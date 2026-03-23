@@ -1142,8 +1142,8 @@ export default function App() {
         body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1000, messages: [{ role: "user", content: prompt }] }),
       });
       if (!response.ok) throw new Error(`API error ${response.status}`);
-      const data = await response.json();
-      const text = data.content?.map(b => (typeof b.text === "string" ? b.text : "")).join("") || "";
+      const data = await response.json();console.log("Raw data:", JSON.stringify(data));
+      const text = data.content?.map(b => (typeof b.text === "string" ? b.text : "")).join("") || "";console.log("API response:", text);
       const raw = JSON.parse(text.replace(/```json|```/g, "").trim());
       const VALID_RECS = ["pursue", "pass", "monitor"];
       const result = {
