@@ -5,8 +5,7 @@ const T = {
   en: {
     dir: "ltr", lang: "en",
     appEyebrow: "AI-Powered Opportunity Intelligence",
-    appTitle1: "The ", appTitleAccent: "Opportunity", appTitle2: " Filter",
-    appTagline: "Score every role against what you actually care about — not what a job board thinks matters.",
+appTitle1: "", appTitleAccent: "Vetted", appTitle2: "",    appTagline: "Score every role against what you actually care about — not what a job board thinks matters.",
     regionTitle: "Select Your Region", regionSubtitle: "Available for North America users.",
     regionContinue: "Continue",
     countries: { us: "United States", ca: "Canada", mx: "Mexico" },
@@ -71,7 +70,7 @@ const T = {
   es: {
     dir: "ltr", lang: "es",
     appEyebrow: "Inteligencia de Oportunidades con IA",
-    appTitle1: "El Filtro de ", appTitleAccent: "Oportunidades", appTitle2: "",
+    appTitle1: "Bộ Lọc ", appTitleAccent: "Cơ Hội", appTitle2: "",
     appTagline: "Evalúa cada rol según lo que realmente te importa.",
     regionTitle: "Selecciona tu Región", regionSubtitle: "Disponible para usuarios en Norteamérica.",
     regionContinue: "Continuar",
@@ -133,8 +132,7 @@ const T = {
   zh: {
     dir: "ltr", lang: "zh",
     appEyebrow: "AI 驱动的机会智能分析",
-    appTitle1: "机会", appTitleAccent: "筛选器", appTitle2: "",
-    appTagline: "根据您真正在意的标准评估每个职位。",
+appTitle1: "", appTitleAccent: "Vetted", appTitle2: "",    appTagline: "根据您真正在意的标准评估每个职位。",
     regionTitle: "选择您的地区", regionSubtitle: "本应用仅对北美地区用户开放。",
     regionContinue: "继续",
     countries: { us: "美国", ca: "加拿大", mx: "墨西哥" },
@@ -194,8 +192,7 @@ const T = {
   fr: {
     dir: "ltr", lang: "fr",
     appEyebrow: "Intelligence d'Opportunités par IA",
-    appTitle1: "Le Filtre d'", appTitleAccent: "Opportunités", appTitle2: "",
-    appTagline: "Évaluez chaque poste selon ce qui compte vraiment pour vous.",
+appTitle1: "", appTitleAccent: "Vetted", appTitle2: "",    appTagline: "Évaluez chaque poste selon ce qui compte vraiment pour vous.",
     regionTitle: "Sélectionnez Votre Région", regionSubtitle: "Disponible en Amérique du Nord.",
     regionContinue: "Continuer",
     countries: { us: "États-Unis", ca: "Canada", mx: "Mexique" },
@@ -256,8 +253,7 @@ const T = {
   ar: {
     dir: "rtl", lang: "ar",
     appEyebrow: "ذكاء اصطناعي لتقييم الفرص المهنية",
-    appTitle1: "مُصفّي ", appTitleAccent: "الفرص", appTitle2: "",
-    appTagline: "قيّم كل وظيفة وفق ما يهمك حقاً.",
+appTitle1: "", appTitleAccent: "Vetted", appTitle2: "",    appTagline: "قيّم كل وظيفة وفق ما يهمك حقاً.",
     regionTitle: "اختر منطقتك", regionSubtitle: "متاح لمستخدمي أمريكا الشمالية.",
     regionContinue: "متابعة",
     countries: { us: "الولايات المتحدة", ca: "كندا", mx: "المكسيك" },
@@ -318,7 +314,7 @@ const T = {
   vi: {
     dir: "ltr", lang: "vi",
     appEyebrow: "Trí Tuệ Nhân Tạo Phân Tích Cơ Hội",
-    appTitle1: "Bộ Lọc ", appTitleAccent: "Cơ Hội", appTitle2: "",
+appTitle1: "", appTitleAccent: "Vetted", appTitle2: "",
     appTagline: "Đánh giá mỗi vai trò theo những gì bạn thực sự quan tâm.",
     regionTitle: "Chọn Khu Vực của Bạn", regionSubtitle: "Ứng dụng này khả dụng cho người dùng Bắc Mỹ.",
     regionContinue: "Tiếp tục",
@@ -1139,15 +1135,15 @@ export default function App() {
       const response = await fetch("/.netlify/functions/anthropic", {
         method: "POST",
         headers: { "Content-Type": "application/json"},
-        body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1000, messages: [{ role: "user", content: prompt }] }),
+        body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 2000, messages: [{ role: "user", content: prompt }] }),
       });
       if (!response.ok) throw new Error(`API error ${response.status}`);
       const data = await response.json();console.log("Raw data:", JSON.stringify(data));
       const text = data.content?.map(b => (typeof b.text === "string" ? b.text : "")).join("") || "";console.log("API response:", text);
       const raw = JSON.parse(text.replace(/```json|```/g, "").trim());
-      const VALID_RECS = ["pursue", "pass", "monitor"];
-      const result = {
-        role_title: sanitizeText(String(raw.role_title || "Unknown Role")),
+const prompt = `Respond in the language: ${t.lang}. All scoring rationale, recommendation_rationale, strengths, gaps, narrative_bridge, and honest_fit_summary must be written in that language. However these fields must ALWAYS be in English: recommendation (must be exactly one of: pursue, pass, monitor), role_title, company.\n\nYou are an expert executive career coach. Score this opportunity against the candidate's filter framework.\n\nCANDIDATE PROFILE:\n${profileSummary}\n\nSCORING FRAMEWORK (score each 1–5):\n${filterDefs}\n\nJOB DESCRIPTION:\n${safeJd}\n\nRespond ONLY with valid JSON (no markdown) in exactly this shape:\n{"role_title":"","company":"","overall_score":3.8,"recommendation":"pursue","recommendation_rationale":"","filter_scores":[{"filter_id":"","filter_name":"","score":4,"rationale":""}],"strengths":[""],"gaps":[""],"narrative_bridge":"","honest_fit_summary":""}`;
+
+      const result = {        role_title: sanitizeText(String(raw.role_title || "Unknown Role")),
         company: sanitizeText(String(raw.company || "Unknown Company")),
         overall_score: Math.min(5, Math.max(1, Number(raw.overall_score) || 1)),
         recommendation: VALID_RECS.includes(raw.recommendation) ? raw.recommendation : "monitor",
