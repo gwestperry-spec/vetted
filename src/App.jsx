@@ -1129,7 +1129,6 @@ export default function App() {
     const filterDefs = filters.map(f => `- ${sanitizeText(fn(f.name))} (weight: ${f.weight}×): ${sanitizeText(fn(f.description), MAX_LONG)}`).join("\n");
     const safeJd = sanitizeText(jd, MAX_JD);
     const profileSummary = Object.entries(safeProfile).map(([k, v]) => `${k}: ${v}`).join("\n");
-    const prompt = `Respond in the language: ${t.lang}. All scoring rationale, recommendations, strengths, gaps, and narrative must be written in that language.\n\nYou are an expert executive career coach. Score this opportunity against the candidate's filter framework.\n\nCANDIDATE PROFILE:\n${profileSummary}\n\nSCORING FRAMEWORK (score each 1–5):\n${filterDefs}\n\nJOB DESCRIPTION:\n${safeJd}\n\nRespond ONLY with valid JSON (no markdown) in exactly this shape:\n{"role_title":"","company":"","overall_score":3.8,"recommendation":"pursue","recommendation_rationale":"","filter_scores":[{"filter_id":"","filter_name":"","score":4,"rationale":""}],"strengths":[""],"gaps":[""],"narrative_bridge":"","honest_fit_summary":""}`;
 
     try {
       const response = await fetch("/.netlify/functions/anthropic", {
@@ -1141,7 +1140,7 @@ export default function App() {
       const data = await response.json();console.log("Raw data:", JSON.stringify(data));
       const text = data.content?.map(b => (typeof b.text === "string" ? b.text : "")).join("") || "";console.log("API response:", text);
       const raw = JSON.parse(text.replace(/```json|```/g, "").trim());
-const prompt = `Respond in the language: ${t.lang}. All scoring rationale, recommendation_rationale, strengths, gaps, narrative_bridge, and honest_fit_summary must be written in that language. However these fields must ALWAYS be in English: recommendation (must be exactly one of: pursue, pass, monitor), role_title, company.\n\nYou are an expert executive career coach. Score this opportunity against the candidate's filter framework.\n\nCANDIDATE PROFILE:\n${profileSummary}\n\nSCORING FRAMEWORK (score each 1–5):\n${filterDefs}\n\nJOB DESCRIPTION:\n${safeJd}\n\nRespond ONLY with valid JSON (no markdown) in exactly this shape:\n{"role_title":"","company":"","overall_score":3.8,"recommendation":"pursue","recommendation_rationale":"","filter_scores":[{"filter_id":"","filter_name":"","score":4,"rationale":""}],"strengths":[""],"gaps":[""],"narrative_bridge":"","honest_fit_summary":""}`;
+const prompt = `Respond in the language: ${t.lang}. All scoring rationale, recommendation_rationale, strengths, gaps, narrative_bridge, and honest_fit_summary must be written in that language. However these fields must ALWAYS be in English: recommendation (must be exactly one of: pursue, pass, monitor), role_title, company.\n\nYou are an expert executive career coach. const prompt =mmary":""}`;
 
       const result = {        role_title: sanitizeText(String(raw.role_title || "Unknown Role")),
         company: sanitizeText(String(raw.company || "Unknown Company")),
