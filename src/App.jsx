@@ -1136,7 +1136,7 @@ export default function App() {
     const prompt = `You are an expert executive career coach. Score this opportunity against the candidate's filter framework.\n\nCANDIDATE PROFILE:\n${profileSummary}\n\nSCORING FRAMEWORK (score each 1–5):\n${filterDefs}\n\nJOB DESCRIPTION:\n${safeJd}\n\nRespond ONLY with valid JSON (no markdown) in exactly this shape:\n{"role_title":"","company":"","overall_score":3.8,"recommendation":"pursue","recommendation_rationale":"","filter_scores":[{"filter_id":"","filter_name":"","score":4,"rationale":""}],"strengths":[""],"gaps":[""],"narrative_bridge":"","honest_fit_summary":""}`;
 
     try {
-      const response = await fetch("https://api.anthropic.com/v1/messages", {
+      const response = await fetch("/.netlify/functions/anthropic", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 2000, messages: [{ role: "user", content: prompt }] }),
