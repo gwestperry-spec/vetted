@@ -5,7 +5,7 @@ const T = {
   en: {
     dir: "ltr", lang: "en",
     appEyebrow: "AI-Powered Opportunity Intelligence",
-    appTitle1: "The ", appTitleAccent: "Opportunity", appTitle2: " Filter",
+    appTitle1: "", appTitleAccent: "Vetted", appTitle2: "",
     appTagline: "Score every role against what you actually care about — not what a job board thinks matters.",
     regionTitle: "Select Your Region", regionSubtitle: "Available for North America users.",
     regionContinue: "Continue",
@@ -71,7 +71,7 @@ const T = {
   es: {
     dir: "ltr", lang: "es",
     appEyebrow: "Inteligencia de Oportunidades con IA",
-    appTitle1: "El Filtro de ", appTitleAccent: "Oportunidades", appTitle2: "",
+    appTitle1: "", appTitleAccent: "Vetted", appTitle2: "",
     appTagline: "Evalúa cada rol según lo que realmente te importa.",
     regionTitle: "Selecciona tu Región", regionSubtitle: "Disponible para usuarios en Norteamérica.",
     regionContinue: "Continuar",
@@ -133,7 +133,7 @@ const T = {
   zh: {
     dir: "ltr", lang: "zh",
     appEyebrow: "AI 驱动的机会智能分析",
-    appTitle1: "机会", appTitleAccent: "筛选器", appTitle2: "",
+    appTitle1: "", appTitleAccent: "Vetted", appTitle2: "",
     appTagline: "根据您真正在意的标准评估每个职位。",
     regionTitle: "选择您的地区", regionSubtitle: "本应用仅对北美地区用户开放。",
     regionContinue: "继续",
@@ -194,7 +194,7 @@ const T = {
   fr: {
     dir: "ltr", lang: "fr",
     appEyebrow: "Intelligence d'Opportunités par IA",
-    appTitle1: "Le Filtre d'", appTitleAccent: "Opportunités", appTitle2: "",
+    appTitle1: "", appTitleAccent: "Vetted", appTitle2: "",
     appTagline: "Évaluez chaque poste selon ce qui compte vraiment pour vous.",
     regionTitle: "Sélectionnez Votre Région", regionSubtitle: "Disponible en Amérique du Nord.",
     regionContinue: "Continuer",
@@ -256,7 +256,7 @@ const T = {
   ar: {
     dir: "rtl", lang: "ar",
     appEyebrow: "ذكاء اصطناعي لتقييم الفرص المهنية",
-    appTitle1: "مُصفّي ", appTitleAccent: "الفرص", appTitle2: "",
+    appTitle1: "", appTitleAccent: "Vetted", appTitle2: "",
     appTagline: "قيّم كل وظيفة وفق ما يهمك حقاً.",
     regionTitle: "اختر منطقتك", regionSubtitle: "متاح لمستخدمي أمريكا الشمالية.",
     regionContinue: "متابعة",
@@ -318,7 +318,7 @@ const T = {
   vi: {
     dir: "ltr", lang: "vi",
     appEyebrow: "Trí Tuệ Nhân Tạo Phân Tích Cơ Hội",
-    appTitle1: "Bộ Lọc ", appTitleAccent: "Cơ Hội", appTitle2: "",
+    appTitle1: "", appTitleAccent: "Vetted", appTitle2: "",
     appTagline: "Đánh giá mỗi vai trò theo những gì bạn thực sự quan tâm.",
     regionTitle: "Chọn Khu Vực của Bạn", regionSubtitle: "Ứng dụng này khả dụng cho người dùng Bắc Mỹ.",
     regionContinue: "Tiếp tục",
@@ -1139,7 +1139,7 @@ export default function App() {
       const response = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1000, messages: [{ role: "user", content: prompt }] }),
+        body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 2000, messages: [{ role: "user", content: prompt }] }),
       });
       if (!response.ok) throw new Error(`API error ${response.status}`);
       const data = await response.json();
