@@ -1,9 +1,5 @@
 {
   "appId": "com.vettedai.app",
   "appName": "Vetted",
-  "webDir": "dist",
-  "server": {
-    "url": "https://celebrated-gelato-56d525.netlify.app",
-    "cleartext": true
-  }
+  "webDir": "dist"
 }
