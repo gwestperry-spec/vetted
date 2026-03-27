@@ -649,12 +649,15 @@ function RegionGate({ t, lang, setLang, selectedCountry, setSelectedCountry, onC
           ))}
         </div>
         <div className="btn-actions" style={{ marginTop: 16 }}>
-          <button className="btn btn-primary" disabled={!selectedCountry} aria-disabled={!selectedCountry} onClick={onContinue} style={{ width: "100%" }}>
-            {t.regionContinue}
-          </button>
-        </div>
-      </div>
-    </div>
+<button className="btn btn-primary" disabled={!selectedCountry} aria-disabled={!selectedCountry} onClick={onContinue} style={{ width: "100%" }}>
+{t.regionContinue}
+</button>
+</div>
+<p style={{ textAlign: "center", marginTop: 16, fontSize: 12, color: "var(--muted)" }}>
+  <a href="https://celebrated-gelato-56d525.netlify.app/privacy" target="_blank" rel="noopener noreferrer" style={{ color: "var(--muted)" }}>Privacy Policy</a>
+</p>
+</div>
+</div>
   );
 }
 
