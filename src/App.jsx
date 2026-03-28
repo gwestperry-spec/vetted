@@ -53,7 +53,7 @@ const T = {
     honestFit: "Honest Fit Assessment", strengths: "Where You Are Strong", gaps: "Real Gaps",
     filterBreakdown: "Filter Breakdown", narrativeBridge: "Narrative Bridge",
     removeOpp: "Remove this opportunity", aboveThreshold: "Above threshold", belowThreshold: "Below threshold",
-    weightedScore: "Weighted Score / 5",
+    weightedScore: "Vetted Quotient (VQ)",
     pursue: "pursue", pass: "pass", monitor: "monitor",
     loadingMsg: "Analyzing role against your framework…",
     scoringError: "Scoring failed. The AI response may have been malformed. Try again.",
@@ -116,7 +116,7 @@ const T = {
     honestFit: "Evaluación de Ajuste", strengths: "Dónde Eres Fuerte", gaps: "Brechas Reales",
     filterBreakdown: "Desglose de Filtros", narrativeBridge: "Puente Narrativo",
     removeOpp: "Eliminar esta oportunidad", aboveThreshold: "Sobre el umbral", belowThreshold: "Bajo el umbral",
-    weightedScore: "Puntuación Ponderada / 5",
+    weightedScore: "Vetted Quotient (VQ)",
     pursue: "seguir", pass: "pasar", monitor: "monitorear",
     loadingMsg: "Analizando rol…", scoringError: "La evaluación falló. Intenta de nuevo.",
     addTagHint: "Presiona Enter o coma para añadir",
@@ -177,7 +177,7 @@ const T = {
     honestFit: "诚实的适配评估", strengths: "您的优势", gaps: "真实差距",
     filterBreakdown: "筛选器详情", narrativeBridge: "叙事桥接",
     removeOpp: "删除此机会", aboveThreshold: "高于门槛", belowThreshold: "低于门槛",
-    weightedScore: "加权评分 / 5",
+    weightedScore: "Vetted Quotient (VQ)",
     pursue: "追求", pass: "放弃", monitor: "观察",
     loadingMsg: "正在分析职位…", scoringError: "评分失败，请重试。",
     addTagHint: "按回车或逗号添加",
@@ -239,7 +239,7 @@ const T = {
     honestFit: "Évaluation de Compatibilité", strengths: "Vos Points Forts", gaps: "Lacunes Réelles",
     filterBreakdown: "Détail des Filtres", narrativeBridge: "Pont Narratif",
     removeOpp: "Supprimer cette opportunité", aboveThreshold: "Au-dessus du seuil", belowThreshold: "Sous le seuil",
-    weightedScore: "Score Pondéré / 5",
+    weightedScore: "Vetted Quotient (VQ)",
     pursue: "poursuivre", pass: "passer", monitor: "surveiller",
     loadingMsg: "Analyse en cours…", scoringError: "L'évaluation a échoué. Réessayez.",
     addTagHint: "Appuyez sur Entrée ou virgule pour ajouter",
@@ -301,7 +301,7 @@ const T = {
     honestFit: "تقييم صريح للتوافق", strengths: "نقاط قوتك", gaps: "الفجوات الحقيقية",
     filterBreakdown: "تفصيل المرشحات", narrativeBridge: "جسر السرد",
     removeOpp: "إزالة هذه الفرصة", aboveThreshold: "فوق العتبة", belowThreshold: "تحت العتبة",
-    weightedScore: "الدرجة المرجّحة / ٥",
+    weightedScore: "Vetted Quotient (VQ)",
     pursue: "متابعة", pass: "تجاوز", monitor: "مراقبة",
     loadingMsg: "تحليل الدور…", scoringError: "فشل التقييم. حاول مرة أخرى.",
     addTagHint: "اضغط Enter أو فاصلة للإضافة",
@@ -363,7 +363,7 @@ const T = {
     honestFit: "Đánh Giá Phù Hợp Thực Tế", strengths: "Điểm Mạnh của Bạn", gaps: "Khoảng Cách Thực Tế",
     filterBreakdown: "Chi Tiết Bộ Lọc", narrativeBridge: "Cầu Nối Tường Thuật",
     removeOpp: "Xóa cơ hội này", aboveThreshold: "Trên ngưỡng", belowThreshold: "Dưới ngưỡng",
-    weightedScore: "Điểm Có Trọng Số / 5",
+    weightedScore: "Vetted Quotient (VQ)",
     pursue: "tiếp tục", pass: "bỏ qua", monitor: "theo dõi",
     loadingMsg: "Đang phân tích vai trò…", scoringError: "Đánh giá thất bại. Thử lại.",
     addTagHint: "Nhấn Enter hoặc dấu phẩy để thêm",
@@ -382,19 +382,19 @@ const T = {
 // ─── Default filters ──────────────────────────────────────────────────────
 const DEFAULT_FILTERS = [
   { id: "pl_ownership", weight: 1.5, isCore: true,
-    name: { en: "P&L Ownership Language", es: "Lenguaje de Responsabilidad P&L", zh: "损益归属语言", fr: "Langage de Responsabilité P&L", ar: "لغة ملكية الأرباح والخسائر", vi: "Ngôn Ngữ Sở Hữu P&L" },
+    name: { en: "Financial Accountability", es: "Responsabilidad Financiera", zh: "财务责任", fr: "Responsabilité Financière", ar: "المساءلة المالية", vi: "Trách Nhiệm Tài Chính" },
     description: { en: "Does the role carry named financial accountability or is it support language?", es: "¿El rol lleva responsabilidad financiera nombrada?", zh: "该职位是否具有明确的财务责任？", fr: "Le rôle porte-t-il une responsabilité financière nommée?", ar: "هل يحمل الدور مسؤولية مالية محددة؟", vi: "Vai trò có trách nhiệm tài chính cụ thể hay chỉ là ngôn ngữ hỗ trợ?" } },
   { id: "reporting_structure", weight: 1.2, isCore: true,
-    name: { en: "Reporting Structure", es: "Estructura de Reporte", zh: "汇报结构", fr: "Structure Hiérarchique", ar: "هيكل التقارير", vi: "Cấu Trúc Báo Cáo" },
+    name: { en: "Access to Leadership", es: "Acceso al Liderazgo", zh: "领导层接触", fr: "Accès au Leadership", ar: "الوصول إلى القيادة", vi: "Tiếp Cận Lãnh Đạo" },
     description: { en: "How many levels from the C-suite? What does visibility mean for trajectory?", es: "¿Cuántos niveles del C-suite?", zh: "距离C级高管有多少层级？", fr: "Combien de niveaux du C-suite?", ar: "كم عدد المستويات من المجموعة التنفيذية؟", vi: "Bao nhiêu cấp bậc so với ban lãnh đạo cấp cao?" } },
   { id: "metric_specificity", weight: 1.3, isCore: true,
-    name: { en: "Metric Specificity", es: "Especificidad de Métricas", zh: "指标具体性", fr: "Spécificité des Métriques", ar: "تحديد المقاييس", vi: "Tính Cụ Thể của Chỉ Số" },
+    name: { en: "Clear Success Measures", es: "Métricas de Éxito Claras", zh: "明确的成功指标", fr: "Mesures de Succès Claires", ar: "مقاييس نجاح واضحة", vi: "Thước Đo Thành Công Rõ Ràng" },
     description: { en: "Are success metrics explicit and financially anchored, or vague?", es: "¿Las métricas de éxito están declaradas explícitamente?", zh: "成功指标是否明确陈述并以财务为基础？", fr: "Les métriques de succès sont-elles explicites?", ar: "هل مقاييس النجاح محددة بوضوح؟", vi: "Các chỉ số thành công có cụ thể và gắn với tài chính không?" } },
   { id: "scope_language", weight: 1.2, isCore: true,
-    name: { en: "Scope Language", es: "Lenguaje de Alcance", zh: "职责范围语言", fr: "Langage de Portée", ar: "لغة النطاق", vi: "Ngôn Ngữ Phạm Vi" },
+    name: { en: "Organizational Impact", es: "Impacto Organizacional", zh: "组织影响力", fr: "Impact Organisationnel", ar: "الأثر التنظيمي", vi: "Tác Động Tổ Chức" },
     description: { en: "Is the role enterprise-wide, regional, or single-function? Does scope match title?", es: "¿Es el rol a nivel empresarial, regional o monofuncional?", zh: "该职位是企业级、区域性还是单一职能？", fr: "Le rôle est-il à l'échelle de l'entreprise?", ar: "هل الدور على مستوى المؤسسة أم إقليمي؟", vi: "Vai trò có phạm vi toàn doanh nghiệp, khu vực hay đơn chức năng?" } },
   { id: "title_gap", weight: 1.0, isCore: true,
-    name: { en: "Title vs. Responsibilities Gap", es: "Brecha Título vs. Responsabilidades", zh: "职位与职责差距", fr: "Écart Titre / Responsabilités", ar: "فجوة المسمى مقابل المسؤوليات", vi: "Khoảng Cách Chức Danh vs. Trách Nhiệm" },
+    name: { en: "Role Integrity", es: "Integridad del Rol", zh: "职位诚信度", fr: "Intégrité du Rôle", ar: "نزاهة الدور", vi: "Tính Toàn Vẹn của Vai Trò" },
     description: { en: "Does the role deliver what the title promises, or is it inflated/understated?", es: "¿El rol entrega lo que promete el título?", zh: "该职位是否兑现了职位名称所承诺的内容？", fr: "Le rôle tient-il les promesses du titre?", ar: "هل يحقق الدور ما يعد به المسمى؟", vi: "Vai trò có đáp ứng những gì chức danh hứa hẹn không?" } },
 ];
 
@@ -411,6 +411,16 @@ const NA_COUNTRIES = [
   { code: "us", flag: "🇺🇸" },
   { code: "ca", flag: "🇨🇦" },
   { code: "mx", flag: "🇲🇽" },
+];
+
+// ─── Weight option labels ─────────────────────────────────────────────────
+const WEIGHT_OPTIONS = [
+  { value: 0.5, label: "Minor" },
+  { value: 1.0, label: "Standard" },
+  { value: 1.2, label: "Relevant" },
+  { value: 1.3, label: "Important" },
+  { value: 1.5, label: "Critical" },
+  { value: 2.0, label: "Critical +" },
 ];
 
 // ─── Input sanitisation ───────────────────────────────────────────────────
@@ -546,7 +556,7 @@ const buildCss = (dir) => `
   .alert-warn{background:var(--warn-bg);color:var(--warn);border-${dir === "rtl" ? "right" : "left"}:3px solid var(--gold)}
   .alert-error{background:var(--pass-bg);color:var(--pass);border-${dir === "rtl" ? "right" : "left"}:3px solid var(--accent)}
   .custom-filter-row{display:flex;gap:10px;align-items:flex-start;padding:14px 0;border-bottom:1px solid var(--cream)}.custom-filter-row:last-child{border-bottom:none}
-  .weight-select{width:80px;flex-shrink:0;min-height:44px}
+  .weight-select{width:110px;flex-shrink:0;min-height:44px}
   .filter-delete-btn{flex-shrink:0;background:none;border:1.5px solid var(--border);color:var(--muted);cursor:pointer;min-width:36px;min-height:36px;display:flex;align-items:center;justify-content:center;border-radius:var(--r);font-size:18px;transition:color .15s,border-color .15s}
   .filter-delete-btn:hover{color:var(--accent);border-color:var(--accent)}
   .filter-delete-btn:focus-visible{outline:none;box-shadow:var(--focus)}
@@ -662,8 +672,6 @@ function RegionGate({ t, lang, setLang, selectedCountry, setSelectedCountry, onC
 }
 
 // ─── TagInput ─────────────────────────────────────────────────────────────
-// Isolated component — has its own local state for the text input value
-// so parent re-renders don't reset or steal focus from this field
 function TagInput({ labelText, labelId, placeholder, tags, onAddTag, onRemoveTag, removeLabel, hint }) {
   const [inputVal, setInputVal] = useState("");
   const inputId = useId();
@@ -820,7 +828,7 @@ function FiltersStep({ t, lang, filters, setFilters, onBack, onNext }) {
               <div style={{ flexShrink: 0 }}>
                 <label style={{ fontSize: 11, color: "var(--muted)", display: "block", marginBottom: 4 }}>{t.labelWeight}</label>
                 <select className="weight-select" value={f.weight} aria-label={`${t.labelWeight}: ${fn(f.name)}`} onChange={e => updateWeight(f.id, parseFloat(e.target.value))}>
-                  {[0.5, 1.0, 1.2, 1.5, 2.0].map(w => <option key={w} value={w}>{w}×</option>)}
+                  {WEIGHT_OPTIONS.map(w => <option key={w.value} value={w.value}>{w.label}</option>)}
                 </select>
               </div>
             </div>
@@ -838,7 +846,7 @@ function FiltersStep({ t, lang, filters, setFilters, onBack, onNext }) {
                     <div style={{ fontSize: 12, color: "var(--muted)" }}>{fn(f.description)}</div>
                   </div>
                   <select className="weight-select" value={f.weight} aria-label={`${t.labelWeight}: ${fn(f.name)}`} onChange={e => updateWeight(f.id, parseFloat(e.target.value))}>
-                    {[0.5, 1.0, 1.2, 1.5, 2.0].map(w => <option key={w} value={w}>{w}×</option>)}
+                    {WEIGHT_OPTIONS.map(w => <option key={w.value} value={w.value}>{w.label}</option>)}
                   </select>
                   <button className="filter-delete-btn" onClick={() => removeFilter(f.id)} aria-label={`Remove ${fn(f.name)}`}>×</button>
                 </div>
@@ -1050,7 +1058,11 @@ function ResultView({ t, opp, profile, onBack, onRemove }) {
                     {[1,2,3,4,5].map(n => <div key={n} className={`dot ${n <= filled ? (fs.score >= 4 ? "gold" : "filled") : ""}`} />)}
                   </div>
                   <span className="filter-score-num" style={{ color: col }} aria-label={`${t.scoreLabel}: ${fs.score} ${t.outOf}`}>{fs.score}/5</span>
-                  {fs.weight && fs.weight !== 1.0 && <span style={{ fontSize: 10, color: "var(--muted)", fontFamily: "monospace" }}>{fs.weight}×</span>}
+                  {fs.weight && fs.weight !== 1.0 && (
+                    <span style={{ fontSize: 10, color: "var(--muted)", fontFamily: "monospace" }}>
+                      {WEIGHT_OPTIONS.find(w => w.value === fs.weight)?.label || `${fs.weight}×`}
+                    </span>
+                  )}
                 </div>
                 <div className="score-bar-wrap" role="progressbar" aria-valuenow={fs.score} aria-valuemin={1} aria-valuemax={5} aria-labelledby={`fn-${fs.filter_id}`}>
                   <div className="score-bar-fill" style={{ width: `${(fs.score / 5) * 100}%`, background: col }} />
@@ -1172,8 +1184,9 @@ export default function App() {
       setCurrentOpp(enriched);
       setStep("result");
       announce(`Scored: ${result.role_title}. Score: ${result.overall_score.toFixed(1)}. Recommendation: ${result.recommendation}.`);
-    } catch {
-      setError(t.scoringError);
+    } catch (err) {
+      const detail = err?.message ? ` (${err.message})` : "";
+      setError(`${t.scoringError}${detail}`);
       announce(t.scoringError);
     } finally {
       setLoading(false);
