@@ -5,19 +5,23 @@ import Capacitor
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
     var window: UIWindow?
+    private var pluginRegistered = false
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         return true
     }
 
+    func applicationDidBecomeActive(_ application: UIApplication) {
+        guard !pluginRegistered else { return }
+        if let vc = window?.rootViewController as? CAPBridgeViewController {
+            vc.bridge?.registerPluginInstance(SignInWithApplePlugin())
+            pluginRegistered = true
+        }
+    }
+
     func applicationWillResignActive(_ application: UIApplication) {}
-
     func applicationDidEnterBackground(_ application: UIApplication) {}
-
     func applicationWillEnterForeground(_ application: UIApplication) {}
-
-    func applicationDidBecomeActive(_ application: UIApplication) {}
-
     func applicationWillTerminate(_ application: UIApplication) {}
 
     func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {

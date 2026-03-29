@@ -1263,15 +1263,13 @@ export default function App() {
     setAuthLoading(true);
     setAuthError("");
     try {
-      // Use Capacitor plugin if available (native iOS), else fallback message
+      // Use native Swift plugin if available (native iOS), else fallback message
+      console.log("Capacitor check:", window.Capacitor, window.Capacitor?.isNativePlatform?.());
       if (window.Capacitor?.isNativePlatform?.()) {
-        const { SignInWithApple } = await import("@capacitor-community/apple-sign-in");
-        const result = await SignInWithApple.authorize({
-          clientId: "com.vetted.app",
-          redirectURI: "https://celebrated-gelato-56d525.netlify.app/.netlify/functions/apple-auth",
-          scopes: "email name",
-        });
+        const result = await window.Capacitor.Plugins.SignInWithApplePlugin.authorize();
 
+        console.log("Available plugins:", Object.keys(window.Capacitor.Plugins));
+        if (result.error) throw new Error(result.message || "Sign in failed");
         const { identityToken, givenName, familyName } = result.response;
 
         // Verify token server-side
@@ -1309,7 +1307,7 @@ export default function App() {
         setAuthError("Sign in with Apple requires the iOS app. To test on web, use the Netlify preview with a supported browser on a Mac or iPhone.");
       }
     } catch (err) {
-      console.error("Apple sign in error:", err);
+      console.error("Apple sign in error FULL:", JSON.stringify(err), err?.message, err?.stack);
       if (err?.message?.includes("cancelled") || err?.message?.includes("canceled")) {
         setAuthError("Sign in was cancelled.");
       } else {

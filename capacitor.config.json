@@ -1,5 +1,9 @@
 {
   "appId": "com.vettedai.app",
   "appName": "Vetted",
-  "webDir": "dist"
+  "webDir": "dist",
+  "ios": {
+    "scheme": "Vetted"
+  },
+  "packageClassList": ["SignInWithApplePlugin"]
 }
