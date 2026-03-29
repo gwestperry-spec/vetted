@@ -1,11 +1,52 @@
 [build]
   command = "npm run build"
   publish = "dist"
+  functions = "netlify/functions"
 
-[functions]
-  directory = "netlify/functions"
+[[headers]]
+  for = "/*"
+  [headers.values]
+    # ── Clickjacking protection ───────────────────────────────────────────
+    X-Frame-Options = "DENY"
 
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
+    # ── Prevent MIME sniffing ─────────────────────────────────────────────
+    X-Content-Type-Options = "nosniff"
+
+    # ── Referrer policy ───────────────────────────────────────────────────
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+    # ── Force HTTPS ───────────────────────────────────────────────────────
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
+
+    # ── Permissions policy — disable unused browser features ─────────────
+    Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=()"
+
+    # ── Content Security Policy ───────────────────────────────────────────
+    # script-src: only our own scripts + Google Fonts inline
+    # connect-src: Anthropic API proxy (our Netlify function) + Apple auth + allorigins proxy
+    # style-src: our styles + Google Fonts
+    # font-src: Google Fonts CDN
+    Content-Security-Policy = """
+      default-src 'self';
+      script-src 'self' 'unsafe-inline';
+      style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+      font-src 'self' https://fonts.gstatic.com;
+      connect-src 'self'
+        https://celebrated-gelato-56d525.netlify.app
+        https://appleid.apple.com
+        https://api.allorigins.win
+        https://api.anthropic.com;
+      img-src 'self' data:;
+      frame-src 'none';
+      object-src 'none';
+      base-uri 'self';
+      form-action 'self';
+    """
+
+# ── Function-specific headers ─────────────────────────────────────────────
+[[headers]]
+  for = "/.netlify/functions/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "https://celebrated-gelato-56d525.netlify.app"
+    Access-Control-Allow-Methods = "POST, OPTIONS"
+    Access-Control-Allow-Headers = "Content-Type, X-Vetted-Token"
