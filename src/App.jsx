@@ -1089,6 +1089,60 @@ function ResultView({ t, opp, profile, onBack, onRemove }) {
   );
 }
 
+
+// ─── SignInGate ───────────────────────────────────────────────────────────
+function SignInGate({ t, lang, setLang, onSignIn, authLoading, authError }) {
+  return (
+    <div className="region-gate">
+      <div style={{ textAlign: "center", marginBottom: 32 }}>
+        <p className="header-eyebrow">AI-Powered Opportunity Intelligence</p>
+        <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 32, fontWeight: 700, marginBottom: 8 }}>
+          <span style={{ color: "var(--accent)" }}>Vetted</span>
+        </h1>
+        <p style={{ color: "var(--muted)", fontSize: 14, lineHeight: 1.6, maxWidth: 320, margin: "0 auto" }}>
+          Filter The Noise. Score every role against what you actually care about.
+        </p>
+      </div>
+      <LangSwitcher lang={lang} setLang={setLang} />
+      <div className="card" style={{ textAlign: "center" }}>
+        <h2 className="card-title" style={{ marginBottom: 8 }}>Welcome</h2>
+        <p className="card-subtitle">Sign in to access your personalized career intelligence framework.</p>
+
+        {authError && (
+          <div role="alert" className="alert alert-error" style={{ marginBottom: 16, textAlign: "left" }}>{authError}</div>
+        )}
+
+        <button
+          className="btn btn-primary"
+          onClick={onSignIn}
+          disabled={authLoading}
+          aria-busy={authLoading}
+          style={{ width: "100%", marginBottom: 16, minHeight: 50, fontSize: 16, gap: 10 }}
+        >
+          {authLoading ? (
+            <>
+              <span className="spinner" style={{ width: 18, height: 18, borderWidth: 2 }} aria-hidden="true" />
+              Signing in…
+            </>
+          ) : (
+            <>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+              </svg>
+              Sign in with Apple
+            </>
+          )}
+        </button>
+
+        <p style={{ fontSize: 11, color: "var(--muted)", lineHeight: 1.6 }}>
+          Your data is private and never sold.{" "}
+          <a href="https://celebrated-gelato-56d525.netlify.app/privacy" target="_blank" rel="noopener noreferrer" style={{ color: "var(--muted)" }}>Privacy Policy</a>
+        </p>
+      </div>
+    </div>
+  );
+}
+
 // ════════════════════════════════════════════════════════════════════════════
 // APP — only manages routing state; all components are stable references
 // ════════════════════════════════════════════════════════════════════════════
@@ -1106,6 +1160,9 @@ export default function App() {
   const [currentOpp, setCurrentOpp] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [authUser, setAuthUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(false);
+  const [authError, setAuthError] = useState("");
   const announcerRef = useRef(null);
 
   const t = T[lang];
@@ -1120,12 +1177,95 @@ export default function App() {
     document.documentElement.dir = dir;
   }, [dir, lang, t.lang]);
 
+  // Restore auth from localStorage on mount
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("vetted_user");
+      if (stored) {
+        const user = JSON.parse(stored);
+        if (user?.id) setAuthUser(user);
+      }
+    } catch { /* ignore */ }
+  }, []);
+
   function announce(msg) {
     if (announcerRef.current) announcerRef.current.textContent = "";
     setTimeout(() => { if (announcerRef.current) announcerRef.current.textContent = msg; }, 50);
   }
 
   const fn = useCallback((field) => resolveLang(field, lang), [lang]);
+
+  // ── Sign in with Apple ───────────────────────────────────────────────────
+  async function handleSignInWithApple() {
+    setAuthLoading(true);
+    setAuthError("");
+    try {
+      // Use Capacitor plugin if available (native iOS), else fallback message
+      if (window.Capacitor?.isNativePlatform?.()) {
+        const { SignInWithApple } = await import("@capacitor-community/apple-sign-in");
+        const result = await SignInWithApple.authorize({
+          clientId: "com.vetted.app",
+          redirectURI: "https://celebrated-gelato-56d525.netlify.app/.netlify/functions/apple-auth",
+          scopes: "email name",
+        });
+
+        const { identityToken, givenName, familyName } = result.response;
+
+        // Verify token server-side
+        const res = await fetch("https://celebrated-gelato-56d525.netlify.app/.netlify/functions/apple-auth", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            identityToken,
+            fullName: { givenName, familyName },
+          }),
+        });
+
+        if (!res.ok) throw new Error("Server verification failed");
+        const data = await res.json();
+
+        const user = {
+          id: data.user.id,
+          email: data.user.email,
+          displayName: data.user.displayName || givenName || "User",
+        };
+
+        localStorage.setItem("vetted_user", JSON.stringify(user));
+        setAuthUser(user);
+
+        // Pre-fill name in profile if we got it from Apple
+        if (user.displayName && user.displayName !== "User") {
+          setProfile(p => ({ ...p, name: p.name || user.displayName }));
+        }
+
+      } else {
+        // Web preview — show helpful message instead of failing silently
+        setAuthError("Sign in with Apple requires the iOS app. To test on web, use the Netlify preview with a supported browser on a Mac or iPhone.");
+      }
+    } catch (err) {
+      console.error("Apple sign in error:", err);
+      if (err?.message?.includes("cancelled") || err?.message?.includes("canceled")) {
+        setAuthError("Sign in was cancelled.");
+      } else {
+        setAuthError("Sign in failed. Please try again.");
+      }
+    } finally {
+      setAuthLoading(false);
+    }
+  }
+
+  function handleSignOut() {
+    localStorage.removeItem("vetted_user");
+    setAuthUser(null);
+    setStep("region");
+    setOpportunities([]);
+    setProfile({
+      name: "", currentTitle: "", background: "", targetRoles: [], targetIndustries: [],
+      compensationMin: "", compensationTarget: "", locationPrefs: [], hardConstraints: "",
+      careerGoal: "", threshold: 3.5,
+    });
+    setFilters(DEFAULT_FILTERS);
+  }
 
   // ── Scoring ──────────────────────────────────────────────────────────────
   async function scoreOpportunity(jd) {
@@ -1153,7 +1293,7 @@ export default function App() {
     try {
       const response = await fetch("https://celebrated-gelato-56d525.netlify.app/.netlify/functions/anthropic", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "X-Vetted-Token": import.meta.env.VITE_VETTED_SECRET || "" },
         body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 2000, messages: [{ role: "user", content: prompt }] }),
       });
       if (!response.ok) throw new Error(`API error ${response.status}`);
@@ -1195,6 +1335,26 @@ export default function App() {
 
   const stepIdx = { region: -1, onboard: 0, filters: 1, dashboard: 2, result: 2 }[step] ?? 0;
 
+  // ── Auth gate — show sign in screen if not authenticated ─────────────────
+  if (!authUser) {
+    return (
+      <>
+        <div ref={announcerRef} role="status" aria-live="polite" aria-atomic="true"
+          style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clip: "rect(0,0,0,0)", whiteSpace: "nowrap" }} />
+        <div className="app">
+          <SignInGate
+            t={t}
+            lang={lang}
+            setLang={setLang}
+            onSignIn={handleSignInWithApple}
+            authLoading={authLoading}
+            authError={authError}
+          />
+        </div>
+      </>
+    );
+  }
+
   if (loading && step === "dashboard") {
     return (
       <div className="app">
@@ -1216,6 +1376,18 @@ export default function App() {
         {step !== "region" && <LangSwitcher lang={lang} setLang={setLang} />}
         {step !== "region" && <AppHeader t={t} />}
         {step !== "region" && step !== "result" && <ProgressBar t={t} stepIdx={stepIdx} />}
+
+        {/* Signed-in user bar */}
+        {step !== "region" && authUser && (
+          <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 12, marginBottom: 8, marginTop: -24 }}>
+            <span style={{ fontSize: 12, color: "var(--muted)", fontFamily: "'IBM Plex Mono', monospace" }}>
+              {authUser.displayName || authUser.email || "Signed in"}
+            </span>
+            <button className="btn btn-secondary btn-sm" onClick={handleSignOut} style={{ fontSize: 11, padding: "4px 12px", minHeight: 30 }}>
+              Sign Out
+            </button>
+          </div>
+        )}
 
         {step === "region" && (
           <RegionGate t={t} lang={lang} setLang={setLang} selectedCountry={selectedCountry} setSelectedCountry={setSelectedCountry} onContinue={() => setStep("onboard")} />
