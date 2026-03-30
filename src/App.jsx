@@ -475,7 +475,7 @@ const buildCss = (dir) => `
   body{font-family:${dir === "rtl" ? "'Noto Sans Arabic'" : "'DM Sans'"}, sans-serif;background:var(--paper);color:var(--ink);min-height:100vh;direction:${dir}}
   .skip-link{position:absolute;top:-100px;left:0;padding:8px 16px;background:var(--ink);color:#fff;font-size:14px;border-radius:0 0 var(--r) 0;z-index:9999;transition:top .15s}
   .skip-link:focus{top:0;outline:3px solid #4a90e2}
-  .app{max-width:860px;margin:0 auto;padding:40px 24px 80px;background:var(--paper);min-height:100vh}
+  .app{max-width:860px;margin:0 auto;padding:40px 24px 80px;background:var(--paper);min-height:100vh;overflow-x:hidden}
   .header{text-align:center;margin-bottom:48px;padding-bottom:32px;border-bottom:1px solid var(--border)}
   .header-eyebrow{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
   .header h1{font-family:'Playfair Display',serif;font-size:clamp(26px,5vw,42px);font-weight:700;line-height:1.1;letter-spacing:-.02em;margin-bottom:12px}
@@ -491,7 +491,7 @@ const buildCss = (dir) => `
   .progress-step.active{background:var(--accent)}.progress-step.done{background:var(--ink)}
   .progress-label{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:.1em;white-space:nowrap;${dir === "rtl" ? "margin-right:10px" : "margin-left:10px"}}
   .card{background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:28px 32px;box-shadow:var(--shadow);margin-bottom:20px}
-  .card-title{font-family:'Playfair Display',serif;font-size:20px;font-weight:600;margin-bottom:6px}
+  .card-title{font-family:'Playfair Display',serif;font-size:20px;font-weight:600;margin-bottom:6px;word-break:break-word;overflow-wrap:break-word}
   .card-subtitle{font-size:13px;color:var(--muted);margin-bottom:24px;line-height:1.6}
   .field{margin-bottom:20px}
   .field label{display:block;font-size:13px;font-weight:500;color:#4a4540;margin-bottom:7px}
