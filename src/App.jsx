@@ -464,10 +464,10 @@ function checkRateLimit() {
 const buildCss = (dir) => `
   @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&family=Noto+Sans+Arabic:wght@300;400;500&family=Noto+Sans+SC:wght@300;400;500&display=swap');
   :root {
-    --ink:#0f0e0c;--paper:#f5f1eb;--cream:#ede8e0;--accent:#c4391a;
-    --gold:#b8960c;--gold-light:#f0e4a0;--muted:#6b6660;--border:#d4cfc6;
-    --success:#145c30;--warn:#6a3e08;--pass:#5c1515;--pass-bg:#f0d8d8;
-    --warn-bg:#f5e8d0;--shadow:0 2px 16px rgba(15,14,12,.08);--r:4px;
+    --ink:#0f0e0c;--paper:#f5f5f5;--cream:#e8f0eb;--accent:#0d5c2e;
+    --gold:#8a6200;--gold-light:#f5e8d0;--muted:#6b6660;--border:#c8ddd0;
+    --success:#0d5c2e;--warn:#8a6200;--pass:#8b1a1a;--pass-bg:#f0d8d8;
+    --warn-bg:#fdf3e0;--shadow:0 2px 16px rgba(15,14,12,.08);--r:4px;
     --focus:0 0 0 3px #4a90e2;
   }
   *,::before,::after{box-sizing:border-box;margin:0;padding:0}
@@ -520,7 +520,7 @@ body{font-family:${dir === "rtl" ? "'Noto Sans Arabic'" : "'DM Sans'"}, sans-ser
   .tab-btn[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--ink)}
   .tab-btn:focus-visible{outline:none;box-shadow:inset 0 0 0 2px #4a90e2}
   .score-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 16px;border-radius:20px;font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:14px}
-  .score-high{background:#c8edda;color:var(--success)}.score-mid{background:var(--gold-light);color:var(--warn)}.score-low{background:var(--pass-bg);color:var(--pass)}
+  .score-high{background:#d4edd9;color:var(--success)}.score-mid{background:var(--gold-light);color:var(--warn)}.score-low{background:var(--pass-bg);color:var(--pass)}
   .recommendation-badge{display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:var(--r);font-size:13px;font-weight:600;text-transform:uppercase;border:1.5px solid currentColor;letter-spacing:.04em;white-space:normal;word-break:break-word;max-width:100%}
   .rec-pursue{color:var(--success);background:#c8edda}.rec-pass{color:var(--pass);background:var(--pass-bg)}.rec-monitor{color:var(--warn);background:var(--warn-bg)}
 .opp-card{background:#fff;border:1.5px solid var(--border);border-radius:var(--r);padding:20px 24px;margin-bottom:12px;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:space-between;gap:16px;width:100%;max-width:100%;box-sizing:border-box;text-align:${dir === "rtl" ? "right" : "left"};font-family:inherit}
