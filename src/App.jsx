@@ -475,7 +475,7 @@ const buildCss = (dir) => `
   body{font-family:${dir === "rtl" ? "'Noto Sans Arabic'" : "'DM Sans'"}, sans-serif;background:var(--paper);color:var(--ink);min-height:100vh;direction:${dir}}
   .skip-link{position:absolute;top:-100px;left:0;padding:8px 16px;background:var(--ink);color:#fff;font-size:14px;border-radius:0 0 var(--r) 0;z-index:9999;transition:top .15s}
   .skip-link:focus{top:0;outline:3px solid #4a90e2}
-  .app{max-width:860px;margin:0 auto;padding:40px 24px 80px}
+  .app{max-width:860px;margin:0 auto;padding:40px 24px 80px;background:var(--paper);min-height:100vh}
   .header{text-align:center;margin-bottom:48px;padding-bottom:32px;border-bottom:1px solid var(--border)}
   .header-eyebrow{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
   .header h1{font-family:'Playfair Display',serif;font-size:clamp(26px,5vw,42px);font-weight:700;line-height:1.1;letter-spacing:-.02em;margin-bottom:12px}
