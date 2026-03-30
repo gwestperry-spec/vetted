@@ -475,7 +475,7 @@ const buildCss = (dir) => `
 body{font-family:${dir === "rtl" ? "'Noto Sans Arabic'" : "'DM Sans'"}, sans-serif;background:var(--paper);color:var(--ink);min-height:100vh;direction:${dir};overflow-x:hidden}
   .skip-link{position:absolute;top:-100px;left:0;padding:8px 16px;background:var(--ink);color:#fff;font-size:14px;border-radius:0 0 var(--r) 0;z-index:9999;transition:top .15s}
   .skip-link:focus{top:0;outline:3px solid #4a90e2}
-  .app{max-width:860px;margin:0 auto;padding:40px 24px 80px;background:var(--paper);min-height:100vh;overflow-x:hidden}
+  .app{max-width:860px;margin:0 auto;padding:40px 16px 80px;background:var(--paper);min-height:100vh;overflow-x:hidden;box-sizing:border-box;width:100%}
   .header{text-align:center;margin-bottom:48px;padding-bottom:32px;border-bottom:1px solid var(--border)}
   .header-eyebrow{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
   .header h1{font-family:'Playfair Display',serif;font-size:clamp(26px,5vw,42px);font-weight:700;line-height:1.1;letter-spacing:-.02em;margin-bottom:12px}
@@ -544,6 +544,7 @@ body{font-family:${dir === "rtl" ? "'Noto Sans Arabic'" : "'DM Sans'"}, sans-ser
   .narrative-box strong{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
   .fit-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}
   @media(max-width:560px){.fit-grid{grid-template-columns:1fr}}
+  @media(max-width:420px){.app{padding:24px 12px 80px}.opp-card{padding:14px 16px}.score-badge{padding:4px 10px;font-size:12px}}
   .fit-box{padding:14px 16px;border-radius:var(--r);font-size:13px;line-height:1.7}
   .fit-box strong{display:block;font-size:11px;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;font-weight:700}
   .fit-box ul{padding-${dir === "rtl" ? "right" : "left"}:16px}.fit-box li{margin-bottom:4px}
