@@ -990,9 +990,8 @@ function Dashboard({ t, profile, filters, lang, opportunities, loading, error, o
                   <div className="opp-title">{opp.role_title}</div>
                   <div className="opp-company">{opp.company}</div>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+<div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 1, minWidth: 0 }}>
                   <span className={`score-badge ${opp.overall_score >= 4 ? "score-high" : opp.overall_score >= profile.threshold ? "score-mid" : "score-low"}`} aria-hidden="true">{opp.overall_score.toFixed(1)}</span>
-                  <span className={`recommendation-badge rec-${opp.recommendation}`} aria-hidden="true">{t[opp.recommendation] || opp.recommendation}</span>
                 </div>
               </button>
             ))}
