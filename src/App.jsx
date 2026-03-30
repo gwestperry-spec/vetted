@@ -471,8 +471,8 @@ const buildCss = (dir) => `
     --focus:0 0 0 3px #4a90e2;
   }
   *,::before,::after{box-sizing:border-box;margin:0;padding:0}
-  html{scroll-behavior:smooth}
-  body{font-family:${dir === "rtl" ? "'Noto Sans Arabic'" : "'DM Sans'"}, sans-serif;background:var(--paper);color:var(--ink);min-height:100vh;direction:${dir}}
+  html{scroll-behavior:smooth;overflow-x:hidden}
+body{font-family:${dir === "rtl" ? "'Noto Sans Arabic'" : "'DM Sans'"}, sans-serif;background:var(--paper);color:var(--ink);min-height:100vh;direction:${dir};overflow-x:hidden}
   .skip-link{position:absolute;top:-100px;left:0;padding:8px 16px;background:var(--ink);color:#fff;font-size:14px;border-radius:0 0 var(--r) 0;z-index:9999;transition:top .15s}
   .skip-link:focus{top:0;outline:3px solid #4a90e2}
   .app{max-width:860px;margin:0 auto;padding:40px 24px 80px;background:var(--paper);min-height:100vh;overflow-x:hidden}
