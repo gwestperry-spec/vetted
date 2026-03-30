@@ -521,7 +521,7 @@ const buildCss = (dir) => `
   .tab-btn:focus-visible{outline:none;box-shadow:inset 0 0 0 2px #4a90e2}
   .score-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 16px;border-radius:20px;font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:14px}
   .score-high{background:#c8edda;color:var(--success)}.score-mid{background:var(--gold-light);color:var(--warn)}.score-low{background:var(--pass-bg);color:var(--pass)}
-  .recommendation-badge{display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:var(--r);font-size:13px;font-weight:600;text-transform:uppercase;border:1.5px solid currentColor;letter-spacing:.04em}
+  .recommendation-badge{display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:var(--r);font-size:13px;font-weight:600;text-transform:uppercase;border:1.5px solid currentColor;letter-spacing:.04em;white-space:normal;word-break:break-word;max-width:100%}
   .rec-pursue{color:var(--success);background:#c8edda}.rec-pass{color:var(--pass);background:var(--pass-bg)}.rec-monitor{color:var(--warn);background:var(--warn-bg)}
   .opp-card{background:#fff;border:1.5px solid var(--border);border-radius:var(--r);padding:20px 24px;margin-bottom:12px;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:space-between;gap:16px;width:100%;text-align:${dir === "rtl" ? "right" : "left"};font-family:inherit}
   .opp-card:hover{border-color:var(--ink);box-shadow:var(--shadow)}
@@ -566,11 +566,10 @@ const buildCss = (dir) => `
   .country-option[aria-pressed="true"]{border-color:var(--ink);border-width:2px;background:var(--cream);font-weight:600}
   .back-link{background:none;border:none;cursor:pointer;color:var(--muted);font-size:13px;display:inline-flex;align-items:center;gap:6px;padding:6px 0;margin-bottom:24px;font-family:inherit;transition:color .15s;min-height:44px}
   .back-link:hover{color:var(--ink)}.back-link:focus-visible{outline:none;box-shadow:var(--focus);border-radius:var(--r)}
-  .overall-score-display{display:flex;align-items:center;gap:20px;padding:20px 0;margin-bottom:8px}
-  .big-score{font-family:'Playfair Display',serif;font-size:56px;font-weight:700;line-height:1}
+.overall-score-display{display:flex;align-items:center;gap:20px;padding:20px 0;margin-bottom:8px;flex-wrap:wrap;box-sizing:border-box;width:100%}  .big-score{font-family:'Playfair Display',serif;font-size:56px;font-weight:700;line-height:1}
   .big-score.high{color:var(--success)}.big-score.mid{color:var(--gold)}.big-score.low{color:var(--accent)}
   .score-meta{flex:1}
-  .score-meta-label{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.score-meta{flex:1;min-width:0;overflow:hidden}
   .threshold-note{font-size:12px;color:var(--muted);margin-top:4px}
   .url-note{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.6}
   .threshold-label{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--accent);letter-spacing:.1em;text-align:${dir === "rtl" ? "left" : "right"};margin-bottom:4px}
