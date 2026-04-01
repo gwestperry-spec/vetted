@@ -479,7 +479,7 @@ body{font-family:${dir === "rtl" ? "'Noto Sans Arabic'" : "'DM Sans'"}, sans-ser
   .header{text-align:center;margin-bottom:48px;padding-bottom:32px;border-bottom:1px solid var(--border)}
   .header-eyebrow{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
   .header h1{font-family:'Playfair Display',serif;font-size:clamp(36px,7vw,56px);font-weight:700;line-height:1.1;letter-spacing:-.02em;margin-bottom:12px}
-  .header h1 span{color:var(--accent)}.header-tagline{font-size:clamp(15px,3vw,20px);color:var(--muted);margin-top:8px;line-height:1.4}
+  .header h1 span{color:var(--accent)}.header-tagline{font-size:18px;color:var(--ink);margin-top:8px;line-height:1.4;opacity:0.7}
   .header p{color:var(--muted);font-size:15px;max-width:520px;margin:0 auto;line-height:1.7}
   .lang-switcher{display:flex;gap:4px;justify-content:center;margin-bottom:28px;flex-wrap:wrap}
   .lang-btn{padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:transparent;font-size:12px;cursor:pointer;color:var(--muted);font-family:inherit;transition:all .15s}
