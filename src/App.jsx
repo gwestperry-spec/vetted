@@ -480,6 +480,7 @@ body{font-family:${dir === "rtl" ? "'Noto Sans Arabic'" : "'DM Sans'"}, sans-ser
   .header-eyebrow{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
   .header h1{font-family:'Playfair Display',serif;font-size:clamp(36px,7vw,56px);font-weight:700;line-height:1.1;letter-spacing:-.02em;margin-bottom:12px}
   .header h1 span{color:var(--accent)}
+  .header-tagline{font-size:clamp(15px,3vw,20px);color:var(--muted);margin-top:8px;line-height:1.4}
   .header p{color:var(--muted);font-size:15px;max-width:520px;margin:0 auto;line-height:1.7}
   .lang-switcher{display:flex;gap:4px;justify-content:center;margin-bottom:28px;flex-wrap:wrap}
   .lang-btn{padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:transparent;font-size:12px;cursor:pointer;color:var(--muted);font-family:inherit;transition:all .15s}
@@ -611,18 +612,7 @@ function LangSwitcher({ lang, setLang }) {
 // ─── AppHeader ────────────────────────────────────────────────────────────
 function AppHeader({ t }) {
   return (
-    <header>
-      <div className="header">
-        <p className="header-eyebrow">{t.appEyebrow}</p>
-        <h1>{t.appTitle1}<span>{t.appTitleAccent}</span>{t.appTitle2}</h1>
-        <p>{t.appTagline}</p>
-      </div>
-    </header>
-  );
-}
-
-// ─── ProgressBar ──────────────────────────────────────────────────────────
-function ProgressBar({ t, stepIdx }) {
+<p className="header-tagline">{t.appTagline}</p>
   const steps = [t.stepProfile, t.stepFilters, t.stepScore];
   return (
     <nav aria-label={`${t.progressLabel} ${stepIdx + 1} ${t.stepOf} ${steps.length}`}>
@@ -1178,13 +1168,54 @@ export default function App() {
 
   // Restore auth from localStorage on mount
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem("vetted_user");
-      if (stored) {
-        const user = JSON.parse(stored);
-        if (user?.id) setAuthUser(user);
-      }
-    } catch { /* ignore */ }
+    async function restoreSession() {
+      try {
+        const stored = localStorage.getItem("vetted_user");
+        if (stored) {
+          const user = JSON.parse(stored);
+          if (user?.id) {
+            setAuthUser(user);
+            const result = await fetch("https://celebrated-gelato-56d525.netlify.app/.netlify/functions/supabase", {
+              method: "POST",
+              headers: { "Content-Type": "application/json", "X-Vetted-Token": import.meta.env.VITE_VETTED_SECRET || "" },
+              body: JSON.stringify({ action: "load", appleId: user.id })
+            });
+            if (result.ok) {
+              const data = await result.json();
+              const saved = data.data;
+              if (saved?.profile?.display_name && saved.profile.display_name !== "User") {
+                const updatedUser = { ...user, displayName: saved.profile.display_name };
+                localStorage.setItem("vetted_user", JSON.stringify(updatedUser));
+                setAuthUser(updatedUser);
+              }
+              if (saved?.profile) {
+                const p = saved.profile;
+                setProfile(prev => ({ ...prev,
+                  name: p.name || prev.name,
+                  background: p.background || prev.background,
+                  careerGoal: p.career_goal || prev.careerGoal,
+                  currentTitle: p.current_title || prev.currentTitle,
+                  targetRoles: p.target_roles || prev.targetRoles,
+                  targetIndustries: p.target_industries || prev.targetIndustries,
+                  location: p.location || prev.location,
+                  compMin: p.comp_min || prev.compMin,
+                  compMax: p.comp_max || prev.compMax,
+                  threshold: p.threshold || prev.threshold,
+                }));
+              }
+              if (saved?.filters?.length) {
+                setFilters(saved.filters.map(f => ({ id: f.filter_id, name: f.filter_name, weight: f.weight, enabled: f.enabled })));
+              }
+              if (saved?.opportunities?.length) {
+                setOpportunities(saved.opportunities);
+              }
+              if (saved?.profile) setStep("dashboard");
+            }
+          }
+        }
+      } catch { /* ignore */ }
+    }
+    restoreSession();
   }, []);
 
   function announce(msg) {
@@ -1282,21 +1313,26 @@ export default function App() {
         if (!res.ok) throw new Error("Server verification failed");
         const data = await res.json();
 
+        const resolvedName = givenName || data.user.displayName || "";
         const user = {
           id: data.user.id,
           email: data.user.email,
-          displayName: data.user.displayName || givenName || "User",
+          displayName: resolvedName || "User",
         };
 
         localStorage.setItem("vetted_user", JSON.stringify(user));
         setAuthUser(user);
 
-        // Load all saved data from Supabase
+        // Load all saved data from Supabase — may update displayName from saved profile
         await loadUserData(user.id);
 
         // Pre-fill name in profile if we got it from Apple (only if no saved profile)
-        if (user.displayName && user.displayName !== "User") {
-          setProfile(p => ({ ...p, name: p.name || user.displayName }));
+        if (resolvedName) {
+          setProfile(p => ({ ...p, name: p.name || resolvedName }));
+          // Persist the name to Supabase immediately so it survives future sessions
+          const updatedUser = { ...user, displayName: resolvedName };
+          localStorage.setItem("vetted_user", JSON.stringify(updatedUser));
+          setAuthUser(updatedUser);
         }
 
       } else {
@@ -1349,7 +1385,7 @@ export default function App() {
     const filterDefs = filters.map(f => `- ${sanitizeText(fn(f.name))} (weight: ${f.weight}×): ${sanitizeText(fn(f.description), MAX_LONG)}`).join("\n");
     const safeJd = sanitizeText(jd, MAX_JD);
     const profileSummary = Object.entries(safeProfile).map(([k, v]) => `${k}: ${v}`).join("\n");
-    const prompt = `You are an expert executive career coach. Score this opportunity against the candidate's filter framework. Respond in ${t.lang} language for all text fields. The recommendation field must always be in English and follow this logic: use "pursue" if overall_score >= ${profile.threshold}, use "monitor" if overall_score >= ${profile.threshold - 0.5} but below threshold, use "pass" if overall_score < ${profile.threshold - 0.5}. Respond in ${t.lang} language for all text fields. The recommendation field must always be in English and follow this logic: use "pursue" if overall_score >= ${profile.threshold}, use "monitor" if overall_score >= ${profile.threshold - 0.5} but below threshold, use "pass" if overall_score < ${profile.threshold - 0.5}. Respond in ${t.lang} language for all text fields. The recommendation field must always be in English and follow this logic: use "pursue" if overall_score >= ${profile.threshold}, use "monitor" if overall_score >= ${profile.threshold - 0.5} but below threshold, use "pass" if overall_score < ${profile.threshold - 0.5}. Respond in ${t.lang} language for all text fields. The recommendation field must always be in English and follow this logic: use "pursue" if overall_score >= ${profile.threshold}, use "monitor" if overall_score >= ${profile.threshold - 0.5} but below threshold, use "pass" if overall_score < ${profile.threshold - 0.5}. Respond in ${t.lang} language for all text fields. The recommendation field must always be in English and follow this logic: use "pursue" if overall_score >= ${profile.threshold}, use "monitor" if overall_score >= ${profile.threshold - 0.5} but below threshold, use "pass" if overall_score < ${profile.threshold - 0.5}.\n\nCANDIDATE PROFILE:\n${profileSummary}\n\nSCORING FRAMEWORK (score each 1–5):\n${filterDefs}\n\nJOB DESCRIPTION:\n${safeJd}\n\nRespond ONLY with valid JSON (no markdown) in exactly this shape:\n{"role_title":"","company":"","overall_score":3.8,"recommendation":"pursue","recommendation_rationale":"","filter_scores":[{"filter_id":"","filter_name":"","score":4,"rationale":""}],"strengths":[""],"gaps":[""],"narrative_bridge":"","honest_fit_summary":""}`;
+    const prompt = `You are an expert executive career coach. Score this opportunity against the candidate's filter framework. Respond in ${t.lang} language for all text fields except the recommendation field. The recommendation field must always be in English: use "pursue" if overall_score >= ${profile.threshold}, use "monitor" if overall_score >= ${profile.threshold - 0.5} but below threshold, use "pass" if overall_score < ${profile.threshold - 0.5}.\n\nCANDIDATE PROFILE:\n${profileSummary}\n\nSCORING FRAMEWORK (score each 1–5):\n${filterDefs}\n\nJOB DESCRIPTION:\n${safeJd}\n\nRespond ONLY with valid JSON (no markdown) in exactly this shape:\n{"role_title":"","company":"","overall_score":3.8,"recommendation":"pursue","recommendation_rationale":"","filter_scores":[{"filter_id":"","filter_name":"","score":4,"rationale":""}],"strengths":[""],"gaps":[""],"narrative_bridge":"","honest_fit_summary":""}`; = `You are an expert executive career coach. Score this opportunity against the candidate's filter framework. Respond in ${t.lang} language for all text fields. The recommendation field must always be in English and follow this logic: use "pursue" if overall_score >= ${profile.threshold}, use "monitor" if overall_score >= ${profile.threshold - 0.5} but below threshold, use "pass" if overall_score < ${profile.threshold - 0.5}. Respond in ${t.lang} language for all text fields. The recommendation field must always be in English and follow this logic: use "pursue" if overall_score >= ${profile.threshold}, use "monitor" if overall_score >= ${profile.threshold - 0.5} but below threshold, use "pass" if overall_score < ${profile.threshold - 0.5}. Respond in ${t.lang} language for all text fields. The recommendation field must always be in English and follow this logic: use "pursue" if overall_score >= ${profile.threshold}, use "monitor" if overall_score >= ${profile.threshold - 0.5} but below threshold, use "pass" if overall_score < ${profile.threshold - 0.5}. Respond in ${t.lang} language for all text fields. The recommendation field must always be in English and follow this logic: use "pursue" if overall_score >= ${profile.threshold}, use "monitor" if overall_score >= ${profile.threshold - 0.5} but below threshold, use "pass" if overall_score < ${profile.threshold - 0.5}. Respond in ${t.lang} language for all text fields. The recommendation field must always be in English and follow this logic: use "pursue" if overall_score >= ${profile.threshold}, use "monitor" if overall_score >= ${profile.threshold - 0.5} but below threshold, use "pass" if overall_score < ${profile.threshold - 0.5}.\n\nCANDIDATE PROFILE:\n${profileSummary}\n\nSCORING FRAMEWORK (score each 1–5):\n${filterDefs}\n\nJOB DESCRIPTION:\n${safeJd}\n\nRespond ONLY with valid JSON (no markdown) in exactly this shape:\n{"role_title":"","company":"","overall_score":3.8,"recommendation":"pursue","recommendation_rationale":"","filter_scores":[{"filter_id":"","filter_name":"","score":4,"rationale":""}],"strengths":[""],"gaps":[""],"narrative_bridge":"","honest_fit_summary":""}`;
 
     try {
       const response = await fetch("https://celebrated-gelato-56d525.netlify.app/.netlify/functions/anthropic", {
