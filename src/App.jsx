@@ -1399,7 +1399,7 @@ export default function App() {
       const response = await fetch("https://celebrated-gelato-56d525.netlify.app/.netlify/functions/anthropic", {
         method: "POST",
         headers: { "Content-Type": "application/json", "X-Vetted-Token": import.meta.env.VITE_VETTED_SECRET || "" },
-        body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 2000, messages: [{ role: "user", content: prompt }] }),
+        body: JSON.stringify({ messages: [{ role: "user", content: prompt }] }),
       });
       if (!response.ok) throw new Error(`API error ${response.status}`);
       const data = await response.json();
