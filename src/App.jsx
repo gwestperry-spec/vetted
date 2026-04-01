@@ -664,7 +664,7 @@ function RegionGate({ t, lang, setLang, selectedCountry, setSelectedCountry, onC
 </button>
 </div>
 <p style={{ textAlign: "center", marginTop: 16, fontSize: 12, color: "var(--muted)" }}>
-  <a href="https://celebrated-gelato-56d525.netlify.app/privacy" target="_blank" rel="noopener noreferrer" style={{ color: "var(--muted)" }}>Privacy Policy</a>
+  <a href="https://tryvettedai.com/privacy" target="_blank" rel="noopener noreferrer" style={{ color: "var(--muted)" }}>Privacy Policy</a>
 </p>
 </div>
 </div>
@@ -1135,7 +1135,7 @@ function SignInGate({ t, lang, setLang, onSignIn, authLoading, authError }) {
 
         <p style={{ fontSize: 11, color: "var(--muted)", lineHeight: 1.6 }}>
           Your data is private and never sold.{" "}
-          <a href="https://celebrated-gelato-56d525.netlify.app/privacy" target="_blank" rel="noopener noreferrer" style={{ color: "var(--muted)" }}>Privacy Policy</a>
+          <a href="https://tryvettedai.com/privacy" target="_blank" rel="noopener noreferrer" style={{ color: "var(--muted)" }}>Privacy Policy</a>
         </p>
       </div>
     </div>
@@ -1185,7 +1185,7 @@ export default function App() {
           const user = JSON.parse(stored);
           if (user?.id) {
             setAuthUser(user);
-            const result = await fetch("https://celebrated-gelato-56d525.netlify.app/.netlify/functions/supabase", {
+            const result = await fetch("https://tryvettedai.com/.netlify/functions/supabase", {
               method: "POST",
               headers: { "Content-Type": "application/json", "X-Vetted-Token": import.meta.env.VITE_VETTED_SECRET || "" },
               body: JSON.stringify({ action: "load", appleId: user.id })
@@ -1238,7 +1238,7 @@ export default function App() {
   // ── Supabase helper ───────────────────────────────────────────────────────
   async function dbCall(action, payload) {
     const secret = import.meta.env.VITE_VETTED_SECRET || "";
-    const res = await fetch("https://celebrated-gelato-56d525.netlify.app/.netlify/functions/supabase", {
+    const res = await fetch("https://tryvettedai.com/.netlify/functions/supabase", {
       method: "POST",
       headers: { "Content-Type": "application/json", "X-Vetted-Token": secret },
       body: JSON.stringify(payload),
@@ -1311,7 +1311,7 @@ export default function App() {
         const { identityToken, givenName, familyName } = result.response;
 
         // Verify token server-side
-        const res = await fetch("https://celebrated-gelato-56d525.netlify.app/.netlify/functions/apple-auth", {
+        const res = await fetch("https://tryvettedai.com/.netlify/functions/apple-auth", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -1396,7 +1396,7 @@ export default function App() {
     const prompt = `You are an expert executive career coach. Score this opportunity against the candidate's filter framework. Respond in ${t.lang} language for all text fields except the recommendation field. The recommendation field must always be in English: use "pursue" if overall_score >= ${profile.threshold}, use "monitor" if overall_score >= ${profile.threshold - 0.5} but below threshold, use "pass" if overall_score < ${profile.threshold - 0.5}.\n\nCANDIDATE PROFILE:\n${profileSummary}\n\nSCORING FRAMEWORK (score each 1–5):\n${filterDefs}\n\nJOB DESCRIPTION:\n${safeJd}\n\nRespond ONLY with valid JSON (no markdown) in exactly this shape:\n{"role_title":"","company":"","overall_score":3.8,"recommendation":"pursue","recommendation_rationale":"","filter_scores":[{"filter_id":"","filter_name":"","score":4,"rationale":""}],"strengths":[""],"gaps":[""],"narrative_bridge":"","honest_fit_summary":""}`;
 
     try {
-      const response = await fetch("https://celebrated-gelato-56d525.netlify.app/.netlify/functions/anthropic", {
+      const response = await fetch("https://tryvettedai.com/.netlify/functions/anthropic", {
         method: "POST",
         headers: { "Content-Type": "application/json", "X-Vetted-Token": import.meta.env.VITE_VETTED_SECRET || "" },
         body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 2000, messages: [{ role: "user", content: prompt }] }),
