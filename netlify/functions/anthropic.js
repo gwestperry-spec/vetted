@@ -111,7 +111,7 @@ exports.handler = async function (event) {
   // ── Strip any attempt to override the model or inject system prompts ──────
   const safeBody = JSON.stringify({
 model: "claude-haiku-4-5-20251001",
-    max_tokens: parsedBody.max_tokens || 500,
+    max_tokens: parsedBody.max_tokens || 2000,
     messages: parsedBody.messages || [],
   });
 
