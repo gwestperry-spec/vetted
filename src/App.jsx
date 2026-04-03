@@ -1303,6 +1303,7 @@ export default function App() {
 
   // ── Sign in with Apple ───────────────────────────────────────────────────
   async function handleSignInWithApple() {
+    if (authLoading) return;
     setAuthLoading(true);
     setAuthError("");
     try {
@@ -1364,6 +1365,7 @@ export default function App() {
   }
 
   function handleSignOut() {
+    setAuthError("");
     localStorage.removeItem("vetted_user");
     setAuthUser(null);
     setStep("region");
