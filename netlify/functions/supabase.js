@@ -27,7 +27,9 @@ function supabaseRequest(method, path, body) {
       res.on("data", (chunk) => { data += chunk; });
       res.on("end", () => {
         try {
-          resolve({ status: res.statusCode, data: data ? JSON.parse(data) : null });
+          const parsed = data ? JSON.parse(data) : null;
+          if (res.statusCode >= 400) console.error("Supabase error", res.statusCode, JSON.stringify(parsed));
+          resolve({ status: res.statusCode, data: parsed });
         } catch {
           resolve({ status: res.statusCode, data: null });
         }
