@@ -1,5 +1,6 @@
 import { ENDPOINTS } from "./config.js";
 import { useState, useEffect, useRef, useId, useCallback } from "react";
+import { Sentry } from "./sentry.js";
 
 // ─── Translations ──────────────────────────────────────────────────────────
 const T = {
@@ -1295,6 +1296,7 @@ export default function App() {
 
     } catch (err) {
       console.error("Failed to load user data:", err.message);
+      Sentry.captureException(err, { tags: { location: "load_user_data" } });
       // Non-fatal — user can still use the app, data just won't persist
     }
   }
@@ -1350,6 +1352,7 @@ export default function App() {
       }
     } catch (err) {
       console.error("Apple sign in error:", err?.message || err);
+      Sentry.captureException(err, { tags: { location: "apple_sign_in" } });
       if (err?.message?.includes("cancelled") || err?.message?.includes("canceled")) {
         setAuthError("Sign in was cancelled.");
       } else {
