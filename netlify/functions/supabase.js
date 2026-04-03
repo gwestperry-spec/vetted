@@ -208,6 +208,11 @@ exports.handler = async (event) => {
         result = await saveOpportunity(appleId, body.opportunity);
         break;
 
+      case "checkScoreLimit":
+        return { statusCode: 200, headers: corsHeaders(origin), body: JSON.stringify(await checkScoreLimit(appleId)) };
+      case "incrementScoreCount":
+        await incrementScoreCount(appleId);
+        return { statusCode: 200, headers: corsHeaders(origin), body: JSON.stringify({ ok: true }) };
       case "deleteOpportunity":
         result = await deleteOpportunity(appleId, body.opportunityId);
         break;
@@ -231,3 +236,41 @@ exports.handler = async (event) => {
     };
   }
 };
+
+// ─── Tier gating — check if user can score ────────────────────────────────
+async function checkScoreLimit(appleId) {
+  const res = await supabaseRequest("GET", `/profiles?apple_id=eq.${encodeURIComponent(appleId)}&select=tier,scores_used,scores_reset_date&limit=1`);
+  const profile = res.data?.[0];
+  if (!profile) return { allowed: true, tier: "free", scoresUsed: 0, scoresRemaining: 10 };
+
+  const tier = profile.tier || "free";
+  if (tier !== "free") return { allowed: true, tier, scoresUsed: profile.scores_used || 0, scoresRemaining: null };
+
+  // Check if reset date has passed — reset if so
+  const now = new Date();
+  const resetDate = profile.scores_reset_date ? new Date(profile.scores_reset_date) : null;
+  let scoresUsed = profile.scores_used || 0;
+
+  if (!resetDate || now >= resetDate) {
+    // Reset the counter
+    const nextReset = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    await supabaseRequest("PATCH", `/profiles?apple_id=eq.${encodeURIComponent(appleId)}`, {
+      scores_used: 0,
+      scores_reset_date: nextReset.toISOString().split("T")[0],
+    });
+    scoresUsed = 0;
+  }
+
+  const limit = 10;
+  const allowed = scoresUsed < limit;
+  return { allowed, tier, scoresUsed, scoresRemaining: limit - scoresUsed };
+}
+
+// ─── Tier gating — increment score count ─────────────────────────────────
+async function incrementScoreCount(appleId) {
+  const res = await supabaseRequest("GET", `/profiles?apple_id=eq.${encodeURIComponent(appleId)}&select=scores_used&limit=1`);
+  const current = res.data?.[0]?.scores_used || 0;
+  await supabaseRequest("PATCH", `/profiles?apple_id=eq.${encodeURIComponent(appleId)}`, {
+    scores_used: current + 1,
+  });
+}

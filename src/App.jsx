@@ -1384,6 +1384,17 @@ export default function App() {
       setError("Too many requests. Please wait before scoring again.");
       return;
     }
+
+    // ── Tier gating check ────────────────────────────────────────────────
+    if (authUser) {
+      const limitCheck = await dbCall("checkScoreLimit", { action: "checkScoreLimit", appleId: authUser.id });
+      if (!limitCheck.data?.allowed) {
+        setError("You've reached your 10 free scores this month. Upgrade to Signal or Vantage for unlimited scoring.");
+        setLoading(false);
+        return;
+      }
+    }
+
     setLoading(true); setError("");
     announce(t.loadingMsg);
 
@@ -1434,6 +1445,12 @@ export default function App() {
       setOpportunities(prev => [enriched, ...prev]);
       setCurrentOpp(enriched);
       setStep("result");
+
+      // ── Increment score count for tier gating ──────────────────────────
+      if (authUser) {
+        dbCall("incrementScoreCount", { action: "incrementScoreCount", appleId: authUser.id })
+          .catch(err => console.error("Failed to increment score count:", err.message));
+      }
 
       // Persist to Supabase
       if (authUser?.id) {
