@@ -35,7 +35,6 @@
         https://celebrated-gelato-56d525.netlify.app
         https://appleid.apple.com
         https://api.allorigins.win
-        https://api.anthropic.com;
       img-src 'self' data:;
       frame-src 'none';
       object-src 'none';

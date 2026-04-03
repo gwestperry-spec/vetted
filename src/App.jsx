@@ -920,7 +920,7 @@ function JDInput({ t, onScore, loading, error }) {
       <p className="card-subtitle">{t.submitSubtitle}</p>
       <div role="tablist" className="tabs">
         <button role="tab" className="tab-btn" aria-selected={tabMode === "paste"} aria-controls="panel-paste" id="tab-paste" onClick={() => setTabMode("paste")}>{t.tabPaste}</button>
-        <button role="tab" className="tab-btn" aria-selected={tabMode === "url"} aria-controls="panel-url" id="tab-url" onClick={() => setTabMode("url")}>{t.tabUrl}</button>
+        node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
       </div>
       {tabMode === "paste" ? (
         <div role="tabpanel" id="panel-paste" aria-labelledby="tab-paste">
