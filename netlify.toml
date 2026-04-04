@@ -49,3 +49,9 @@
     Access-Control-Allow-Origin = "https://celebrated-gelato-56d525.netlify.app"
     Access-Control-Allow-Methods = "POST, OPTIONS"
     Access-Control-Allow-Headers = "Content-Type, X-Vetted-Token"
+
+[functions]
+  included_files = ["netlify/functions/**"]
+
+[functions."anthropic"]
+  timeout = 30
