@@ -1387,7 +1387,7 @@ export default function App() {
     // ── Tier gating check ────────────────────────────────────────────────
     if (authUser) {
       const limitCheck = await dbCall("checkScoreLimit", { action: "checkScoreLimit", appleId: authUser.id });
-      if (!limitCheck.data?.allowed) {
+      if (!limitCheck?.allowed) {
         setError("You've reached your 10 free scores this month. Upgrade to Signal or Vantage for unlimited scoring.");
         setLoading(false);
         return;
