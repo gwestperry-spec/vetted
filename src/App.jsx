@@ -1215,7 +1215,7 @@ export default function App() {
                 }));
               }
               if (saved?.filters?.length) {
-                setFilters(saved.filters.map(f => ({ id: f.filter_id, name: f.filter_name, weight: f.weight, enabled: f.enabled })));
+                setFilters(saved.filters.map(f => ({ id: f.filter_id, name: f.name, description: f.description, weight: f.weight, isCore: f.is_core })));
               }
               if (saved?.opportunities?.length) {
                 setOpportunities(saved.opportunities);
@@ -1272,7 +1272,7 @@ export default function App() {
       }
 
       if (savedFilters?.length) {
-        setFilters(savedFilters.map(f => ({
+      setFilters(savedFilters.map(f => ({
           id: f.filter_id,
           name: f.name,
           description: f.description,
@@ -1406,9 +1406,10 @@ export default function App() {
       locations: profile.locationPrefs.map(l => sanitizeText(l)).join(", "),
       constraints: sanitizeText(profile.hardConstraints, MAX_LONG), threshold: profile.threshold,
     };
-    const filterDefs = filters.map(f => `- ${sanitizeText(fn(f.name))} (weight: ${f.weight}×): ${sanitizeText(fn(f.description), MAX_LONG)}`).join("\n");
+ const filterDefs = filters.map(f => `- ${sanitizeText(fn(f.name))} (weight: ${f.weight}x): ${sanitizeText(fn(f.description), MAX_LONG)}`).join("\n");
+return fd; }).join("\n");
     const safeJd = sanitizeText(jd, MAX_JD);
-    const profileSummary = Object.entries(safeProfile).map(([k, v]) => `${k}: ${v}`).join("\n");
+    
     const prompt = `You are an expert executive career coach. Score this opportunity against the candidate's filter framework. Respond in ${t.lang} language for all text fields except the recommendation field. The recommendation field must always be in English: use "pursue" if overall_score >= ${profile.threshold}, use "monitor" if overall_score >= ${profile.threshold - 0.5} but below threshold, use "pass" if overall_score < ${profile.threshold - 0.5}.\n\nCANDIDATE PROFILE:\n${profileSummary}\n\nSCORING FRAMEWORK (score each 1–5):\n${filterDefs}\n\nJOB DESCRIPTION:\n${safeJd}\n\nRespond ONLY with valid JSON (no markdown) in exactly this shape:\n{"role_title":"","company":"","overall_score":3.8,"recommendation":"pursue","recommendation_rationale":"","filter_scores":[{"filter_id":"","filter_name":"","score":4,"rationale":""}],"strengths":[""],"gaps":[""],"narrative_bridge":"","honest_fit_summary":""}`;
 
     try {
