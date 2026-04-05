@@ -73,32 +73,47 @@ function supabaseRequest(method, path, body, preferHeader = "return=representati
 // Manual implementation of Stripe's constructEvent verification algorithm.
 // https://stripe.com/docs/webhooks/signatures
 function verifyStripeSignature(rawBody, sigHeader, secret) {
-  if (!secret) return true; // secret not yet configured — pass through (setup phase only)
-  if (!sigHeader) return false;
+  if (!secret) { console.log("[stripe_webhook] No secret configured — skipping verification"); return true; }
+  if (!sigHeader) { console.error("[stripe_webhook] sig_fail: no Stripe-Signature header"); return false; }
 
   const parts = {};
   for (const part of sigHeader.split(",")) {
     const eq = part.indexOf("=");
-    if (eq > 0) parts[part.slice(0, eq)] = part.slice(eq + 1);
+    if (eq > 0) parts[part.slice(0, eq).trim()] = part.slice(eq + 1).trim();
   }
 
   const timestamp = parts["t"];
   const v1 = parts["v1"];
-  if (!timestamp || !v1) return false;
+  if (!timestamp || !v1) {
+    console.error(`[stripe_webhook] sig_fail: missing t=${timestamp} v1=${v1 ? "present" : "missing"}`);
+    return false;
+  }
 
-  // Reject replays older than 5 minutes
+  // Reject replays older than 24 hours.
+  // Stripe retries use the ORIGINAL timestamp — a 5-minute window rejects all
+  // retries after the first attempt. 24h covers Stripe's full retry schedule.
   const nowSeconds = Math.floor(Date.now() / 1000);
-  if (Math.abs(nowSeconds - parseInt(timestamp, 10)) > 300) return false;
+  const age = nowSeconds - parseInt(timestamp, 10);
+  if (age > 86400 || age < -300) {
+    console.error(`[stripe_webhook] sig_fail: timestamp age=${age}s out of range`);
+    return false;
+  }
 
+  const signedPayload = `${timestamp}.${rawBody}`;
   const expected = crypto
     .createHmac("sha256", secret)
-    .update(`${timestamp}.${rawBody}`)
+    .update(signedPayload)
     .digest("hex");
 
+  console.log(`[stripe_webhook] sig_check: body_len=${rawBody.length} age=${age}s v1_len=${v1.length} expected_len=${expected.length}`);
+
   try {
-    return crypto.timingSafeEqual(Buffer.from(v1), Buffer.from(expected));
-  } catch {
-    return false; // buffers different length — definitely invalid
+    const match = crypto.timingSafeEqual(Buffer.from(v1), Buffer.from(expected));
+    if (!match) console.error("[stripe_webhook] sig_fail: HMAC mismatch");
+    return match;
+  } catch (e) {
+    console.error(`[stripe_webhook] sig_fail: timingSafeEqual threw — ${e.message}`);
+    return false;
   }
 }
 
