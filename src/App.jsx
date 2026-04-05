@@ -968,6 +968,7 @@ export default function App() {
   const [authError, setAuthError] = useState("");
   const [showPaywall, setShowPaywall] = useState(false);
   const [upgradeSuccess, setUpgradeSuccess] = useState(false);
+  const [pendingTierCheck, setPendingTierCheck] = useState(false);
   const announcerRef = useRef(null);
   const loadCallRef = useRef(0); // incremented on each loadUserData call; stale calls abort on mismatch
 
@@ -1056,6 +1057,36 @@ export default function App() {
       window.history.replaceState({}, "", window.location.pathname);
     }
   }, [authUser]);
+
+  // iOS native: after Stripe checkout opens in Safari, detect when user returns
+  // to the app (visibilitychange) and immediately re-check tier from Supabase.
+  // No sign-out/sign-in required — tier updates in-place.
+  useEffect(() => {
+    if (!pendingTierCheck || !authUser?.id) return;
+
+    async function checkTier() {
+      try {
+        const result = await dbCall("load", { action: "load", appleId: authUser.id });
+        const tier = result?.data?.profile?.tier;
+        if (tier && tier !== "free") {
+          setPendingTierCheck(false);
+          setUpgradeSuccess(true);
+          setError("");
+        }
+      } catch {
+        // Silent — will retry on next foreground event
+      }
+    }
+
+    function onVisibilityChange() {
+      if (document.visibilityState === "visible") checkTier();
+    }
+
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    // Also check immediately in case user is already back
+    checkTier();
+    return () => document.removeEventListener("visibilitychange", onVisibilityChange);
+  }, [pendingTierCheck, authUser?.id]);
 
   function announce(msg) {
     if (announcerRef.current) announcerRef.current.textContent = "";
@@ -1406,6 +1437,17 @@ export default function App() {
             }
           }} />
         )}
+        {pendingTierCheck && !upgradeSuccess && (
+          <div role="status" style={{
+            background: "#f5f3ee", borderLeft: "3px solid var(--accent)",
+            borderRadius: "var(--r)", padding: "12px 16px",
+            fontSize: 13, lineHeight: 1.6, marginBottom: 16,
+            display: "flex", alignItems: "center", gap: 10,
+          }}>
+            <span className="spinner" style={{ width: 13, height: 13, borderWidth: 2, flexShrink: 0 }} aria-hidden="true" />
+            <span>Waiting for payment confirmation — return here after completing checkout in your browser.</span>
+          </div>
+        )}
         {upgradeSuccess && (
           <div role="status" style={{
             background: "#c8edda", color: "var(--success)",
@@ -1442,7 +1484,7 @@ export default function App() {
           onClose={(reason) => {
             setShowPaywall(false);
             if (reason === "pending") {
-              setError("Complete payment in your browser, then sign out and back in to activate your plan.");
+              setPendingTierCheck(true);
             } else if (reason === "session_expired") {
               handleSignOut();
             }

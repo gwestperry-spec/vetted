@@ -34,7 +34,7 @@ function reportToSentry(err, context) {
 // ─── Supabase REST helper ──────────────────────────────────────────────────
 // Duplicated from supabase.js — functions can't share modules on Netlify
 // without a bundler. Keep in sync if schema changes.
-function supabaseRequest(method, path, body) {
+function supabaseRequest(method, path, body, preferHeader = "return=representation") {
   return new Promise((resolve, reject) => {
     const SUPABASE_URL = process.env.VT_DB_URL;
     const SUPABASE_KEY = process.env.VT_DB_KEY;
@@ -51,7 +51,7 @@ function supabaseRequest(method, path, body) {
         "Content-Type": "application/json",
         "apikey": SUPABASE_KEY,
         "Authorization": `Bearer ${SUPABASE_KEY}`,
-        "Prefer": "return=representation",
+        "Prefer": preferHeader,
         ...(bodyStr && { "Content-Length": Buffer.byteLength(bodyStr) }),
       },
     };
@@ -126,10 +126,21 @@ async function setUserTier(appleId, tier) {
     throw new Error(`Supabase PATCH failed with status ${result.status}: ${JSON.stringify(result.data)}`);
   }
 
-  // Supabase returns [] when no rows matched the filter — treat as an error
-  // so it surfaces in Sentry rather than silently succeeding with no DB change.
+  // Supabase returns [] when no rows matched the filter — profile doesn't exist yet.
+  // Upsert to create it with just apple_id + tier so the user isn't blocked.
   if (Array.isArray(result.data) && result.data.length === 0) {
-    throw new Error(`No profile found for appleId=${appleId.slice(0, 8)}… — PATCH matched 0 rows`);
+    console.log(`[stripe_webhook] PATCH matched 0 rows — upserting profile for appleId=${appleId.slice(0, 8)}…`);
+    const upsertResult = await supabaseRequest(
+      "POST",
+      "/profiles?on_conflict=apple_id",
+      { apple_id: appleId, tier },
+      "resolution=merge-duplicates,return=representation"
+    );
+    if (upsertResult.status < 200 || upsertResult.status >= 300) {
+      throw new Error(`Supabase upsert failed with status ${upsertResult.status}: ${JSON.stringify(upsertResult.data)}`);
+    }
+    console.log(`[stripe_webhook] ✓ tier=${tier} upserted for appleId=${appleId.slice(0, 8)}…`);
+    return;
   }
 
   console.log(`[stripe_webhook] ✓ tier=${tier} confirmed for appleId=${appleId.slice(0, 8)}…`);
