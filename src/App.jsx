@@ -1,6 +1,10 @@
 import { ENDPOINTS } from "./config.js";
 import { Component, useState, useEffect, useRef, useId, useCallback } from "react";
 import { handleError } from "./handleError.js";
+import LangSwitcher from "./components/LangSwitcher.jsx";
+import SignInGate from "./components/SignInGate.jsx";
+import ScoreResult from "./components/ScoreResult.jsx";
+import OpportunityForm from "./components/OpportunityForm.jsx";
 
 // ─── Error boundary ────────────────────────────────────────────────────────
 export class ErrorBoundary extends Component {
@@ -433,14 +437,6 @@ const DEFAULT_FILTERS = [
     description: { en: "Does the role deliver what the title promises, or is it inflated/understated?", es: "¿El rol entrega lo que promete el título?", zh: "该职位是否兑现了职位名称所承诺的内容？", fr: "Le rôle tient-il les promesses du titre?", ar: "هل يحقق الدور ما يعد به المسمى؟", vi: "Vai trò có đáp ứng những gì chức danh hứa hẹn không?" } },
 ];
 
-const LANG_OPTIONS = [
-  { code: "en", label: "EN", full: "English" },
-  { code: "es", label: "ES", full: "Español" },
-  { code: "zh", label: "中文", full: "中文" },
-  { code: "fr", label: "FR", full: "Français" },
-  { code: "ar", label: "عربي", full: "العربية" },
-  { code: "vi", label: "VI", full: "Tiếng Việt" },
-];
 
 const NA_COUNTRIES = [
   { code: "us", flag: "🇺🇸" },
@@ -448,7 +444,19 @@ const NA_COUNTRIES = [
   { code: "mx", flag: "🇲🇽" },
 ];
 
-// ─── Weight option labels ─────────────────────────────────────────────────
+
+// ─── Input sanitisation ───────────────────────────────────────────────────
+const MAX_SHORT = 200;
+const MAX_LONG = 2000;
+const MAX_JD = 12000;
+
+function sanitizeText(value, maxLen = MAX_SHORT) {
+  if (typeof value !== "string") return "";
+  return value.replace(/[<>'"]/g, "").replace(/\r/g, "").slice(0, maxLen).trim();
+}
+
+
+// ─── Weight option labels (used by FiltersStep) ───────────────────────────
 const WEIGHT_OPTIONS = [
   { value: 0.5, label: "Minor" },
   { value: 1.0, label: "Standard" },
@@ -457,31 +465,6 @@ const WEIGHT_OPTIONS = [
   { value: 1.5, label: "Critical" },
   { value: 2.0, label: "Critical +" },
 ];
-
-// ─── Input sanitisation ───────────────────────────────────────────────────
-const MAX_SHORT = 200;
-const MAX_LONG = 2000;
-const MAX_JD = 12000;
-const MAX_URL = 2048;
-
-function sanitizeText(value, maxLen = MAX_SHORT) {
-  if (typeof value !== "string") return "";
-  return value.replace(/[<>'"]/g, "").replace(/\r/g, "").slice(0, maxLen).trim();
-}
-
-function sanitizeUrl(value) {
-  const trimmed = (value || "").trim().slice(0, MAX_URL);
-  try {
-    const u = new URL(trimmed);
-    if (u.protocol !== "https:" && u.protocol !== "http:") return "";
-    const host = u.hostname.toLowerCase();
-    if (host === "localhost" || host === "127.0.0.1" || host === "0.0.0.0" ||
-      host.startsWith("192.168.") || host.startsWith("10.") ||
-      host.startsWith("172.16.") || host.endsWith(".internal") ||
-      host === "metadata.google.internal") return "";
-    return trimmed;
-  } catch { return ""; }
-}
 
 // ─── Rate limiting ────────────────────────────────────────────────────────
 const RATE_WINDOW_MS = 60_000;
@@ -624,24 +607,6 @@ function resolveLang(field, lang) {
 // TOP-LEVEL COMPONENTS — defined at module scope, never recreated on re-render
 // ════════════════════════════════════════════════════════════════════════════
 
-// ─── LangSwitcher ─────────────────────────────────────────────────────────
-function LangSwitcher({ lang, setLang }) {
-  return (
-    <nav aria-label="Language selection">
-      <div className="lang-switcher">
-        {LANG_OPTIONS.map(l => (
-          <button
-            key={l.code}
-            className={`lang-btn ${lang === l.code ? "active" : ""}`}
-            onClick={() => setLang(l.code)}
-            aria-pressed={lang === l.code}
-            aria-label={`${l.full}${lang === l.code ? " (current)" : ""}`}
-          >{l.label}</button>
-        ))}
-      </div>
-    </nav>
-  );
-}
 
 // ─── AppHeader ────────────────────────────────────────────────────────────
 function AppHeader({ t }) {
@@ -921,71 +886,6 @@ function FiltersStep({ t, lang, filters, setFilters, onBack, onNext }) {
   );
 }
 
-// ─── JDInput — isolated so its textarea never loses focus ─────────────────
-function JDInput({ t, onScore, loading, error }) {
-  const [jd, setJd] = useState("");
-  const [tabMode, setTabMode] = useState("paste");
-  const [urlVal, setUrlVal] = useState("");
-  const [fetching, setFetching] = useState(false);
-  const [fetchError, setFetchError] = useState("");
-  const jdId = useId(); const urlId = useId();
-
-  async function handleUrlFetch() {
-    const safeUrl = sanitizeUrl(urlVal);
-    if (!safeUrl) { setFetchError(t.urlFetchError); return; }
-    setFetching(true); setFetchError("");
-    try {
-      const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(safeUrl)}`);
-      if (!res.ok) throw new Error();
-      const data = await res.json();
-      if (!data.contents) throw new Error();
-      const stripped = data.contents
-        .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
-        .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
-        .replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 8000);
-      if (stripped.length < 100) throw new Error();
-      setJd(stripped); setTabMode("paste");
-    } catch { setFetchError(t.urlFetchError); }
-    finally { setFetching(false); }
-  }
-
-  return (
-    <div className="card">
-      <h2 className="card-title">{t.submitTitle}</h2>
-      <p className="card-subtitle">{t.submitSubtitle}</p>
-      <div role="tablist" className="tabs">
-        <button role="tab" className="tab-btn" aria-selected={tabMode === "paste"} aria-controls="panel-paste" id="tab-paste" onClick={() => setTabMode("paste")}>{t.tabPaste}</button>
-      </div>
-      {tabMode === "paste" ? (
-        <div role="tabpanel" id="panel-paste" aria-labelledby="tab-paste">
-          <div className="field">
-            <label htmlFor={jdId}>{t.labelJD}</label>
-            <textarea id={jdId} value={jd} onChange={e => setJd(e.target.value)} placeholder={t.placeholderJD} style={{ minHeight: 200 }} maxLength={MAX_JD} />
-          </div>
-        </div>
-      ) : (
-        <div role="tabpanel" id="panel-url" aria-labelledby="tab-url">
-          <div className="field">
-            <label htmlFor={urlId}>{t.labelUrl}</label>
-            <div style={{ display: "flex", gap: 10 }}>
-              <input id={urlId} type="url" value={urlVal} onChange={e => setUrlVal(e.target.value)} placeholder="https://" style={{ flex: 1 }} maxLength={MAX_URL} />
-              <button className="btn btn-secondary" onClick={handleUrlFetch} disabled={!urlVal.trim() || fetching} aria-busy={fetching}>{fetching ? t.btnFetching : t.btnFetch}</button>
-            </div>
-            {fetchError && <div role="alert" className="alert alert-warn" style={{ marginTop: 12 }}>{fetchError}</div>}
-            <p className="url-note">{t.urlNote}</p>
-            {jd && tabMode === "url" && <p style={{ marginTop: 10, fontSize: 13, color: "var(--muted)" }} aria-live="polite">✓ {jd.length.toLocaleString()} {t.fetchedText}</p>}
-          </div>
-        </div>
-      )}
-      {error && <div role="alert" className="alert alert-error">{error}</div>}
-      <div className="btn-actions">
-        <button className="btn btn-primary" onClick={() => onScore(jd)} disabled={!jd.trim() || loading} aria-busy={loading}>
-          {loading ? t.btnScoring : t.btnScore}
-        </button>
-      </div>
-    </div>
-  );
-}
 
 // ─── Dashboard ────────────────────────────────────────────────────────────
 function Dashboard({ t, profile, filters, lang, opportunities, loading, error, onScore, onViewOpp, onEditFilters }) {
@@ -1009,7 +909,7 @@ function Dashboard({ t, profile, filters, lang, opportunities, loading, error, o
           <p className="loading-text">{t.loadingMsg}</p>
         </div>
       ) : (
-        <JDInput t={t} onScore={onScore} loading={loading} error={error} />
+        <OpportunityForm t={t} onScore={onScore} loading={loading} error={error} />
       )}
 
       {opportunities.length > 0 && (
@@ -1043,138 +943,6 @@ function Dashboard({ t, profile, filters, lang, opportunities, loading, error, o
   );
 }
 
-// ─── ResultView ───────────────────────────────────────────────────────────
-function ResultView({ t, opp, profile, onBack, onRemove }) {
-  if (!opp) return null;
-  const sc = opp.overall_score >= 4 ? "high" : opp.overall_score >= profile.threshold ? "mid" : "low";
-
-  return (
-    <main id="main-content" aria-label={opp.role_title}>
-      <button className="back-link" onClick={onBack}>{t.backDash}</button>
-      <article aria-labelledby="result-title">
-        <div className="card">
-          <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, letterSpacing: ".15em", textTransform: "uppercase", color: "var(--muted)", marginBottom: 6 }}>{opp.company}</p>
-          <h1 className="card-title" id="result-title" style={{ fontSize: 26 }}>{opp.role_title}</h1>
-          <div className="overall-score-display">
-            <div className={`big-score ${sc}`} aria-label={`${t.weightedScore}: ${opp.overall_score.toFixed(1)}`}>{opp.overall_score.toFixed(1)}</div>
-            <div className="score-meta">
-              <p className="score-meta-label">{t.weightedScore}</p>
-              <span className={`recommendation-badge rec-${opp.recommendation}`}>{t[opp.recommendation] || opp.recommendation}</span>
-              <p className="threshold-note">{t.threshold}: {profile.threshold} — {opp.overall_score >= profile.threshold ? t.aboveThreshold : t.belowThreshold}</p>
-            </div>
-          </div>
-          <div className="narrative-box" role="note"><strong>{t.recRationale}</strong>{opp.recommendation_rationale}</div>
-          <div className="narrative-box" style={{ borderLeftColor: "var(--gold)" }} role="note"><strong>{t.honestFit}</strong>{opp.honest_fit_summary}</div>
-        </div>
-
-        <div className="fit-grid">
-          <section className="fit-box fit-strength" aria-labelledby="str-heading">
-            <h2 id="str-heading"><strong>{t.strengths}</strong></h2>
-            <ul>{(opp.strengths || []).map((s, i) => <li key={i}>{s}</li>)}</ul>
-          </section>
-          <section className="fit-box fit-gap" aria-labelledby="gap-heading">
-            <h2 id="gap-heading"><strong>{t.gaps}</strong></h2>
-            <ul>{(opp.gaps || []).map((g, i) => <li key={i}>{g}</li>)}</ul>
-          </section>
-        </div>
-
-        <section className="card" aria-labelledby="filter-bd-heading">
-          <h2 id="filter-bd-heading" className="section-label">{t.filterBreakdown}</h2>
-          {opp.filter_scores.map(fs => {
-            const filled = Math.round(fs.score);
-            const col = fs.score >= 4 ? "var(--success)" : fs.score >= 3 ? "var(--gold)" : "var(--accent)";
-            return (
-              <div key={fs.filter_id} className="filter-row">
-                <div className="filter-header">
-                  <span className="filter-name" id={`fn-${fs.filter_id}`}>{fs.filter_name}</span>
-                  <div className="filter-score-dots" aria-hidden="true">
-                    {[1,2,3,4,5].map(n => <div key={n} className={`dot ${n <= filled ? (fs.score >= 4 ? "gold" : "filled") : ""}`} />)}
-                  </div>
-                  <span className="filter-score-num" style={{ color: col }} aria-label={`${t.scoreLabel}: ${fs.score} ${t.outOf}`}>{fs.score}/5</span>
-                  {fs.weight && fs.weight !== 1.0 && (
-                    <span style={{ fontSize: 10, color: "var(--muted)", fontFamily: "monospace" }}>
-                      {WEIGHT_OPTIONS.find(w => w.value === fs.weight)?.label || `${fs.weight}×`}
-                    </span>
-                  )}
-                </div>
-                <div className="score-bar-wrap" role="progressbar" aria-valuenow={fs.score} aria-valuemin={1} aria-valuemax={5} aria-labelledby={`fn-${fs.filter_id}`}>
-                  <div className="score-bar-fill" style={{ width: `${(fs.score / 5) * 100}%`, background: col }} />
-                </div>
-                <p className="filter-rationale">{fs.rationale}</p>
-              </div>
-            );
-          })}
-        </section>
-
-        {opp.narrative_bridge && (
-          <section className="card" aria-labelledby="bridge-heading">
-            <h2 id="bridge-heading" className="card-title" style={{ fontSize: 16 }}>{t.narrativeBridge}</h2>
-            <p className="card-subtitle" style={{ marginBottom: 0 }}>{opp.narrative_bridge}</p>
-          </section>
-        )}
-
-        <div className="btn-actions" style={{ justifyContent: "space-between" }}>
-          <button className="btn btn-secondary" onClick={onBack}>{t.backDash}</button>
-          <button className="btn btn-danger btn-sm" onClick={onRemove}>{t.removeOpp}</button>
-        </div>
-      </article>
-    </main>
-  );
-}
-
-
-// ─── SignInGate ───────────────────────────────────────────────────────────
-function SignInGate({ t, lang, setLang, onSignIn, authLoading, authError }) {
-  return (
-    <div className="region-gate">
-      <div style={{ textAlign: "center", marginBottom: 32 }}>
-        <p className="header-eyebrow">AI-Powered Opportunity Intelligence</p>
-        <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 32, fontWeight: 700, marginBottom: 8 }}>
-          <span style={{ color: "var(--accent)" }}>Vetted</span>
-        </h1>
-        <p style={{ color: "var(--muted)", fontSize: 14, lineHeight: 1.6, maxWidth: 320, margin: "0 auto" }}>
-          Filter The Noise. Score every role against what you actually care about.
-        </p>
-      </div>
-      <LangSwitcher lang={lang} setLang={setLang} />
-      <div className="card" style={{ textAlign: "center" }}>
-        <h2 className="card-title" style={{ marginBottom: 8 }}>Welcome</h2>
-        <p className="card-subtitle">Sign in to access your personalized career intelligence framework.</p>
-
-        {authError && (
-          <div role="alert" className="alert alert-error" style={{ marginBottom: 16, textAlign: "left" }}>{authError}</div>
-        )}
-
-        <button
-          className="btn btn-primary"
-          onClick={onSignIn}
-          disabled={authLoading}
-          aria-busy={authLoading}
-          style={{ width: "100%", marginBottom: 16, minHeight: 50, fontSize: 16, gap: 10 }}
-        >
-          {authLoading ? (
-            <>
-              <span className="spinner" style={{ width: 18, height: 18, borderWidth: 2 }} aria-hidden="true" />
-              Signing in…
-            </>
-          ) : (
-            <>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
-              </svg>
-              Sign in with Apple
-            </>
-          )}
-        </button>
-
-        <p style={{ fontSize: 11, color: "var(--muted)", lineHeight: 1.6 }}>
-          Your data is private and never sold.{" "}
-          <a href={ENDPOINTS.privacy} target="_blank" rel="noopener noreferrer" style={{ color: "var(--muted)" }}>Privacy Policy</a>
-        </p>
-      </div>
-    </div>
-  );
-}
 
 // ════════════════════════════════════════════════════════════════════════════
 // APP — only manages routing state; all components are stable references
@@ -1608,7 +1376,7 @@ export default function App() {
             onScore={scoreOpportunity} onViewOpp={(opp) => { setCurrentOpp(opp); setStep("result"); }} onEditFilters={() => setStep("filters")} />
         )}
         {step === "result" && (
-          <ResultView t={t} opp={currentOpp} profile={profile} onBack={() => setStep("dashboard")}
+          <ScoreResult t={t} opp={currentOpp} profile={profile} onBack={() => setStep("dashboard")}
             onRemove={() => {
               setOpportunities(prev => prev.filter(o => o.id !== currentOpp.id));
               setStep("dashboard");
