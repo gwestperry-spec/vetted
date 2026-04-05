@@ -1164,6 +1164,7 @@ export default function App() {
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState("");
   const announcerRef = useRef(null);
+  const loadCallRef = useRef(0); // incremented on each loadUserData call; stale calls abort on mismatch
 
   const t = T[lang];
   const dir = t.dir;
@@ -1237,21 +1238,34 @@ export default function App() {
   const fn = useCallback((field) => resolveLang(field, lang), [lang]);
 
   // ── Supabase helper ───────────────────────────────────────────────────────
-  async function dbCall(action, payload) {
+  async function dbCall(action, payload, timeoutMs = 15000) {
     const secret = import.meta.env.VITE_VETTED_SECRET || "";
-    const res = await fetch(ENDPOINTS.supabase, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-Vetted-Token": secret },
-      body: JSON.stringify(payload),
-    });
-    if (!res.ok) throw new Error(`DB error ${res.status}`);
-    return res.json();
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const res = await fetch(ENDPOINTS.supabase, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-Vetted-Token": secret },
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+      });
+      if (!res.ok) throw new Error(`DB error ${res.status}`);
+      return res.json();
+    } catch (err) {
+      if (err.name === "AbortError") throw new Error("Request timed out. Check your connection and try again.");
+      throw err;
+    } finally {
+      clearTimeout(timer);
+    }
   }
 
   // ── Load user data from Supabase after sign-in ────────────────────────────
   async function loadUserData(appleId) {
+    const callId = ++loadCallRef.current;
     try {
       const result = await dbCall("load", { action: "load", appleId });
+      if (callId !== loadCallRef.current) return; // stale — a sign-out or newer sign-in superseded this call
+
       const { profile: savedProfile, filters: savedFilters, opportunities: savedOpps } = result.data;
 
       if (savedProfile) {
@@ -1272,7 +1286,7 @@ export default function App() {
       }
 
       if (savedFilters?.length) {
-      setFilters(savedFilters.map(f => ({
+        setFilters(savedFilters.map(f => ({
           id: f.filter_id,
           name: f.name,
           description: f.description,
@@ -1291,12 +1305,17 @@ export default function App() {
         setStep("dashboard");
       } else if (savedProfile) {
         setStep("dashboard");
+      } else {
+        // Fresh user — no saved data found; send to onboarding
+        setStep("onboard");
       }
 
     } catch (err) {
+      if (callId !== loadCallRef.current) return;
       console.error("Failed to load user data:", err.message);
       Sentry.captureException(err, { tags: { location: "load_user_data" } });
-      // Non-fatal — user can still use the app, data just won't persist
+      // Non-fatal — drop to onboarding so user can still use the app
+      setStep("onboard");
     }
   }
 
@@ -1364,6 +1383,7 @@ export default function App() {
   }
 
   function handleSignOut() {
+    loadCallRef.current++; // invalidate any in-flight loadUserData
     setAuthError("");
     localStorage.removeItem("vetted_user");
     setAuthUser(null);
@@ -1406,12 +1426,23 @@ export default function App() {
       locations: profile.locationPrefs.map(l => sanitizeText(l)).join(", "),
       constraints: sanitizeText(profile.hardConstraints, MAX_LONG), threshold: profile.threshold,
     };
- const filterDefs = filters.map(f => `- ${sanitizeText(fn(f.name))} (weight: ${f.weight}x): ${sanitizeText(fn(f.description), MAX_LONG)}`).join("\n");
+    const profileSummary = [
+      safeProfile.name          && `Name: ${safeProfile.name}`,
+      safeProfile.currentTitle  && `Title: ${safeProfile.currentTitle}`,
+      safeProfile.background    && `Background: ${safeProfile.background}`,
+      safeProfile.careerGoal    && `Career Goal: ${safeProfile.careerGoal}`,
+      safeProfile.targetRoles   && `Target Roles: ${safeProfile.targetRoles}`,
+      safeProfile.targetIndustries && `Industries: ${safeProfile.targetIndustries}`,
+      safeProfile.comp          && `Compensation: ${safeProfile.comp}`,
+      safeProfile.locations     && `Location Preferences: ${safeProfile.locations}`,
+      safeProfile.constraints   && `Hard Constraints: ${safeProfile.constraints}`,
+    ].filter(Boolean).join("\n");
+    const filterDefs = filters.map(f => `- ${sanitizeText(fn(f.name))} (weight: ${f.weight}x): ${sanitizeText(fn(f.description), MAX_LONG)}`).join("\n");
     const safeJd = sanitizeText(jd, MAX_JD);
-    
-    const prompt = `You are an expert executive career coach. Score this opportunity against the candidate's filter framework. Respond in ${t.lang} language for all text fields except the recommendation field. The recommendation field must always be in English: use "pursue" if overall_score >= ${profile.threshold}, use "monitor" if overall_score >= ${profile.threshold - 0.5} but below threshold, use "pass" if overall_score < ${profile.threshold - 0.5}.\n\nCANDIDATE PROFILE:\n${profileSummary}\n\nSCORING FRAMEWORK (score each 1–5):\n${filterDefs}\n\nJOB DESCRIPTION:\n${safeJd}\n\nRespond ONLY with valid JSON (no markdown) in exactly this shape:\n{"role_title":"","company":"","overall_score":3.8,"recommendation":"pursue","recommendation_rationale":"","filter_scores":[{"filter_id":"","filter_name":"","score":4,"rationale":""}],"strengths":[""],"gaps":[""],"narrative_bridge":"","honest_fit_summary":""}`;
 
     try {
+      const prompt = `You are an expert executive career coach. Score this opportunity against the candidate's filter framework. Respond in ${t.lang} language for all text fields except the recommendation field. The recommendation field must always be in English: use "pursue" if overall_score >= ${profile.threshold}, use "monitor" if overall_score >= ${profile.threshold - 0.5} but below threshold, use "pass" if overall_score < ${profile.threshold - 0.5}.\n\nCANDIDATE PROFILE:\n${profileSummary}\n\nSCORING FRAMEWORK (score each 1–5):\n${filterDefs}\n\nJOB DESCRIPTION:\n${safeJd}\n\nRespond ONLY with valid JSON (no markdown) in exactly this shape:\n{"role_title":"","company":"","overall_score":3.8,"recommendation":"pursue","recommendation_rationale":"","filter_scores":[{"filter_id":"","filter_name":"","score":4,"rationale":""}],"strengths":[""],"gaps":[""],"narrative_bridge":"","honest_fit_summary":""}`;
+
       const response = await fetch(ENDPOINTS.anthropic, {
         method: "POST",
         headers: { "Content-Type": "application/json", "X-Vetted-Token": import.meta.env.VITE_VETTED_SECRET || "" },
