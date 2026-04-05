@@ -67,14 +67,19 @@ export default function PaywallModal({ authUser, onClose }) {
       const { url } = await res.json();
       if (!url) throw new Error("No checkout URL returned");
 
-      // Open Stripe Checkout.
-      // On web: new tab. On iOS Capacitor: opens system Safari.
-      window.open(url, "_blank");
-
-      // Show return instructions — the tier activates via webhook after payment.
-      setError(""); // clear any previous error
-      setLoading(null);
-      onClose("pending"); // signal to parent that checkout was opened
+      // Redirect to Stripe Checkout.
+      // On iOS Capacitor (native app): open in system Safari so WKWebView state is preserved.
+      // On web: navigate the current tab — Stripe will redirect back to success_url.
+      const isNativeApp = typeof window.SignInWithApplePlugin !== "undefined";
+      if (isNativeApp) {
+        window.open(url, "_blank");
+        setLoading(null);
+        onClose("pending");
+      } else {
+        // Web: navigate in-place. The success_url brings the user back to the app
+        // with ?upgrade=success, which App.jsx detects to refresh tier state.
+        window.location.href = url;
+      }
     } catch (err) {
       handleError(err, "paywall_upgrade");
       setError("Could not start checkout. Please try again.");
@@ -181,8 +186,7 @@ export default function PaywallModal({ authUser, onClose }) {
 
         {/* Footer note */}
         <p style={{ textAlign: "center", fontSize: 11, color: "var(--muted)", lineHeight: 1.6 }}>
-          Payment processed securely by Stripe. After completing checkout in your browser,
-          sign out and back in to activate your plan.
+          Payment processed securely by Stripe. Cancel anytime — no long-term commitment.
         </p>
       </div>
     </div>

@@ -966,6 +966,7 @@ export default function App() {
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState("");
   const [showPaywall, setShowPaywall] = useState(false);
+  const [upgradeSuccess, setUpgradeSuccess] = useState(false);
   const announcerRef = useRef(null);
   const loadCallRef = useRef(0); // incremented on each loadUserData call; stale calls abort on mismatch
 
@@ -1033,6 +1034,19 @@ export default function App() {
     }
     restoreSession();
   }, []);
+
+  // Detect ?upgrade=success after returning from Stripe Checkout (web flow).
+  // The webhook has already updated Supabase by the time the user lands here.
+  // We show a success banner and clear the URL param so it doesn't re-trigger.
+  useEffect(() => {
+    if (!authUser) return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("upgrade") === "success") {
+      setUpgradeSuccess(true);
+      setShowPaywall(false);
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, [authUser]);
 
   function announce(msg) {
     if (announcerRef.current) announcerRef.current.textContent = "";
@@ -1372,6 +1386,19 @@ export default function App() {
                 .catch(err => handleError(err, "save_filters"));
             }
           }} />
+        )}
+        {upgradeSuccess && (
+          <div role="status" style={{
+            background: "#c8edda", color: "var(--success)",
+            borderLeft: "3px solid var(--success)",
+            borderRadius: "var(--r)", padding: "12px 16px",
+            fontSize: 13, lineHeight: 1.6, marginBottom: 16,
+            display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
+          }}>
+            <span>✓ Upgrade successful — unlimited scoring is now active.</span>
+            <button onClick={() => setUpgradeSuccess(false)} aria-label="Dismiss"
+              style={{ background: "none", border: "none", cursor: "pointer", color: "var(--success)", fontSize: 18, lineHeight: 1, padding: 0, minWidth: 24 }}>×</button>
+          </div>
         )}
         {step === "dashboard" && (
           <Dashboard t={t} profile={profile} filters={filters} lang={lang} opportunities={opportunities} loading={loading} error={error}

@@ -43,7 +43,6 @@ function supabaseRequest(method, path, body) {
     }
     const url = new URL(`${SUPABASE_URL}/rest/v1${path}`);
     const bodyStr = body ? JSON.stringify(body) : null;
-
     const options = {
       hostname: url.hostname,
       path: url.pathname + url.search,
@@ -56,7 +55,6 @@ function supabaseRequest(method, path, body) {
         ...(bodyStr && { "Content-Length": Buffer.byteLength(bodyStr) }),
       },
     };
-
     const req = https.request(options, (res) => {
       let data = "";
       res.on("data", (chunk) => { data += chunk; });
@@ -72,10 +70,11 @@ function supabaseRequest(method, path, body) {
 }
 
 // ─── Stripe webhook signature verification ────────────────────────────────
-// Implements the Stripe-Signature header verification algorithm exactly.
+// Manual implementation of Stripe's constructEvent verification algorithm.
 // https://stripe.com/docs/webhooks/signatures
 function verifyStripeSignature(rawBody, sigHeader, secret) {
-  if (!sigHeader || !secret) return !secret; // pass through if secret not yet configured
+  if (!secret) return true; // secret not yet configured — pass through (setup phase only)
+  if (!sigHeader) return false;
 
   const parts = {};
   for (const part of sigHeader.split(",")) {
@@ -91,21 +90,27 @@ function verifyStripeSignature(rawBody, sigHeader, secret) {
   const nowSeconds = Math.floor(Date.now() / 1000);
   if (Math.abs(nowSeconds - parseInt(timestamp, 10)) > 300) return false;
 
-  const signedPayload = `${timestamp}.${rawBody}`;
   const expected = crypto
     .createHmac("sha256", secret)
-    .update(signedPayload)
+    .update(`${timestamp}.${rawBody}`)
     .digest("hex");
 
-  // Constant-time compare to prevent timing attacks
   try {
     return crypto.timingSafeEqual(Buffer.from(v1), Buffer.from(expected));
   } catch {
-    return false; // buffers different length → invalid
+    return false; // buffers different length — definitely invalid
   }
 }
 
-// ─── Update Supabase tier ─────────────────────────────────────────────────
+// ─── Resolve tier from Stripe price ID ───────────────────────────────────
+function tierFromPriceId(priceId) {
+  if (!priceId) return null;
+  if (priceId === process.env.STRIPE_SIGNAL_PRICE_ID) return "signal";
+  if (priceId === process.env.STRIPE_VANTAGE_PRICE_ID) return "vantage";
+  return null;
+}
+
+// ─── Supabase tier write ──────────────────────────────────────────────────
 async function setUserTier(appleId, tier) {
   const result = await supabaseRequest(
     "PATCH",
@@ -115,22 +120,74 @@ async function setUserTier(appleId, tier) {
   if (result.status < 200 || result.status >= 300) {
     throw new Error(`Supabase PATCH failed with status ${result.status}`);
   }
-  return result;
+  console.log(`[stripe_webhook] tier=${tier} set for appleId=${appleId.slice(0, 8)}…`);
+}
+
+// ─── Event processing — runs after 200 is returned to Stripe ─────────────
+async function processEvent(stripeEvent) {
+  const type = stripeEvent.type;
+  const obj = stripeEvent.data?.object;
+
+  // ── checkout.session.completed ───────────────────────────────────────────
+  // Fires when a user completes a Stripe Checkout session (new subscription).
+  if (type === "checkout.session.completed") {
+    const appleId = obj?.metadata?.appleId;
+    const tier = obj?.metadata?.tier;
+
+    if (!appleId) throw new Error("checkout.session.completed: missing metadata.appleId");
+    if (!tier || !["signal", "vantage"].includes(tier)) {
+      throw new Error(`checkout.session.completed: invalid tier "${tier}"`);
+    }
+    await setUserTier(appleId, tier);
+    return;
+  }
+
+  // ── customer.subscription.updated ────────────────────────────────────────
+  // Fires on plan change, renewal, status change (active → past_due, etc).
+  if (type === "customer.subscription.updated") {
+    const appleId = obj?.metadata?.appleId;
+    if (!appleId) throw new Error("subscription.updated: missing metadata.appleId");
+
+    const status = obj?.status;
+    const priceId = obj?.items?.data?.[0]?.price?.id;
+
+    if (status === "active" || status === "trialing") {
+      const tier = tierFromPriceId(priceId);
+      if (!tier) throw new Error(`subscription.updated: unrecognised price ID "${priceId}"`);
+      await setUserTier(appleId, tier);
+    } else if (status === "canceled" || status === "unpaid") {
+      // Status has lapsed — demote to free immediately
+      await setUserTier(appleId, "free");
+    }
+    // past_due and other transient states: leave tier as-is, let Stripe retry billing
+    return;
+  }
+
+  // ── customer.subscription.deleted ────────────────────────────────────────
+  // Fires when a subscription is fully cancelled (at period end or immediately).
+  if (type === "customer.subscription.deleted") {
+    const appleId = obj?.metadata?.appleId;
+    if (!appleId) throw new Error("subscription.deleted: missing metadata.appleId");
+    await setUserTier(appleId, "free");
+    return;
+  }
+
+  // All other event types acknowledged silently — no processing needed.
+  console.log(`[stripe_webhook] Unhandled event type "${type}" — acknowledged`);
 }
 
 // ─── Handler ───────────────────────────────────────────────────────────────
 exports.handler = async (event) => {
-  // Stripe only sends POST
   if (event.httpMethod !== "POST") {
     return { statusCode: 405, body: "Method not allowed" };
   }
 
-  // ── Get raw body (Netlify may base64-encode binary payloads) ─────────────
+  // ── Raw body (Netlify may base64-encode binary payloads) ──────────────────
   const rawBody = event.isBase64Encoded
     ? Buffer.from(event.body, "base64").toString("utf8")
     : event.body || "";
 
-  // ── Verify Stripe signature ───────────────────────────────────────────────
+  // ── Verify Stripe-Signature ───────────────────────────────────────────────
   const sigHeader = event.headers?.["stripe-signature"] || event.headers?.["Stripe-Signature"] || "";
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || "";
 
@@ -147,40 +204,16 @@ exports.handler = async (event) => {
     return { statusCode: 400, body: JSON.stringify({ error: "Invalid JSON" }) };
   }
 
-  const eventType = stripeEvent?.type;
-  console.log(`[stripe_webhook] Received event: ${eventType}`);
+  console.log(`[stripe_webhook] Received: ${stripeEvent?.type}`);
 
-  // ── Handle checkout.session.completed ─────────────────────────────────────
-  // This fires when a user successfully completes a Stripe Checkout session.
-  if (eventType === "checkout.session.completed") {
-    const session = stripeEvent.data?.object;
-    const appleId = session?.metadata?.appleId;
-    const tier = session?.metadata?.tier;
+  // ── Return 200 to Stripe immediately, then process async ─────────────────
+  // Stripe requires a fast acknowledgement. Processing happens in the background;
+  // if it fails, Sentry captures it. Stripe does NOT retry non-5xx responses.
+  setImmediate(() => {
+    processEvent(stripeEvent).catch((err) => {
+      reportToSentry(err, `stripe_webhook_${stripeEvent?.type}`);
+    });
+  });
 
-    if (!appleId || !tier) {
-      const err = new Error(`Missing metadata in checkout.session.completed — appleId: ${appleId}, tier: ${tier}`);
-      reportToSentry(err, "stripe_webhook");
-      // Still return 200 so Stripe doesn't retry — this is a data issue, not transient
-      return { statusCode: 200, body: JSON.stringify({ received: true }) };
-    }
-
-    if (!["signal", "vantage"].includes(tier)) {
-      const err = new Error(`Unexpected tier value in webhook metadata: ${tier}`);
-      reportToSentry(err, "stripe_webhook");
-      return { statusCode: 200, body: JSON.stringify({ received: true }) };
-    }
-
-    try {
-      await setUserTier(appleId, tier);
-      console.log(`[stripe_webhook] Set tier=${tier} for appleId=${appleId.slice(0, 8)}…`);
-    } catch (err) {
-      reportToSentry(err, "stripe_webhook_set_tier");
-      // Return 500 so Stripe retries the webhook (transient DB failure)
-      return { statusCode: 500, body: JSON.stringify({ error: "Failed to update tier" }) };
-    }
-  }
-
-  // ── Acknowledge all other event types without error ───────────────────────
-  // Stripe requires a 200 response to prevent retries for events we don't handle.
   return { statusCode: 200, body: JSON.stringify({ received: true }) };
 };
