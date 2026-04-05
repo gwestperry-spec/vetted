@@ -1197,7 +1197,8 @@ export default function App() {
               const saved = data.data;
               if (saved?.profile?.display_name && saved.profile.display_name !== "User") {
                 const updatedUser = { ...user, displayName: saved.profile.display_name };
-                localStorage.setItem("vetted_user", JSON.stringify(updatedUser));
+                const { sessionToken: _st, ...updatedUserToStore } = updatedUser;
+                localStorage.setItem("vetted_user", JSON.stringify(updatedUserToStore));
                 setAuthUser(updatedUser);
               }
               if (saved?.profile) {
@@ -1353,7 +1354,8 @@ export default function App() {
           sessionToken: data.sessionToken || "",
         };
 
-        localStorage.setItem("vetted_user", JSON.stringify(user));
+        const { sessionToken: _st1, ...userToStore } = user;
+        localStorage.setItem("vetted_user", JSON.stringify(userToStore));
         setAuthUser(user);
 
         // Load all saved data from Supabase
@@ -1362,7 +1364,8 @@ export default function App() {
         if (resolvedName) {
           setProfile(p => ({ ...p, name: p.name || resolvedName }));
           const updatedUser = { ...user, displayName: resolvedName };
-          localStorage.setItem("vetted_user", JSON.stringify(updatedUser));
+          const { sessionToken: _st2, ...updatedUserToStore } = updatedUser;
+          localStorage.setItem("vetted_user", JSON.stringify(updatedUserToStore));
           setAuthUser(updatedUser);
         }
 
