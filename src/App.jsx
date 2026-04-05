@@ -1404,16 +1404,6 @@ export default function App() {
       return;
     }
 
-    // ── Tier gating check ────────────────────────────────────────────────
-    if (authUser) {
-      const limitCheck = await dbCall("checkScoreLimit", { action: "checkScoreLimit", appleId: authUser.id });
-      if (!limitCheck?.allowed) {
-        setError("You've reached your 10 free scores this month. Upgrade to Signal or Vantage for unlimited scoring.");
-        setLoading(false);
-        return;
-      }
-    }
-
     setLoading(true); setError("");
     announce(t.loadingMsg);
 
@@ -1446,8 +1436,16 @@ export default function App() {
       const response = await fetch(ENDPOINTS.anthropic, {
         method: "POST",
         headers: { "Content-Type": "application/json", "X-Vetted-Token": import.meta.env.VITE_VETTED_SECRET || "" },
-        body: JSON.stringify({ messages: [{ role: "user", content: prompt }] }),
+        body: JSON.stringify({ messages: [{ role: "user", content: prompt }], appleId: authUser?.id }),
       });
+      if (response.status === 429) {
+        const errData = await response.json().catch(() => ({}));
+        if (errData.limitReached) {
+          setError("You've reached your 10 free scores this month. Upgrade to Signal or Vantage for unlimited scoring.");
+          return;
+        }
+        throw new Error("Too many requests. Please wait before scoring again.");
+      }
       if (!response.ok) throw new Error(`API error ${response.status}`);
       const data = await response.json();
       const text = data.content?.map(b => (typeof b.text === "string" ? b.text : "")).join("") || "";
@@ -1476,13 +1474,8 @@ export default function App() {
       setCurrentOpp(enriched);
       setStep("result");
 
-      // ── Increment score count for tier gating ──────────────────────────
-      if (authUser) {
-        dbCall("incrementScoreCount", { action: "incrementScoreCount", appleId: authUser.id })
-          .catch(err => console.error("Failed to increment score count:", err.message));
-      }
-
       // Persist to Supabase
+      // (score count increment is handled server-side in anthropic.js)
       if (authUser?.id) {
         dbCall("saveOpportunity", { action: "saveOpportunity", appleId: authUser.id, opportunity: enriched })
           .catch(err => console.error("Failed to save opportunity:", err.message));
