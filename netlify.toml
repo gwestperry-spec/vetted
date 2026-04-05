@@ -55,3 +55,6 @@
 
 [functions."anthropic"]
   timeout = 30
+
+[functions."stripe-webhook"]
+  timeout = 26

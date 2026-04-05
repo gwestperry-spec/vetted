@@ -112,15 +112,27 @@ function tierFromPriceId(priceId) {
 
 // ─── Supabase tier write ──────────────────────────────────────────────────
 async function setUserTier(appleId, tier) {
+  console.log(`[stripe_webhook] setUserTier appleId=${appleId.slice(0, 8)}… tier=${tier}`);
+
   const result = await supabaseRequest(
     "PATCH",
     `/profiles?apple_id=eq.${encodeURIComponent(appleId)}`,
     { tier }
   );
+
+  console.log(`[stripe_webhook] PATCH status=${result.status} rows=${Array.isArray(result.data) ? result.data.length : "?"}`);
+
   if (result.status < 200 || result.status >= 300) {
-    throw new Error(`Supabase PATCH failed with status ${result.status}`);
+    throw new Error(`Supabase PATCH failed with status ${result.status}: ${JSON.stringify(result.data)}`);
   }
-  console.log(`[stripe_webhook] tier=${tier} set for appleId=${appleId.slice(0, 8)}…`);
+
+  // Supabase returns [] when no rows matched the filter — treat as an error
+  // so it surfaces in Sentry rather than silently succeeding with no DB change.
+  if (Array.isArray(result.data) && result.data.length === 0) {
+    throw new Error(`No profile found for appleId=${appleId.slice(0, 8)}… — PATCH matched 0 rows`);
+  }
+
+  console.log(`[stripe_webhook] ✓ tier=${tier} confirmed for appleId=${appleId.slice(0, 8)}…`);
 }
 
 // ─── Event processing — runs after 200 is returned to Stripe ─────────────
@@ -133,6 +145,8 @@ async function processEvent(stripeEvent) {
   if (type === "checkout.session.completed") {
     const appleId = obj?.metadata?.appleId;
     const tier = obj?.metadata?.tier;
+
+    console.log(`[stripe_webhook] checkout.session.completed metadata appleId=${appleId?.slice(0,8) ?? "MISSING"} tier=${tier ?? "MISSING"}`);
 
     if (!appleId) throw new Error("checkout.session.completed: missing metadata.appleId");
     if (!tier || !["signal", "vantage"].includes(tier)) {
