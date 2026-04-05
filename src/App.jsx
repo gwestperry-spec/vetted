@@ -1,6 +1,39 @@
 import { ENDPOINTS } from "./config.js";
-import { useState, useEffect, useRef, useId, useCallback } from "react";
-import { Sentry } from "./sentry.js";
+import { Component, useState, useEffect, useRef, useId, useCallback } from "react";
+import { handleError } from "./handleError.js";
+
+// ─── Error boundary ────────────────────────────────────────────────────────
+export class ErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error) {
+    handleError(error, "error_boundary");
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="app" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "100vh", gap: 16, padding: 24 }}>
+          <h2 style={{ fontSize: 18, fontWeight: 600 }}>Something went wrong</h2>
+          <p style={{ color: "var(--muted)", fontSize: 14, textAlign: "center" }}>
+            {this.state.error?.message || "An unexpected error occurred."}
+          </p>
+          <button className="btn btn-primary" onClick={() => this.setState({ hasError: false, error: null })}>
+            Try again
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 // ─── Translations ──────────────────────────────────────────────────────────
 const T = {
@@ -1313,8 +1346,7 @@ export default function App() {
 
     } catch (err) {
       if (callId !== loadCallRef.current) return;
-      console.error("Failed to load user data:", err.message);
-      Sentry.captureException(err, { tags: { location: "load_user_data" } });
+      handleError(err, "load_user_data");
       // Non-fatal — drop to onboarding so user can still use the app
       setStep("onboard");
     }
@@ -1374,8 +1406,7 @@ export default function App() {
         setAuthError("Sign in with Apple requires the iOS app. To test on web, use the Netlify preview with a supported browser on a Mac or iPhone.");
       }
     } catch (err) {
-      console.error("Apple sign in error:", err?.message || err);
-      Sentry.captureException(err, { tags: { location: "apple_sign_in" } });
+      handleError(err, "apple_sign_in");
       if (err?.message?.includes("cancelled") || err?.message?.includes("canceled")) {
         setAuthError("Sign in was cancelled.");
       } else {
@@ -1482,10 +1513,11 @@ export default function App() {
       // (score count increment is handled server-side in anthropic.js)
       if (authUser?.id) {
         dbCall("saveOpportunity", { action: "saveOpportunity", appleId: authUser.id, opportunity: enriched })
-          .catch(err => console.error("Failed to save opportunity:", err.message));
+          .catch(err => handleError(err, "save_opportunity"));
       }
       announce(`Scored: ${result.role_title}. Score: ${result.overall_score.toFixed(1)}. Recommendation: ${result.recommendation}.`);
     } catch (err) {
+      handleError(err, "score_opportunity");
       const detail = err?.message ? ` (${err.message})` : "";
       setError(`${t.scoringError}${detail}`);
       announce(t.scoringError);
@@ -1558,7 +1590,7 @@ export default function App() {
             setStep("filters");
             if (authUser?.id) {
               dbCall("saveProfile", { action: "saveProfile", appleId: authUser.id, profile: { ...profile, lang, displayName: authUser.displayName, email: authUser.email } })
-                .catch(err => console.error("Failed to save profile:", err.message));
+                .catch(err => handleError(err, "save_profile"));
             }
           }} />
         )}
@@ -1567,7 +1599,7 @@ export default function App() {
             setStep("dashboard");
             if (authUser?.id) {
               dbCall("saveFilters", { action: "saveFilters", appleId: authUser.id, filters })
-                .catch(err => console.error("Failed to save filters:", err.message));
+                .catch(err => handleError(err, "save_filters"));
             }
           }} />
         )}
@@ -1582,7 +1614,7 @@ export default function App() {
               setStep("dashboard");
               if (authUser?.id && currentOpp?.id) {
                 dbCall("deleteOpportunity", { action: "deleteOpportunity", appleId: authUser.id, opportunityId: currentOpp.id })
-                  .catch(err => console.error("Failed to delete opportunity:", err.message));
+                  .catch(err => handleError(err, "delete_opportunity"));
               }
             }} />
         )}
