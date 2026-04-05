@@ -5,6 +5,7 @@ import LangSwitcher from "./components/LangSwitcher.jsx";
 import SignInGate from "./components/SignInGate.jsx";
 import ScoreResult from "./components/ScoreResult.jsx";
 import OpportunityForm from "./components/OpportunityForm.jsx";
+import PaywallModal from "./components/PaywallModal.jsx";
 
 // ─── Error boundary ────────────────────────────────────────────────────────
 export class ErrorBoundary extends Component {
@@ -964,6 +965,7 @@ export default function App() {
   const [authUser, setAuthUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState("");
+  const [showPaywall, setShowPaywall] = useState(false);
   const announcerRef = useRef(null);
   const loadCallRef = useRef(0); // incremented on each loadUserData call; stale calls abort on mismatch
 
@@ -1244,7 +1246,7 @@ export default function App() {
       if (response.status === 429) {
         const errData = await response.json().catch(() => ({}));
         if (errData.limitReached) {
-          setError("You've reached your 10 free scores this month. Upgrade to Signal or Vantage for unlimited scoring.");
+          setShowPaywall(true);
           return;
         }
         throw new Error("Too many requests. Please wait before scoring again.");
@@ -1387,6 +1389,18 @@ export default function App() {
             }} />
         )}
       </div>
+
+      {showPaywall && (
+        <PaywallModal
+          authUser={authUser}
+          onClose={(reason) => {
+            setShowPaywall(false);
+            if (reason === "pending") {
+              setError("Complete payment in your browser, then sign out and back in to activate your plan.");
+            }
+          }}
+        />
+      )}
     </>
   );
 }

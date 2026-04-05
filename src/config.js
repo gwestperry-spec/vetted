@@ -8,5 +8,6 @@ export const ENDPOINTS = {
   anthropic: `${API_BASE}/.netlify/functions/anthropic`,
   appleAuth: `${API_BASE}/.netlify/functions/apple-auth`,
   supabase:  `${API_BASE}/.netlify/functions/supabase`,
+  checkout:  `${API_BASE}/.netlify/functions/create-checkout-session`,
   privacy:   `${API_BASE}/privacy`,
 };
