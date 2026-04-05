@@ -206,14 +206,17 @@ exports.handler = async (event) => {
 
   console.log(`[stripe_webhook] Received: ${stripeEvent?.type}`);
 
-  // ── Return 200 to Stripe immediately, then process async ─────────────────
-  // Stripe requires a fast acknowledgement. Processing happens in the background;
-  // if it fails, Sentry captures it. Stripe does NOT retry non-5xx responses.
-  setImmediate(() => {
-    processEvent(stripeEvent).catch((err) => {
-      reportToSentry(err, `stripe_webhook_${stripeEvent?.type}`);
-    });
-  });
+  // ── Process event synchronously before returning 200 ─────────────────────
+  // setImmediate() is not reliable in serverless — the execution context is
+  // frozen after the response is sent, so queued callbacks never run.
+  // Supabase PATCH takes ~200ms; well within Stripe's 30-second timeout.
+  try {
+    await processEvent(stripeEvent);
+  } catch (err) {
+    reportToSentry(err, `stripe_webhook_${stripeEvent?.type}`);
+    // Still return 200 — Stripe must not retry this event. The error is in
+    // Sentry. A 5xx would cause Stripe to retry, potentially double-billing.
+  }
 
   return { statusCode: 200, body: JSON.stringify({ received: true }) };
 };

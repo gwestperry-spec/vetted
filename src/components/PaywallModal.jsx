@@ -59,6 +59,15 @@ export default function PaywallModal({ authUser, onClose }) {
         }),
       });
 
+      if (res.status === 403) {
+        const data = await res.json().catch(() => ({}));
+        if (data.error === "Invalid session" || data.error === "Authentication required") {
+          // Session expired — close modal so App can prompt re-sign-in
+          setLoading(null);
+          onClose("session_expired");
+          return;
+        }
+      }
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error || `Request failed (${res.status})`);
@@ -70,7 +79,7 @@ export default function PaywallModal({ authUser, onClose }) {
       // Redirect to Stripe Checkout.
       // On iOS Capacitor (native app): open in system Safari so WKWebView state is preserved.
       // On web: navigate the current tab — Stripe will redirect back to success_url.
-      const isNativeApp = typeof window.SignInWithApplePlugin !== "undefined";
+      const isNativeApp = window.Capacitor?.isNativePlatform?.() === true;
       if (isNativeApp) {
         window.open(url, "_blank");
         setLoading(null);

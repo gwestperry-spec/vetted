@@ -43,7 +43,7 @@ export default function ScoreResult({ t, opp, profile, onBack, onRemove }) {
 
         <section className="card" aria-labelledby="filter-bd-heading">
           <h2 id="filter-bd-heading" className="section-label">{t.filterBreakdown}</h2>
-          {opp.filter_scores.map(fs => {
+          {(opp.filter_scores || []).map(fs => {
             const filled = Math.round(fs.score);
             const col = fs.score >= 4 ? "var(--success)" : fs.score >= 3 ? "var(--gold)" : "var(--accent)";
             return (
