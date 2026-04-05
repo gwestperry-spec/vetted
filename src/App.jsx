@@ -1350,6 +1350,7 @@ export default function App() {
           id: data.user.id,
           email: data.user.email,
           displayName: resolvedName || "User",
+          sessionToken: data.sessionToken || "",
         };
 
         localStorage.setItem("vetted_user", JSON.stringify(user));
@@ -1436,7 +1437,7 @@ export default function App() {
       const response = await fetch(ENDPOINTS.anthropic, {
         method: "POST",
         headers: { "Content-Type": "application/json", "X-Vetted-Token": import.meta.env.VITE_VETTED_SECRET || "" },
-        body: JSON.stringify({ messages: [{ role: "user", content: prompt }], appleId: authUser?.id }),
+        body: JSON.stringify({ messages: [{ role: "user", content: prompt }], appleId: authUser?.id, sessionToken: authUser?.sessionToken || "" }),
       });
       if (response.status === 429) {
         const errData = await response.json().catch(() => ({}));

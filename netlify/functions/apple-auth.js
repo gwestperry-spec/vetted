@@ -109,6 +109,15 @@ exports.handler = async (event) => {
       ? `${fullName.givenName}${fullName.familyName ? " " + fullName.familyName : ""}`.trim()
       : null;
 
+    // Issue a session token — HMAC-SHA256(sub, VETTED_SECRET).
+    // The client includes this on every scoring request; anthropic.js re-derives
+    // the HMAC from the client-provided appleId and compares with timingSafeEqual,
+    // so a client cannot forge a token for a different user's appleId.
+    const sessionToken = crypto
+      .createHmac("sha256", process.env.VETTED_SECRET || "")
+      .update(userInfo.sub)
+      .digest("hex");
+
     return {
       statusCode: 200,
       headers,
@@ -119,6 +128,7 @@ exports.handler = async (event) => {
           email: userInfo.email || null,
           displayName,
         },
+        sessionToken,
       }),
     };
   } catch (err) {

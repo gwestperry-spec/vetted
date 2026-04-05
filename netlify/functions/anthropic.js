@@ -48,6 +48,40 @@ function corsHeaders(origin) {
   };
 }
 
+// ─── Sentry reporting ─────────────────────────────────────────────────────
+// Fire-and-forget: never let Sentry failures affect the response path.
+function reportToSentry(err, context) {
+  const dsn = process.env.VITE_SENTRY_DSN;
+  if (!dsn) { console.error(`[${context}]`, err.message); return; }
+  try {
+    const url = new URL(dsn);
+    const key = url.username;
+    const projectId = url.pathname.replace(/^\//, "");
+    const payload = JSON.stringify({
+      timestamp: new Date().toISOString().replace("T", " ").split(".")[0],
+      platform: "node",
+      level: "error",
+      exception: { values: [{ type: err.name || "Error", value: err.message || String(err) }] },
+      tags: { location: context },
+    });
+    const req = https.request({
+      hostname: url.hostname,
+      path: `/api/${projectId}/store/`,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Sentry-Auth": `Sentry sentry_version=7, sentry_timestamp=${Math.floor(Date.now() / 1000)}, sentry_key=${key}`,
+        "Content-Length": Buffer.byteLength(payload),
+      },
+    }, () => {});
+    req.on("error", () => {});
+    req.write(payload);
+    req.end();
+  } catch {
+    console.error(`[${context}]`, err.message);
+  }
+}
+
 // ─── Supabase REST helper ──────────────────────────────────────────────────
 // Duplicated from supabase.js — functions can't share modules on Netlify
 // without a bundler. Keep in sync if schema changes.
@@ -245,11 +279,29 @@ exports.handler = async function (event) {
     return { statusCode: 400, headers: corsHeaders(origin), body: JSON.stringify({ error: "Invalid JSON body" }) };
   }
 
-  const { messages, appleId } = parsedBody;
+  const { messages, appleId, sessionToken } = parsedBody;
 
   // ── Require authentication ─────────────────────────────────────────────
-  if (!appleId || typeof appleId !== "string" || appleId.length > 256) {
+  if (!appleId || typeof appleId !== "string" || appleId.length > 256 ||
+      !sessionToken || typeof sessionToken !== "string") {
     return { statusCode: 403, headers: corsHeaders(origin), body: JSON.stringify({ error: "Authentication required" }) };
+  }
+
+  // ── Verify session token — proves this appleId was issued by our server ─
+  // apple-auth.js generates sessionToken = HMAC-SHA256(sub, VETTED_SECRET).
+  // We re-derive it here and compare with timingSafeEqual to prevent
+  // timing attacks. If VETTED_SECRET is unset (local dev), skip check.
+  if (serverSecret) {
+    const expectedToken = crypto
+      .createHmac("sha256", serverSecret)
+      .update(appleId)
+      .digest("hex");
+    const tokenBuf = Buffer.from(sessionToken.padEnd(64, "0").slice(0, 64));
+    const expectedBuf = Buffer.from(expectedToken.padEnd(64, "0").slice(0, 64));
+    if (!crypto.timingSafeEqual(tokenBuf, expectedBuf)) {
+      console.warn("Session token mismatch for appleId:", appleId.slice(0, 8) + "…");
+      return { statusCode: 403, headers: corsHeaders(origin), body: JSON.stringify({ error: "Invalid session" }) };
+    }
   }
 
   // ── Server-side tier enforcement ───────────────────────────────────────
@@ -257,9 +309,9 @@ exports.handler = async function (event) {
   try {
     tierCheck = await checkScoreLimit(appleId);
   } catch (err) {
-    // Supabase unreachable — fail open with a warning so a transient DB
-    // outage doesn't block paying users. Log for monitoring.
-    console.error("Tier check failed, proceeding:", err.message);
+    // Supabase unreachable — fail open so a transient DB outage doesn't
+    // block paying users. Report to Sentry for monitoring.
+    reportToSentry(err, "anthropic_tier_check");
     tierCheck = { allowed: true, tier: "unknown" };
   }
 
