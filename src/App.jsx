@@ -1058,13 +1058,19 @@ export default function App() {
     }
   }, [authUser]);
 
-  // iOS native: after Stripe checkout opens in Safari, detect when user returns
-  // to the app (visibilitychange) and immediately re-check tier from Supabase.
+  // iOS native: after Stripe checkout opens in Safari, poll Supabase every 3s
+  // until the webhook updates the tier (or 2 minutes elapse).
   // No sign-out/sign-in required — tier updates in-place.
   useEffect(() => {
     if (!pendingTierCheck || !authUser?.id) return;
 
+    let cancelled = false;
+    const POLL_INTERVAL = 3000;
+    const TIMEOUT_MS = 120000; // 2 minutes
+    const startedAt = Date.now();
+
     async function checkTier() {
+      if (cancelled) return;
       try {
         const result = await dbCall("load", { action: "load", appleId: authUser.id });
         const tier = result?.data?.profile?.tier;
@@ -1072,20 +1078,23 @@ export default function App() {
           setPendingTierCheck(false);
           setUpgradeSuccess(true);
           setError("");
+          return; // done
         }
       } catch {
-        // Silent — will retry on next foreground event
+        // Silent — keep polling
       }
+      if (cancelled) return;
+      if (Date.now() - startedAt > TIMEOUT_MS) {
+        // Timed out — give up, let user retry manually
+        setPendingTierCheck(false);
+        setError("Payment confirmed but plan activation took too long. Sign out and back in to apply it.");
+        return;
+      }
+      setTimeout(checkTier, POLL_INTERVAL);
     }
 
-    function onVisibilityChange() {
-      if (document.visibilityState === "visible") checkTier();
-    }
-
-    document.addEventListener("visibilitychange", onVisibilityChange);
-    // Also check immediately in case user is already back
     checkTier();
-    return () => document.removeEventListener("visibilitychange", onVisibilityChange);
+    return () => { cancelled = true; };
   }, [pendingTierCheck, authUser?.id]);
 
   function announce(msg) {
