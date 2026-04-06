@@ -111,8 +111,9 @@ exports.handler = async (event) => {
     return { statusCode: 400, headers, body: JSON.stringify({ error: "tier, appleId, and sessionToken are required" }) };
   }
 
-  if (!["signal", "vantage"].includes(tier)) {
-    return { statusCode: 400, headers, body: JSON.stringify({ error: "tier must be signal or vantage" }) };
+  const VALID_TIERS = ["signal", "vantage", "signal_lifetime", "vantage_lifetime"];
+  if (!VALID_TIERS.includes(tier)) {
+    return { statusCode: 400, headers, body: JSON.stringify({ error: "invalid tier" }) };
   }
 
   // ── Verify session token (same HMAC pattern as anthropic.js) ─────────────
@@ -129,13 +130,18 @@ exports.handler = async (event) => {
     }
   }
 
-  // ── Resolve price ID ──────────────────────────────────────────────────────
-  const priceId = tier === "signal"
-    ? process.env.STRIPE_SIGNAL_PRICE_ID
-    : process.env.STRIPE_VANTAGE_PRICE_ID;
+  // ── Resolve price ID and mode ─────────────────────────────────────────────
+  const isLifetime = tier === "signal_lifetime" || tier === "vantage_lifetime";
+  const PRICE_MAP = {
+    signal:           process.env.STRIPE_SIGNAL_PRICE_ID,
+    vantage:          process.env.STRIPE_VANTAGE_PRICE_ID,
+    signal_lifetime:  process.env.STRIPE_SIGNAL_LIFETIME_PRICE_ID,
+    vantage_lifetime: process.env.STRIPE_VANTAGE_LIFETIME_PRICE_ID,
+  };
+  const priceId = PRICE_MAP[tier];
 
   if (!priceId) {
-    const err = new Error(`STRIPE_${tier.toUpperCase()}_PRICE_ID not configured`);
+    const err = new Error(`Price ID not configured for tier "${tier}"`);
     reportToSentry(err, "create_checkout_session");
     return { statusCode: 500, headers, body: JSON.stringify({ error: "Payment configuration error" }) };
   }
@@ -143,19 +149,24 @@ exports.handler = async (event) => {
   // ── Create Stripe Checkout session ────────────────────────────────────────
   try {
     const params = {
-      "mode": "subscription",
+      "mode": isLifetime ? "payment" : "subscription",
       "line_items[0][price]": priceId,
       "line_items[0][quantity]": "1",
       // Native iOS: use custom URL scheme so Safari auto-returns to the app.
       // Web: redirect back to the site which the app detects via ?upgrade=success.
       "success_url": isNative ? "vetted://upgrade-success" : "https://tryvettedai.com?upgrade=success",
       "cancel_url": isNative ? "vetted://upgrade-cancelled" : "https://tryvettedai.com?upgrade=cancelled",
-      // Store appleId + tier in session metadata so the webhook can identify the user
+      // Store appleId + tier in metadata so the webhook can identify the user.
+      // For one-time payments, metadata goes on payment_intent_data (not subscription_data).
       "metadata[appleId]": appleId,
       "metadata[tier]": tier,
-      // Also store on the subscription itself for future subscription events
-      "subscription_data[metadata][appleId]": appleId,
-      "subscription_data[metadata][tier]": tier,
+      ...(isLifetime ? {
+        "payment_intent_data[metadata][appleId]": appleId,
+        "payment_intent_data[metadata][tier]": tier,
+      } : {
+        "subscription_data[metadata][appleId]": appleId,
+        "subscription_data[metadata][tier]": tier,
+      }),
     };
 
     console.log(`[create_checkout] tier=${tier} priceId=${priceId} appleId=${appleId.slice(0,8)}…`);

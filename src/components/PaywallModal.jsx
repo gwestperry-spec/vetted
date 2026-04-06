@@ -39,6 +39,25 @@ const TIERS = [
   },
 ];
 
+const LIFETIME_TIERS = [
+  {
+    id: "signal_lifetime",
+    name: "Signal Founding Member",
+    price: "SIGNAL_LIFETIME_PRICE",
+    tagline: "Everything in Signal — pay once, use forever",
+    cta: "Get Signal Lifetime",
+    accent: "var(--accent)",
+  },
+  {
+    id: "vantage_lifetime",
+    name: "Vantage Founding Member",
+    price: "VANTAGE_LIFETIME_PRICE",
+    tagline: "Everything in Vantage — pay once, use forever",
+    cta: "Get Vantage Lifetime",
+    accent: "var(--gold)",
+  },
+];
+
 export default function PaywallModal({ authUser, onClose }) {
   const [loading, setLoading] = useState(null); // "signal" | "vantage" | null
   const [error, setError] = useState("");
@@ -189,6 +208,47 @@ export default function PaywallModal({ authUser, onClose }) {
           ))}
         </div>
 
+        {/* Founding member section */}
+        <div style={{ borderTop: "1px solid var(--border)", paddingTop: 18, marginBottom: 20 }}>
+          <div style={{ textAlign: "center", marginBottom: 14 }}>
+            <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, letterSpacing: ".2em", textTransform: "uppercase", color: "var(--muted)", marginBottom: 4 }}>
+              Founding Member — Limited Seats
+            </p>
+            <p style={{ fontSize: 12, color: "var(--muted)", lineHeight: 1.5 }}>
+              Pay once. Use forever. Lock in access before prices increase.
+            </p>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            {LIFETIME_TIERS.map(tier => (
+              <div key={tier.id} style={{
+                border: `1.5px solid ${tier.accent}`,
+                borderRadius: 6, padding: "16px 14px",
+                background: "#fff", opacity: 0.92,
+              }}>
+                <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 15, fontWeight: 700, marginBottom: 2 }}>
+                  {tier.name}
+                </div>
+                <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 12, lineHeight: 1.4 }}>{tier.tagline}</div>
+                <div style={{ marginBottom: 14 }}>
+                  <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, fontWeight: 700 }}>{tier.price}</span>
+                  <span style={{ fontSize: 11, color: "var(--muted)", marginLeft: 4 }}>one-time</span>
+                </div>
+                <button
+                  className="btn btn-secondary"
+                  onClick={() => handleUpgrade(tier.id)}
+                  disabled={!!loading}
+                  aria-busy={loading === tier.id}
+                  style={{ width: "100%", fontSize: 12, minHeight: 38, borderColor: tier.accent, color: tier.accent }}
+                >
+                  {loading === tier.id ? (
+                    <><span className="spinner" style={{ width: 13, height: 13, borderWidth: 2 }} aria-hidden="true" /> Starting…</>
+                  ) : tier.cta}
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+
         {/* Error */}
         {error && (
           <div role="alert" className="alert alert-error" style={{ marginBottom: 12 }}>{error}</div>
@@ -196,7 +256,7 @@ export default function PaywallModal({ authUser, onClose }) {
 
         {/* Footer note */}
         <p style={{ textAlign: "center", fontSize: 11, color: "var(--muted)", lineHeight: 1.6 }}>
-          Payment processed securely by Stripe. Cancel anytime — no long-term commitment.
+          Payment processed securely by Stripe. Subscriptions can be cancelled anytime.
         </p>
       </div>
     </div>

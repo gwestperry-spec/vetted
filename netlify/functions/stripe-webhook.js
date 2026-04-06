@@ -125,6 +125,43 @@ function tierFromPriceId(priceId) {
   return null;
 }
 
+// ─── Supabase lifetime check — never downgrade a lifetime buyer ───────────
+async function isLifetimeBuyer(appleId) {
+  const result = await supabaseRequest(
+    "GET",
+    `/profiles?apple_id=eq.${encodeURIComponent(appleId)}&select=lifetime&limit=1`
+  );
+  return result.data?.[0]?.lifetime === true;
+}
+
+// ─── Supabase lifetime + tier write ──────────────────────────────────────
+async function setUserLifetime(appleId, tier) {
+  console.log(`[stripe_webhook] setUserLifetime appleId=${appleId.slice(0, 8)}… tier=${tier}`);
+  // Map signal_lifetime → signal, vantage_lifetime → vantage
+  const baseTier = tier.replace("_lifetime", "");
+  const result = await supabaseRequest(
+    "PATCH",
+    `/profiles?apple_id=eq.${encodeURIComponent(appleId)}`,
+    { tier: baseTier, lifetime: true }
+  );
+  console.log(`[stripe_webhook] lifetime PATCH status=${result.status} rows=${Array.isArray(result.data) ? result.data.length : "?"}`);
+  if (result.status < 200 || result.status >= 300) {
+    throw new Error(`Supabase lifetime PATCH failed: ${result.status}`);
+  }
+  if (Array.isArray(result.data) && result.data.length === 0) {
+    const upsertResult = await supabaseRequest(
+      "POST",
+      "/profiles?on_conflict=apple_id",
+      { apple_id: appleId, tier: baseTier, lifetime: true },
+      "resolution=merge-duplicates,return=representation"
+    );
+    if (upsertResult.status < 200 || upsertResult.status >= 300) {
+      throw new Error(`Supabase lifetime upsert failed: ${upsertResult.status}`);
+    }
+  }
+  console.log(`[stripe_webhook] ✓ lifetime=${baseTier} set for appleId=${appleId.slice(0, 8)}…`);
+}
+
 // ─── Supabase tier write ──────────────────────────────────────────────────
 async function setUserTier(appleId, tier) {
   console.log(`[stripe_webhook] setUserTier appleId=${appleId.slice(0, 8)}… tier=${tier}`);
@@ -166,15 +203,47 @@ async function processEvent(stripeEvent) {
   const type = stripeEvent.type;
   const obj = stripeEvent.data?.object;
 
-  // ── checkout.session.completed ───────────────────────────────────────────
-  // Fires when a user completes a Stripe Checkout session (new subscription).
-  if (type === "checkout.session.completed") {
+  // ── payment_intent.succeeded ─────────────────────────────────────────────
+  // Fires on one-time payments (lifetime purchases). appleId and tier are in
+  // payment_intent_data.metadata, set at checkout session creation time.
+  if (type === "payment_intent.succeeded") {
     const appleId = obj?.metadata?.appleId;
     const tier = obj?.metadata?.tier;
 
-    console.log(`[stripe_webhook] checkout.session.completed metadata appleId=${appleId?.slice(0,8) ?? "MISSING"} tier=${tier ?? "MISSING"}`);
+    console.log(`[stripe_webhook] payment_intent.succeeded metadata appleId=${appleId?.slice(0,8) ?? "MISSING"} tier=${tier ?? "MISSING"}`);
+
+    if (!appleId || !tier) {
+      // Not a Vetted lifetime purchase (e.g. Stripe test event) — ignore silently
+      console.log(`[stripe_webhook] payment_intent.succeeded: missing metadata — skipping`);
+      return;
+    }
+    if (!["signal_lifetime", "vantage_lifetime"].includes(tier)) {
+      console.log(`[stripe_webhook] payment_intent.succeeded: tier="${tier}" not a lifetime tier — skipping`);
+      return;
+    }
+    await setUserLifetime(appleId, tier);
+    return;
+  }
+
+  // ── checkout.session.completed ───────────────────────────────────────────
+  // Fires for both subscriptions and one-time payments.
+  // For lifetime (mode=payment): tier is already handled by payment_intent.succeeded.
+  // For subscriptions (mode=subscription): update tier from session metadata.
+  if (type === "checkout.session.completed") {
+    const appleId = obj?.metadata?.appleId;
+    const tier = obj?.metadata?.tier;
+    const mode = obj?.mode;
+
+    console.log(`[stripe_webhook] checkout.session.completed mode=${mode} appleId=${appleId?.slice(0,8) ?? "MISSING"} tier=${tier ?? "MISSING"}`);
 
     if (!appleId) throw new Error("checkout.session.completed: missing metadata.appleId");
+
+    // Lifetime purchases are handled by payment_intent.succeeded — skip here
+    if (mode === "payment") {
+      console.log(`[stripe_webhook] checkout.session.completed: mode=payment — deferring to payment_intent.succeeded`);
+      return;
+    }
+
     if (!tier || !["signal", "vantage"].includes(tier)) {
       throw new Error(`checkout.session.completed: invalid tier "${tier}"`);
     }
@@ -188,6 +257,12 @@ async function processEvent(stripeEvent) {
     const appleId = obj?.metadata?.appleId;
     if (!appleId) throw new Error("subscription.updated: missing metadata.appleId");
 
+    // Never downgrade a lifetime buyer
+    if (await isLifetimeBuyer(appleId)) {
+      console.log(`[stripe_webhook] subscription.updated: lifetime buyer — skipping downgrade for appleId=${appleId.slice(0,8)}…`);
+      return;
+    }
+
     const status = obj?.status;
     const priceId = obj?.items?.data?.[0]?.price?.id;
 
@@ -196,7 +271,6 @@ async function processEvent(stripeEvent) {
       if (!tier) throw new Error(`subscription.updated: unrecognised price ID "${priceId}"`);
       await setUserTier(appleId, tier);
     } else if (status === "canceled" || status === "unpaid") {
-      // Status has lapsed — demote to free immediately
       await setUserTier(appleId, "free");
     }
     // past_due and other transient states: leave tier as-is, let Stripe retry billing
@@ -208,6 +282,12 @@ async function processEvent(stripeEvent) {
   if (type === "customer.subscription.deleted") {
     const appleId = obj?.metadata?.appleId;
     if (!appleId) throw new Error("subscription.deleted: missing metadata.appleId");
+
+    // Never downgrade a lifetime buyer
+    if (await isLifetimeBuyer(appleId)) {
+      console.log(`[stripe_webhook] subscription.deleted: lifetime buyer — skipping downgrade for appleId=${appleId.slice(0,8)}…`);
+      return;
+    }
     await setUserTier(appleId, "free");
     return;
   }
