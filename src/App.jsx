@@ -1334,10 +1334,11 @@ export default function App() {
         throw new Error("Too many requests. Please wait before scoring again.");
       }
       if (response.status === 403) {
-        // Session expired or missing — sign out so the user is prompted to sign in again
+        // Session expired or missing — sign out and show explanation on sign-in screen
         const errData = await response.json().catch(() => ({}));
         if (errData.error === "Authentication required" || errData.error === "Invalid session") {
           handleSignOut();
+          setAuthError("Your session expired. Please sign in again to continue.");
           return;
         }
       }
