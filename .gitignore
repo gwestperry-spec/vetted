@@ -3,3 +3,6 @@ dist
 .env
 .env.local
 .DS_Store
+.claude/
+**/.claude/
+ios/App/App.xcodeproj/.claude/
