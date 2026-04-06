@@ -53,6 +53,142 @@ const LANG_NAMES = {
   fr: "French",  ar: "Arabic",  vi: "Vietnamese",
 };
 
+// ─── Section Carousel — VQ insight panels ────────────────────────────────────
+function SectionCarousel({ opp, t }) {
+  const sections = [
+    opp.recommendation_rationale && {
+      key: "summary",
+      label: t.recRationale || "Summary",
+      icon: "◎",
+      color: "var(--accent)",
+      content: <p style={{ fontSize: 14, lineHeight: 1.8, color: "var(--ink)" }}>{opp.recommendation_rationale}</p>,
+    },
+    opp.honest_fit_summary && {
+      key: "honest",
+      label: t.honestFit || "Honest Assessment",
+      icon: "⚖",
+      color: "var(--gold)",
+      content: <p style={{ fontSize: 14, lineHeight: 1.8, color: "var(--ink)" }}>{opp.honest_fit_summary}</p>,
+    },
+    (opp.strengths?.length > 0) && {
+      key: "strengths",
+      label: t.strengths || "Where You're Strong",
+      icon: "↑",
+      color: "var(--success)",
+      content: (
+        <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
+          {opp.strengths.map((s, i) => (
+            <li key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start", paddingBottom: 10, fontSize: 13, lineHeight: 1.6, color: "var(--ink)" }}>
+              <span style={{ color: "var(--success)", fontWeight: 700, flexShrink: 0, marginTop: 1 }}>✓</span>
+              {s}
+            </li>
+          ))}
+        </ul>
+      ),
+    },
+    (opp.gaps?.length > 0) && {
+      key: "gaps",
+      label: t.gaps || "Real Gaps",
+      icon: "↓",
+      color: "var(--accent)",
+      content: (
+        <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
+          {opp.gaps.map((g, i) => (
+            <li key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start", paddingBottom: 10, fontSize: 13, lineHeight: 1.6, color: "var(--ink)" }}>
+              <span style={{ color: "var(--accent)", fontWeight: 700, flexShrink: 0, marginTop: 1 }}>△</span>
+              {g}
+            </li>
+          ))}
+        </ul>
+      ),
+    },
+    opp.narrative_bridge && {
+      key: "bridge",
+      label: t.narrativeBridge || "Your Narrative",
+      icon: "→",
+      color: "var(--muted)",
+      content: <p style={{ fontSize: 14, lineHeight: 1.8, color: "var(--ink)" }}>{opp.narrative_bridge}</p>,
+    },
+  ].filter(Boolean);
+
+  const [idx, setIdx] = useState(0);
+  const touchStartX = useRef(null);
+  const total = sections.length;
+  if (!total) return null;
+
+  const sec = sections[idx];
+
+  function prev() { setIdx(i => Math.max(0, i - 1)); }
+  function next() { setIdx(i => Math.min(total - 1, i + 1)); }
+  function onTouchStart(e) { touchStartX.current = e.touches[0].clientX; }
+  function onTouchEnd(e) {
+    if (touchStartX.current === null) return;
+    const dx = e.changedTouches[0].clientX - touchStartX.current;
+    if (dx < -44) next();
+    else if (dx > 44) prev();
+    touchStartX.current = null;
+  }
+
+  return (
+    <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+      {/* Tab strip */}
+      <div style={{ display: "flex", borderBottom: "1px solid var(--border)", overflowX: "auto", scrollbarWidth: "none" }}>
+        {sections.map((s, i) => (
+          <button
+            key={s.key}
+            onClick={() => setIdx(i)}
+            style={{
+              flex: "0 0 auto",
+              padding: "10px 14px",
+              fontSize: 11, fontWeight: 600,
+              fontFamily: "'IBM Plex Mono', monospace",
+              letterSpacing: ".06em",
+              textTransform: "uppercase",
+              border: "none",
+              borderBottom: i === idx ? `2px solid ${s.color}` : "2px solid transparent",
+              background: "transparent",
+              color: i === idx ? s.color : "var(--muted)",
+              cursor: "pointer",
+              whiteSpace: "nowrap",
+              transition: "all .15s",
+            }}
+          >
+            {s.icon} {s.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Content panel */}
+      <div
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
+        style={{ padding: "22px 20px", minHeight: 160 }}
+        aria-live="polite"
+        aria-label={sec.label}
+      >
+        {sec.content}
+      </div>
+
+      {/* Swipe nav row */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px 14px" }}>
+        <button
+          onClick={prev} disabled={idx === 0}
+          aria-label="Previous section"
+          style={{ background: "none", border: "none", cursor: idx === 0 ? "default" : "pointer", opacity: idx === 0 ? 0.25 : 0.6, fontSize: 18, padding: "4px 8px", minHeight: 36 }}
+        >‹</button>
+        <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: "var(--muted)", letterSpacing: ".1em" }}>
+          {idx + 1} / {total}  ·  SWIPE OR TAP
+        </span>
+        <button
+          onClick={next} disabled={idx === total - 1}
+          aria-label="Next section"
+          style={{ background: "none", border: "none", cursor: idx === total - 1 ? "default" : "pointer", opacity: idx === total - 1 ? 0.25 : 0.6, fontSize: 18, padding: "4px 8px", minHeight: 36 }}
+        >›</button>
+      </div>
+    </div>
+  );
+}
+
 // ─── Filter Carousel ──────────────────────────────────────────────────────────
 function FilterCarousel({ filterScores, t }) {
   const [idx, setIdx] = useState(0);
@@ -318,35 +454,14 @@ Respond ONLY with valid JSON (no markdown) in exactly this shape:
               <p className="threshold-note">{t.threshold}: {profile.threshold} — {opp.overall_score >= profile.threshold ? t.aboveThreshold : t.belowThreshold}</p>
             </div>
           </div>
-          {opp.recommendation_rationale && (
-            <div className="narrative-box" role="note"><strong>{t.recRationale}</strong>{opp.recommendation_rationale}</div>
-          )}
-          {opp.honest_fit_summary && (
-            <div className="narrative-box" style={{ borderLeftColor: "var(--gold)" }} role="note"><strong>{t.honestFit}</strong>{opp.honest_fit_summary}</div>
-          )}
         </div>
 
-        <div className="fit-grid">
-          <section className="fit-box fit-strength" aria-labelledby="str-heading">
-            <h2 id="str-heading"><strong>{t.strengths}</strong></h2>
-            <ul>{(opp.strengths || []).map((s, i) => <li key={i}>{s}</li>)}</ul>
-          </section>
-          <section className="fit-box fit-gap" aria-labelledby="gap-heading">
-            <h2 id="gap-heading"><strong>{t.gaps}</strong></h2>
-            <ul>{(opp.gaps || []).map((g, i) => <li key={i}>{g}</li>)}</ul>
-          </section>
-        </div>
+        <SectionCarousel opp={opp} t={t} />
 
         <div className="card">
           <FilterCarousel filterScores={opp.filter_scores || []} t={t} />
         </div>
 
-        {opp.narrative_bridge && (
-          <section className="card" aria-labelledby="bridge-heading">
-            <h2 id="bridge-heading" className="card-title" style={{ fontSize: 16 }}>{t.narrativeBridge}</h2>
-            <p className="card-subtitle" style={{ marginBottom: 0 }}>{opp.narrative_bridge}</p>
-          </section>
-        )}
 
         {/* ── Career Coaching (Vantage) ───────────────────────────────────── */}
         <section className="card" aria-labelledby="coaching-heading">
