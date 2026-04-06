@@ -5,9 +5,12 @@
 export const API_BASE = "https://celebrated-gelato-56d525.netlify.app";
 
 export const ENDPOINTS = {
-  anthropic: `${API_BASE}/.netlify/functions/anthropic`,
-  appleAuth: `${API_BASE}/.netlify/functions/apple-auth`,
-  supabase:  `${API_BASE}/.netlify/functions/supabase`,
-  checkout:  `${API_BASE}/.netlify/functions/create-checkout-session`,
-  privacy:   `${API_BASE}/privacy`,
+  anthropic:    `${API_BASE}/.netlify/functions/anthropic`,
+  appleAuth:    `${API_BASE}/.netlify/functions/apple-auth`,
+  supabase:     `${API_BASE}/.netlify/functions/supabase`,
+  checkout:     `${API_BASE}/.netlify/functions/create-checkout-session`,
+  appleIap:     `${API_BASE}/.netlify/functions/verify-apple-iap`,
+  parseResume:  `${API_BASE}/.netlify/functions/parse-resume`,
+  salaryLookup: `${API_BASE}/.netlify/functions/salary-lookup`,
+  privacy:      `${API_BASE}/privacy`,
 };

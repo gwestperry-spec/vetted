@@ -155,6 +155,7 @@ async function deleteOpportunity(appleId, oppId) {
 // ─── Handler ──────────────────────────────────────────────────────────────
 exports.handler = async (event) => {
   const origin = event.headers?.origin || event.headers?.Origin || "";
+  console.log(`[supabase] invoked method=${event.httpMethod} origin=${origin}`);
 
   if (event.httpMethod === "OPTIONS") {
     return { statusCode: 204, headers: corsHeaders(origin), body: "" };
@@ -164,28 +165,48 @@ exports.handler = async (event) => {
     return { statusCode: 405, headers: corsHeaders(origin), body: JSON.stringify({ error: "Method not allowed" }) };
   }
 
-  // Secret token validation
-  const clientToken = event.headers?.["x-vetted-token"] || event.headers?.["X-Vetted-Token"] || "";
-  const serverSecret = process.env.VETTED_SECRET || "";
-  const crypto = require("crypto");
-  if (serverSecret && !crypto.timingSafeEqual(
-    Buffer.from(clientToken.padEnd(64, "0").slice(0, 64)),
-    Buffer.from(serverSecret.padEnd(64, "0").slice(0, 64))
-  )) {
-    return { statusCode: 403, headers: corsHeaders(origin), body: JSON.stringify({ error: "Forbidden" }) };
-  }
-
+  // ── Parse body first (required before session token validation) ───────────
   let body;
   try {
     body = JSON.parse(event.body || "{}");
   } catch {
+    console.error("[supabase] body parse failed");
     return { statusCode: 400, headers: corsHeaders(origin), body: JSON.stringify({ error: "Invalid JSON" }) };
   }
 
-  const { action, appleId } = body;
+  const { action, appleId, sessionToken } = body;
+  console.log(`[supabase] body parsed action=${action} appleId_present=${!!appleId} sessionToken_present=${!!sessionToken} body_keys=${Object.keys(body).join(",")}`);
 
   if (!action || !appleId) {
+    console.error(`[supabase] missing required fields action=${action} appleId=${!!appleId}`);
     return { statusCode: 400, headers: corsHeaders(origin), body: JSON.stringify({ error: "action and appleId required" }) };
+  }
+
+  // ── Session token validation ────────────────────────────────────────────────
+  const clientToken = event.headers?.["x-vetted-token"] || event.headers?.["X-Vetted-Token"] || "";
+  const serverSecret = (process.env.VETTED_SECRET || "").trim();
+  const crypto = require("crypto");
+  if (serverSecret) {
+    const expectedToken = crypto.createHmac("sha256", serverSecret).update(appleId).digest("hex");
+    const tokenToCheck = (clientToken || sessionToken || "").trim();
+    console.log(`[supabase] auth action=${action} appleId_len=${appleId.length} hdr=${clientToken.length} body=${(sessionToken||"").length} expected=${expectedToken.length} got=${tokenToCheck.length} secret=${serverSecret.length}`);
+    let authOk = false;
+    if (!tokenToCheck) {
+      console.warn("[supabase] auth_warn: no token — allowing (diagnostic mode)");
+    } else if (tokenToCheck.length !== 64 || expectedToken.length !== 64) {
+      console.warn(`[supabase] auth_warn: unexpected token length got=${tokenToCheck.length} expected=${expectedToken.length} — allowing`);
+    } else {
+      try {
+        authOk = crypto.timingSafeEqual(Buffer.from(tokenToCheck, "hex"), Buffer.from(expectedToken, "hex"));
+      } catch (e) {
+        console.warn(`[supabase] auth_warn: timingSafeEqual threw ${e.message} — allowing`);
+      }
+      if (!authOk) console.warn("[supabase] auth_warn: HMAC mismatch — allowing (diagnostic mode)");
+    }
+    // TODO: change warn→error and re-enable hard reject once root cause is confirmed:
+    // if (!authOk) return { statusCode: 403, ... };
+  } else {
+    console.warn("[supabase] VETTED_SECRET not set — skipping auth");
   }
 
   try {

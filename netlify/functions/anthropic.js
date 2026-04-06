@@ -239,16 +239,9 @@ exports.handler = async function (event) {
     return { statusCode: 403, headers: corsHeaders(origin), body: JSON.stringify({ error: "Forbidden" }) };
   }
 
-  // ── Secret token validation ────────────────────────────────────────────
-  const clientToken = event.headers?.["x-vetted-token"] || event.headers?.["X-Vetted-Token"] || "";
+  // ── Auth: shared-secret header check removed (was exposed in client bundle).
+  // Per-user session token validation (HMAC of appleId) below is the auth layer.
   const serverSecret = process.env.VETTED_SECRET || "";
-  if (serverSecret && !crypto.timingSafeEqual(
-    Buffer.from(clientToken.padEnd(64, "0").slice(0, 64)),
-    Buffer.from(serverSecret.padEnd(64, "0").slice(0, 64))
-  )) {
-    console.warn("Blocked request with invalid secret token");
-    return { statusCode: 403, headers: corsHeaders(origin), body: JSON.stringify({ error: "Forbidden" }) };
-  }
 
   // ── IP rate limiting ───────────────────────────────────────────────────
   const ip =

@@ -79,13 +79,25 @@ async function verifyAppleToken(identityToken) {
   return { sub, email, email_verified };
 }
 
+// ─── Allowed origins (mirrors other functions — no wildcard on auth endpoint) ─
+const ALLOWED_ORIGINS = [
+  "https://celebrated-gelato-56d525.netlify.app",
+  "https://tryvettedai.com",
+  "capacitor://localhost",
+  "http://localhost:5173",
+  "http://localhost:3000",
+];
+
 // ─── Handler ──────────────────────────────────────────────────────────────
 exports.handler = async (event) => {
+  const origin = event.headers?.origin || event.headers?.Origin || "";
+  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
   const headers = {
-    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Origin": allowedOrigin,
     "Access-Control-Allow-Headers": "Content-Type",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
     "Content-Type": "application/json",
+    "Vary": "Origin",
   };
 
   if (event.httpMethod === "OPTIONS") {
@@ -114,7 +126,7 @@ exports.handler = async (event) => {
     // the HMAC from the client-provided appleId and compares with timingSafeEqual,
     // so a client cannot forge a token for a different user's appleId.
     const sessionToken = crypto
-      .createHmac("sha256", process.env.VETTED_SECRET || "")
+      .createHmac("sha256", (process.env.VETTED_SECRET || "").trim())
       .update(userInfo.sub)
       .digest("hex");
 

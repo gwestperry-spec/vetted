@@ -5,6 +5,7 @@ import { handleError } from "../handleError.js";
 const TIERS = [
   {
     id: "signal",
+    iapId: "com.vettedai.app.signal.monthly",
     name: "Signal",
     price: "$24.99",
     period: "/ month",
@@ -22,6 +23,7 @@ const TIERS = [
   },
   {
     id: "vantage",
+    iapId: "com.vettedai.app.vantage.monthly",
     name: "Vantage",
     price: "$49.99",
     period: "/ month",
@@ -42,6 +44,7 @@ const TIERS = [
 const LIFETIME_TIERS = [
   {
     id: "signal_lifetime",
+    iapId: "com.vettedai.app.signal.lifetime",
     name: "Signal Founding Member",
     price: "$399",
     tagline: "Everything in Signal — pay once, use forever",
@@ -50,6 +53,7 @@ const LIFETIME_TIERS = [
   },
   {
     id: "vantage_lifetime",
+    iapId: "com.vettedai.app.vantage.lifetime",
     name: "Vantage Founding Member",
     price: "$799",
     tagline: "Everything in Vantage — pay once, use forever",
@@ -58,11 +62,71 @@ const LIFETIME_TIERS = [
   },
 ];
 
+const isNativeApp = window.Capacitor?.isNativePlatform?.() === true;
+
 export default function PaywallModal({ authUser, onClose }) {
-  const [loading, setLoading] = useState(null); // "signal" | "vantage" | null
+  const [loading, setLoading] = useState(null);
   const [error, setError] = useState("");
 
-  async function handleUpgrade(tierId) {
+  // ── iOS — StoreKit 2 via native plugin ────────────────────────────────────
+  async function handleIAPUpgrade(tier) {
+    if (loading) return;
+    setLoading(tier.id);
+    setError("");
+
+    try {
+      const plugin = window.Capacitor?.Plugins?.StoreKitPlugin;
+      if (!plugin) throw new Error("StoreKit not available");
+
+      // Initiate native purchase sheet
+      const result = await plugin.purchase({ productId: tier.iapId });
+
+      if (!result?.jws) throw new Error("No transaction returned from StoreKit");
+
+      // Validate server-side and update Supabase
+      const res = await fetch(ENDPOINTS.appleIap, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          jws: result.jws,
+          appleId: authUser?.id,
+          sessionToken: authUser?.sessionToken || "",
+        }),
+      });
+
+      if (res.status === 403) {
+        const data = await res.json().catch(() => ({}));
+        if (data.error === "Invalid session" || data.error === "Authentication required") {
+          setLoading(null);
+          onClose("session_expired");
+          return;
+        }
+      }
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || `Validation failed (${res.status})`);
+      }
+
+      const { tier: confirmedTier } = await res.json();
+      setLoading(null);
+      // Signal success with the confirmed tier — App.jsx applies it immediately,
+      // no polling needed (IAP validation is synchronous).
+      onClose("iap_success", confirmedTier);
+
+    } catch (err) {
+      if (err?.message === "cancelled" || err?.message === "pending") {
+        setLoading(null);
+        return;
+      }
+      handleError(err, "iap_upgrade");
+      setError(err?.message || "Purchase failed. Please try again.");
+      setLoading(null);
+    }
+  }
+
+  // ── Web — Stripe Checkout ─────────────────────────────────────────────────
+  async function handleStripeUpgrade(tierId) {
     if (loading) return;
     setLoading(tierId);
     setError("");
@@ -75,14 +139,13 @@ export default function PaywallModal({ authUser, onClose }) {
           tier: tierId,
           appleId: authUser?.id,
           sessionToken: authUser?.sessionToken || "",
-          isNative: window.Capacitor?.isNativePlatform?.() === true,
+          isNative: false,
         }),
       });
 
       if (res.status === 403) {
         const data = await res.json().catch(() => ({}));
         if (data.error === "Invalid session" || data.error === "Authentication required") {
-          // Session expired — close modal so App can prompt re-sign-in
           setLoading(null);
           onClose("session_expired");
           return;
@@ -96,23 +159,22 @@ export default function PaywallModal({ authUser, onClose }) {
       const { url } = await res.json();
       if (!url) throw new Error("No checkout URL returned");
 
-      // Redirect to Stripe Checkout.
-      // On iOS Capacitor (native app): open in system Safari so WKWebView state is preserved.
-      // On web: navigate the current tab — Stripe will redirect back to success_url.
-      const isNativeApp = window.Capacitor?.isNativePlatform?.() === true;
-      if (isNativeApp) {
-        window.open(url, "_blank");
-        setLoading(null);
-        onClose("pending");
-      } else {
-        // Web: navigate in-place. The success_url brings the user back to the app
-        // with ?upgrade=success, which App.jsx detects to refresh tier state.
-        window.location.href = url;
-      }
+      // Web: navigate in-place; success_url returns with ?upgrade=success
+      window.location.href = url;
+
     } catch (err) {
-      handleError(err, "paywall_upgrade");
+      handleError(err, "stripe_upgrade");
       setError(err?.message || "Could not start checkout. Please try again.");
       setLoading(null);
+    }
+  }
+
+  // Route to the correct payment path based on platform
+  function handleUpgrade(tier) {
+    if (isNativeApp) {
+      handleIAPUpgrade(tier);
+    } else {
+      handleStripeUpgrade(tier.id);
     }
   }
 
@@ -195,7 +257,7 @@ export default function PaywallModal({ authUser, onClose }) {
               </ul>
               <button
                 className="btn btn-primary"
-                onClick={() => handleUpgrade(tier.id)}
+                onClick={() => handleUpgrade(tier)}
                 disabled={!!loading}
                 aria-busy={loading === tier.id}
                 style={{ width: "100%", background: tier.accent, fontSize: 13, minHeight: 42 }}
@@ -235,7 +297,7 @@ export default function PaywallModal({ authUser, onClose }) {
                 </div>
                 <button
                   className="btn btn-secondary"
-                  onClick={() => handleUpgrade(tier.id)}
+                  onClick={() => handleUpgrade(tier)}
                   disabled={!!loading}
                   aria-busy={loading === tier.id}
                   style={{ width: "100%", fontSize: 12, minHeight: 38, borderColor: tier.accent, color: tier.accent }}
@@ -256,7 +318,9 @@ export default function PaywallModal({ authUser, onClose }) {
 
         {/* Footer note */}
         <p style={{ textAlign: "center", fontSize: 11, color: "var(--muted)", lineHeight: 1.6 }}>
-          Payment processed securely by Stripe. Subscriptions can be cancelled anytime.
+          {isNativeApp
+            ? "Subscriptions managed through your Apple ID. Cancel anytime in Settings."
+            : "Payment processed securely by Stripe. Subscriptions can be cancelled anytime."}
         </p>
       </div>
     </div>

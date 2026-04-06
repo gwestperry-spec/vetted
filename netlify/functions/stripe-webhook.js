@@ -73,7 +73,17 @@ function supabaseRequest(method, path, body, preferHeader = "return=representati
 // Manual implementation of Stripe's constructEvent verification algorithm.
 // https://stripe.com/docs/webhooks/signatures
 function verifyStripeSignature(rawBody, sigHeader, secret) {
-  if (!secret) { console.log("[stripe_webhook] No secret configured — skipping verification"); return true; }
+  // Never skip verification in production. If the env var is not set, reject all
+  // requests — an unverified webhook is worse than a broken one.
+  if (!secret) {
+    const isLocal = process.env.NETLIFY_DEV === "true" || process.env.NODE_ENV === "development";
+    if (isLocal) {
+      console.warn("[stripe_webhook] No secret — skipping verification (local dev only)");
+      return true;
+    }
+    console.error("[stripe_webhook] STRIPE_WEBHOOK_SECRET not set in production — rejecting");
+    return false;
+  }
   if (!sigHeader) { console.error("[stripe_webhook] sig_fail: no Stripe-Signature header"); return false; }
 
   const parts = {};
