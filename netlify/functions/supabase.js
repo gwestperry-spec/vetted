@@ -190,21 +190,25 @@ exports.handler = async (event) => {
     const expectedToken = crypto.createHmac("sha256", serverSecret).update(appleId).digest("hex");
     const tokenToCheck = (clientToken || sessionToken || "").trim();
     console.log(`[supabase] auth action=${action} appleId_len=${appleId.length} hdr=${clientToken.length} body=${(sessionToken||"").length} expected=${expectedToken.length} got=${tokenToCheck.length} secret=${serverSecret.length}`);
-    let authOk = false;
     if (!tokenToCheck) {
-      console.warn("[supabase] auth_warn: no token — allowing (diagnostic mode)");
-    } else if (tokenToCheck.length !== 64 || expectedToken.length !== 64) {
-      console.warn(`[supabase] auth_warn: unexpected token length got=${tokenToCheck.length} expected=${expectedToken.length} — allowing`);
-    } else {
-      try {
-        authOk = crypto.timingSafeEqual(Buffer.from(tokenToCheck, "hex"), Buffer.from(expectedToken, "hex"));
-      } catch (e) {
-        console.warn(`[supabase] auth_warn: timingSafeEqual threw ${e.message} — allowing`);
-      }
-      if (!authOk) console.warn("[supabase] auth_warn: HMAC mismatch — allowing (diagnostic mode)");
+      console.error("[supabase] auth_fail: no token");
+      return { statusCode: 403, headers: corsHeaders(origin), body: JSON.stringify({ error: "Forbidden" }) };
     }
-    // TODO: change warn→error and re-enable hard reject once root cause is confirmed:
-    // if (!authOk) return { statusCode: 403, ... };
+    if (tokenToCheck.length !== 64 || expectedToken.length !== 64) {
+      console.error(`[supabase] auth_fail: bad token length got=${tokenToCheck.length}`);
+      return { statusCode: 403, headers: corsHeaders(origin), body: JSON.stringify({ error: "Forbidden" }) };
+    }
+    let authOk = false;
+    try {
+      authOk = crypto.timingSafeEqual(Buffer.from(tokenToCheck, "hex"), Buffer.from(expectedToken, "hex"));
+    } catch (e) {
+      console.error(`[supabase] auth_fail: ${e.message}`);
+      return { statusCode: 403, headers: corsHeaders(origin), body: JSON.stringify({ error: "Forbidden" }) };
+    }
+    if (!authOk) {
+      console.error("[supabase] auth_fail: HMAC mismatch");
+      return { statusCode: 403, headers: corsHeaders(origin), body: JSON.stringify({ error: "Forbidden" }) };
+    }
   } else {
     console.warn("[supabase] VETTED_SECRET not set — skipping auth");
   }
