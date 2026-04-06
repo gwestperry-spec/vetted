@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { exportOpportunityPdf } from "../utils/exportPdf.js";
 import { ENDPOINTS } from "../config.js";
 import { handleError } from "../handleError.js";
@@ -52,6 +52,140 @@ const LANG_NAMES = {
   en: "English", es: "Spanish", zh: "Chinese (Simplified)",
   fr: "French",  ar: "Arabic",  vi: "Vietnamese",
 };
+
+// ─── Filter Carousel ──────────────────────────────────────────────────────────
+function FilterCarousel({ filterScores, t }) {
+  const [idx, setIdx] = useState(0);
+  const touchStartX = useRef(null);
+  const total = filterScores.length;
+  if (!total) return null;
+
+  const fs = filterScores[idx];
+  const filled = Math.round(fs.score);
+  const col = fs.score >= 4 ? "var(--success)" : fs.score >= 3 ? "var(--gold)" : "var(--accent)";
+
+  function prev() { setIdx(i => Math.max(0, i - 1)); }
+  function next() { setIdx(i => Math.min(total - 1, i + 1)); }
+
+  function onTouchStart(e) { touchStartX.current = e.touches[0].clientX; }
+  function onTouchEnd(e) {
+    if (touchStartX.current === null) return;
+    const dx = e.changedTouches[0].clientX - touchStartX.current;
+    if (dx < -44) next();
+    else if (dx > 44) prev();
+    touchStartX.current = null;
+  }
+
+  return (
+    <section aria-labelledby="filter-bd-heading">
+      {/* Header row */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+        <h2 id="filter-bd-heading" className="section-label" style={{ marginBottom: 0 }}>{t.filterBreakdown}</h2>
+        <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: "var(--muted)", letterSpacing: ".08em" }}>
+          {idx + 1} / {total}
+        </span>
+      </div>
+
+      {/* Card */}
+      <div
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
+        style={{
+          background: "#fff",
+          border: "1.5px solid var(--border)",
+          borderRadius: "var(--r)",
+          padding: "24px 22px",
+          userSelect: "none",
+          minHeight: 200,
+          position: "relative",
+        }}
+      >
+        {/* Filter name + weight */}
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8, marginBottom: 18 }}>
+          <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 700, lineHeight: 1.3, flex: 1 }}>
+            {fs.filter_name}
+          </h3>
+          {fs.weight && fs.weight !== 1.0 && (
+            <span style={{
+              fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, fontWeight: 700,
+              letterSpacing: ".1em", textTransform: "uppercase",
+              background: "var(--cream)", color: "var(--muted)",
+              padding: "3px 8px", borderRadius: 20, flexShrink: 0, marginTop: 3,
+            }}>
+              {WEIGHT_OPTIONS.find(w => w.value === fs.weight)?.label || `${fs.weight}×`}
+            </span>
+          )}
+        </div>
+
+        {/* Score */}
+        <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 14 }}>
+          <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 38, fontWeight: 700, color: col, lineHeight: 1 }}>
+            {fs.score}
+          </span>
+          <div>
+            <div style={{ display: "flex", gap: 5, marginBottom: 6 }} aria-hidden="true">
+              {[1,2,3,4,5].map(n => (
+                <div key={n} style={{
+                  width: 10, height: 10, borderRadius: "50%",
+                  background: n <= filled
+                    ? (fs.score >= 4 ? "var(--gold)" : col)
+                    : "var(--border)",
+                  transition: "background .2s",
+                }} />
+              ))}
+            </div>
+            <span style={{ fontSize: 11, color: "var(--muted)", fontFamily: "'IBM Plex Mono', monospace" }}>out of 5</span>
+          </div>
+        </div>
+
+        {/* Bar */}
+        <div style={{ height: 6, background: "var(--border)", borderRadius: 3, marginBottom: 18, overflow: "hidden" }}>
+          <div style={{ height: "100%", width: `${(fs.score / 5) * 100}%`, background: col, borderRadius: 3, transition: "width .3s" }} />
+        </div>
+
+        {/* Rationale */}
+        <p style={{ fontSize: 13, lineHeight: 1.75, color: "var(--ink)", margin: 0 }}>
+          {fs.rationale}
+        </p>
+      </div>
+
+      {/* Navigation */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 14 }}>
+        <button
+          onClick={prev} disabled={idx === 0}
+          aria-label="Previous filter"
+          style={{ background: "none", border: "1.5px solid var(--border)", borderRadius: "var(--r)", padding: "6px 14px", cursor: idx === 0 ? "default" : "pointer", opacity: idx === 0 ? 0.3 : 1, fontSize: 16, minWidth: 40, minHeight: 36 }}
+        >‹</button>
+
+        {/* Dots */}
+        <div style={{ display: "flex", gap: 6, alignItems: "center" }} role="tablist" aria-label="Filter navigation">
+          {filterScores.map((_, i) => (
+            <button
+              key={i}
+              role="tab"
+              aria-selected={i === idx}
+              aria-label={`Filter ${i + 1}`}
+              onClick={() => setIdx(i)}
+              style={{
+                width: i === idx ? 20 : 7, height: 7,
+                borderRadius: 4,
+                background: i === idx ? "var(--accent)" : "var(--border)",
+                border: "none", cursor: "pointer", padding: 0,
+                transition: "all .2s",
+              }}
+            />
+          ))}
+        </div>
+
+        <button
+          onClick={next} disabled={idx === total - 1}
+          aria-label="Next filter"
+          style={{ background: "none", border: "1.5px solid var(--border)", borderRadius: "var(--r)", padding: "6px 14px", cursor: idx === total - 1 ? "default" : "pointer", opacity: idx === total - 1 ? 0.3 : 1, fontSize: 16, minWidth: 40, minHeight: 36 }}
+        >›</button>
+      </div>
+    </section>
+  );
+}
 
 export default function ScoreResult({ t, lang, opp, profile, onBack, onRemove, userTier, authUser, onUpgrade }) {
   if (!opp) return null;
@@ -203,33 +337,9 @@ Respond ONLY with valid JSON (no markdown) in exactly this shape:
           </section>
         </div>
 
-        <section className="card" aria-labelledby="filter-bd-heading">
-          <h2 id="filter-bd-heading" className="section-label">{t.filterBreakdown}</h2>
-          {(opp.filter_scores || []).map(fs => {
-            const filled = Math.round(fs.score);
-            const col = fs.score >= 4 ? "var(--success)" : fs.score >= 3 ? "var(--gold)" : "var(--accent)";
-            return (
-              <div key={fs.filter_id} className="filter-row">
-                <div className="filter-header">
-                  <span className="filter-name" id={`fn-${fs.filter_id}`}>{fs.filter_name}</span>
-                  <div className="filter-score-dots" aria-hidden="true">
-                    {[1,2,3,4,5].map(n => <div key={n} className={`dot ${n <= filled ? (fs.score >= 4 ? "gold" : "filled") : ""}`} />)}
-                  </div>
-                  <span className="filter-score-num" style={{ color: col }} aria-label={`${t.scoreLabel}: ${fs.score} ${t.outOf}`}>{fs.score}/5</span>
-                  {fs.weight && fs.weight !== 1.0 && (
-                    <span style={{ fontSize: 10, color: "var(--muted)", fontFamily: "monospace" }}>
-                      {WEIGHT_OPTIONS.find(w => w.value === fs.weight)?.label || `${fs.weight}×`}
-                    </span>
-                  )}
-                </div>
-                <div className="score-bar-wrap" role="progressbar" aria-valuenow={fs.score} aria-valuemin={1} aria-valuemax={5} aria-labelledby={`fn-${fs.filter_id}`}>
-                  <div className="score-bar-fill" style={{ width: `${(fs.score / 5) * 100}%`, background: col }} />
-                </div>
-                <p className="filter-rationale">{fs.rationale}</p>
-              </div>
-            );
-          })}
-        </section>
+        <div className="card">
+          <FilterCarousel filterScores={opp.filter_scores || []} t={t} />
+        </div>
 
         {opp.narrative_bridge && (
           <section className="card" aria-labelledby="bridge-heading">
