@@ -156,12 +156,15 @@ exports.handler = async (event) => {
       "subscription_data[metadata][tier]": tier,
     };
 
+    console.log(`[create_checkout] tier=${tier} priceId=${priceId} appleId=${appleId.slice(0,8)}…`);
     const result = await stripeRequest("POST", "/checkout/sessions", params);
+    console.log(`[create_checkout] Stripe status=${result.status} error=${JSON.stringify(result.data?.error ?? null)}`);
 
     if (result.status !== 200) {
-      const err = new Error(`Stripe error ${result.status}: ${JSON.stringify(result.data?.error)}`);
+      const errMsg = result.data?.error?.message || JSON.stringify(result.data?.error) || "unknown";
+      const err = new Error(`Stripe error ${result.status}: ${errMsg}`);
       reportToSentry(err, "create_checkout_session");
-      return { statusCode: 502, headers, body: JSON.stringify({ error: "Failed to create checkout session" }) };
+      return { statusCode: 502, headers, body: JSON.stringify({ error: errMsg }) };
     }
 
     return {

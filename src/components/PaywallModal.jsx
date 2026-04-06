@@ -91,7 +91,7 @@ export default function PaywallModal({ authUser, onClose }) {
       }
     } catch (err) {
       handleError(err, "paywall_upgrade");
-      setError("Could not start checkout. Please try again.");
+      setError(err?.message || "Could not start checkout. Please try again.");
       setLoading(null);
     }
   }
