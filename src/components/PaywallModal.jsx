@@ -64,8 +64,13 @@ const LIFETIME_TIERS = [
 
 const isNativeApp = window.Capacitor?.isNativePlatform?.() === true;
 
+// Tier rank — higher index = higher tier
+const TIER_RANK = { free: 0, signal: 1, signal_lifetime: 2, vantage: 3, vantage_lifetime: 4 };
+
 export default function PaywallModal({ authUser, onClose }) {
   const [loading, setLoading] = useState(null);
+  const [restoring, setRestoring] = useState(false);
+  const [restoreMsg, setRestoreMsg] = useState("");
   const [error, setError] = useState("");
 
   // ── iOS — StoreKit 2 via native plugin ────────────────────────────────────
@@ -166,6 +171,61 @@ export default function PaywallModal({ authUser, onClose }) {
       handleError(err, "stripe_upgrade");
       setError(err?.message || "Could not start checkout. Please try again.");
       setLoading(null);
+    }
+  }
+
+  // ── Restore Purchases (iOS only — Apple requirement) ─────────────────────
+  async function handleRestorePurchases() {
+    if (restoring || loading) return;
+    setRestoring(true);
+    setRestoreMsg("");
+    setError("");
+
+    try {
+      const plugin = window.Capacitor?.Plugins?.StoreKitPlugin;
+      if (!plugin) throw new Error("StoreKit not available");
+
+      const { transactions } = await plugin.restorePurchases();
+
+      if (!transactions?.length) {
+        setRestoreMsg("No previous purchases found.");
+        setRestoring(false);
+        return;
+      }
+
+      // Validate each entitlement server-side; apply the highest tier found
+      let bestTier = null;
+      for (const tx of transactions) {
+        try {
+          const res = await fetch(ENDPOINTS.appleIap, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              jws: tx.jws,
+              appleId: authUser?.id,
+              sessionToken: authUser?.sessionToken || "",
+            }),
+          });
+          if (res.ok) {
+            const { tier } = await res.json();
+            if (tier && (TIER_RANK[tier] ?? 0) > (TIER_RANK[bestTier] ?? 0)) {
+              bestTier = tier;
+            }
+          }
+        } catch { /* skip failed validation, try next */ }
+      }
+
+      if (bestTier) {
+        setRestoring(false);
+        onClose("iap_success", bestTier);
+      } else {
+        setRestoreMsg("Purchases found but could not be verified. Please contact support.");
+        setRestoring(false);
+      }
+    } catch (err) {
+      handleError(err, "restore_purchases");
+      setError(err?.message || "Restore failed. Please try again.");
+      setRestoring(false);
     }
   }
 
@@ -316,12 +376,35 @@ export default function PaywallModal({ authUser, onClose }) {
           <div role="alert" className="alert alert-error" style={{ marginBottom: 12 }}>{error}</div>
         )}
 
-        {/* Footer note */}
-        <p style={{ textAlign: "center", fontSize: 11, color: "var(--muted)", lineHeight: 1.6 }}>
-          {isNativeApp
-            ? "Subscriptions managed through your Apple ID. Cancel anytime in Settings."
-            : "Payment processed securely by Stripe. Subscriptions can be cancelled anytime."}
-        </p>
+        {/* Restore message */}
+        {restoreMsg && (
+          <p role="status" style={{ textAlign: "center", fontSize: 12, color: "var(--muted)", marginBottom: 10 }}>
+            {restoreMsg}
+          </p>
+        )}
+
+        {/* Footer */}
+        <div style={{ textAlign: "center" }}>
+          <p style={{ fontSize: 11, color: "var(--muted)", lineHeight: 1.6, marginBottom: isNativeApp ? 10 : 0 }}>
+            {isNativeApp
+              ? "Subscriptions managed through your Apple ID. Cancel anytime in Settings."
+              : "Payment processed securely by Stripe. Subscriptions can be cancelled anytime."}
+          </p>
+          {isNativeApp && (
+            <button
+              onClick={handleRestorePurchases}
+              disabled={restoring || !!loading}
+              style={{
+                background: "none", border: "none", cursor: "pointer",
+                color: "var(--muted)", fontSize: 12,
+                textDecoration: "underline", fontFamily: "inherit",
+                padding: "4px 8px", minHeight: 36,
+              }}
+            >
+              {restoring ? "Restoring…" : "Restore Purchases"}
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
