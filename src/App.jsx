@@ -1700,7 +1700,13 @@ export default function App() {
                   gaps: o.gaps || [],
                 })));
               }
-              if (saved?.profile) setStep("dashboard");
+              if (saved?.profile) {
+                setStep("dashboard");
+              } else {
+                // Auth succeeded but no Supabase profile yet — go to onboarding
+                // (don't leave user stuck at the region screen)
+                setStep("onboard");
+              }
             }
           }
         }
