@@ -72,7 +72,7 @@ async function verifyAppleToken(identityToken) {
 
   const validAudiences = [
     process.env.APPLE_CLIENT_ID,
-    "com.vetted.app",
+    "com.vettedai.app",
   ];
   if (!validAudiences.includes(aud)) throw new Error(`Invalid audience: ${aud}`);
 
