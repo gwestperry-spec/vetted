@@ -43,7 +43,7 @@ const LIFETIME_TIERS = [
   {
     id: "signal_lifetime",
     name: "Signal Founding Member",
-    price: "SIGNAL_LIFETIME_PRICE",
+    price: "$399",
     tagline: "Everything in Signal — pay once, use forever",
     cta: "Get Signal Lifetime",
     accent: "var(--accent)",
@@ -51,7 +51,7 @@ const LIFETIME_TIERS = [
   {
     id: "vantage_lifetime",
     name: "Vantage Founding Member",
-    price: "VANTAGE_LIFETIME_PRICE",
+    price: "$799",
     tagline: "Everything in Vantage — pay once, use forever",
     cta: "Get Vantage Lifetime",
     accent: "var(--gold)",
