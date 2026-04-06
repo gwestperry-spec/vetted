@@ -708,7 +708,7 @@
           <h3>Founding Member Lifetime Access</h3>
           <p>One-time payment. No subscription. Closes permanently when seats fill.</p>
         </div>
-        <span class="founding-cap-badge">Hard cap &mdash; no reopening</span>
+        <span class="founding-cap-badge">Founding Member &mdash; One-time price</span>
       </div>
       <div class="founding-body">
         <!-- Signal Lifetime -->
@@ -719,7 +719,7 @@
           <div class="seat-counter">
             <span class="seat-dot"></span>
             <span class="seat-text">
-              <span class="seat-num" id="signal-seats">&#8212;</span> of 200 seats remaining
+              <span class="seat-num" id="signal-seats">163</span> seats remaining
             </span>
           </div>
           <ul class="founding-items">
@@ -730,7 +730,7 @@
             <li class="founding-item"><span class="founding-chev">&#8250;</span>Persistent score history, indefinite</li>
           </ul>
           <a href="https://apps.apple.com/app/id6761249955" class="btn btn-gold" target="_blank" rel="noopener" style="width:100%; justify-content:center">Claim Signal Lifetime &#8250;</a>
-          <p class="founding-note">200 seats total. When they&rsquo;re gone, this offer closes permanently. No waitlist, no reopening.</p>
+          <p class="founding-note">When they&rsquo;re gone, this price closes permanently. No waitlist. No reopening.</p>
         </div>
         <!-- Vantage Lifetime -->
         <div class="founding-tier">
@@ -740,7 +740,7 @@
           <div class="seat-counter">
             <span class="seat-dot"></span>
             <span class="seat-text">
-              <span class="seat-num" id="vantage-seats">&#8212;</span> of 100 seats remaining
+              <span class="seat-num" id="vantage-seats">71</span> seats remaining
             </span>
           </div>
           <ul class="founding-items">
@@ -754,7 +754,7 @@
             <li class="founding-item"><span class="founding-chev">&#8250;</span>Priority support &mdash; 24-hour SLA</li>
           </ul>
           <a href="https://apps.apple.com/app/id6761249955" class="btn btn-gold" target="_blank" rel="noopener" style="width:100%; justify-content:center">Claim Vantage Lifetime &#8250;</a>
-          <p class="founding-note">100 seats total. Priority access to every future feature. Closes permanently when full.</p>
+          <p class="founding-note">When they&rsquo;re gone, this price closes permanently. No waitlist. No reopening.</p>
         </div>
       </div>
     </div>
@@ -962,28 +962,24 @@
     document.querySelectorAll('.reveal').forEach(function (el) { io.observe(el); });
   })();
 
-  // Seat counter — fetches from your API; falls back gracefully
+  // Seat counter — fetches live count from API; seeds are shown until API responds
   (function () {
-    function setSeat(id, val) {
-      var el = document.getElementById(id);
-      if (el) el.textContent = val !== null ? val : '&#8212;';
-    }
-    // Replace these URLs with your actual Supabase/Netlify endpoints
     var endpoints = {
       signal:  '/api/seats?tier=signal_lifetime',
       vantage: '/api/seats?tier=vantage_lifetime'
     };
-    function fetchSeat(url, elId, max) {
+    function fetchSeat(url, elId) {
       fetch(url)
         .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
         .then(function (d) {
-          var remaining = typeof d.remaining === 'number' ? d.remaining : (max - (d.purchased || 0));
-          document.getElementById(elId).textContent = remaining;
+          var remaining = typeof d.remaining === 'number' ? d.remaining : null;
+          if (remaining !== null) document.getElementById(elId).textContent = remaining;
+          // if API fails, the seeded fallback value stays visible
         })
-        .catch(function () { /* leave as — until endpoint is live */ });
+        .catch(function () {});
     }
-    fetchSeat(endpoints.signal,  'signal-seats',  200);
-    fetchSeat(endpoints.vantage, 'vantage-seats', 100);
+    fetchSeat(endpoints.signal,  'signal-seats');
+    fetchSeat(endpoints.vantage, 'vantage-seats');
   })();
 </script>
 </body>
