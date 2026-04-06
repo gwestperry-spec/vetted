@@ -1047,7 +1047,7 @@ export default function App() {
 
   // Detect ?upgrade=success after returning from Stripe Checkout (web flow).
   // The webhook has already updated Supabase by the time the user lands here.
-  // We show a success banner and clear the URL param so it doesn't re-trigger.
+  // Web: detect ?upgrade=success after returning from Stripe Checkout.
   useEffect(() => {
     if (!authUser) return;
     const params = new URLSearchParams(window.location.search);
@@ -1057,6 +1057,23 @@ export default function App() {
       window.history.replaceState({}, "", window.location.pathname);
     }
   }, [authUser]);
+
+  // iOS native: listen for vetted://upgrade-success deep link from Safari.
+  // Capacitor fires the "appUrlOpen" event when Safari redirects to our custom scheme.
+  useEffect(() => {
+    if (!window.Capacitor?.isNativePlatform?.()) return;
+    function handleAppUrl(event) {
+      const url = event?.url || "";
+      if (url.startsWith("vetted://upgrade-success")) {
+        setShowPaywall(false);
+        setPendingTierCheck(true);
+      }
+    }
+    window.Capacitor?.Plugins?.App?.addListener?.("appUrlOpen", handleAppUrl);
+    return () => {
+      window.Capacitor?.Plugins?.App?.removeAllListeners?.("appUrlOpen");
+    };
+  }, []);
 
   // iOS native: after Stripe checkout opens in Safari, poll Supabase every 3s
   // until the webhook updates the tier (or 2 minutes elapse).

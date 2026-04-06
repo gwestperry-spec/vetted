@@ -56,6 +56,7 @@ export default function PaywallModal({ authUser, onClose }) {
           tier: tierId,
           appleId: authUser?.id,
           sessionToken: authUser?.sessionToken || "",
+          isNative: window.Capacitor?.isNativePlatform?.() === true,
         }),
       });
 

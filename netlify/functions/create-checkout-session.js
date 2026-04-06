@@ -105,7 +105,7 @@ exports.handler = async (event) => {
     return { statusCode: 400, headers, body: JSON.stringify({ error: "Invalid JSON" }) };
   }
 
-  const { tier, appleId, sessionToken } = body;
+  const { tier, appleId, sessionToken, isNative } = body;
 
   if (!tier || !appleId || !sessionToken) {
     return { statusCode: 400, headers, body: JSON.stringify({ error: "tier, appleId, and sessionToken are required" }) };
@@ -146,8 +146,10 @@ exports.handler = async (event) => {
       "mode": "subscription",
       "line_items[0][price]": priceId,
       "line_items[0][quantity]": "1",
-      "success_url": "https://tryvettedai.com?upgrade=success",
-      "cancel_url": "https://tryvettedai.com?upgrade=cancelled",
+      // Native iOS: use custom URL scheme so Safari auto-returns to the app.
+      // Web: redirect back to the site which the app detects via ?upgrade=success.
+      "success_url": isNative ? "vetted://upgrade-success" : "https://tryvettedai.com?upgrade=success",
+      "cancel_url": isNative ? "vetted://upgrade-cancelled" : "https://tryvettedai.com?upgrade=cancelled",
       // Store appleId + tier in session metadata so the webhook can identify the user
       "metadata[appleId]": appleId,
       "metadata[tier]": tier,
