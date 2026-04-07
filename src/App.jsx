@@ -1251,15 +1251,40 @@ function ScoringProgress({ phase }) {
 
 // ─── MarketPulseCard (Vantage #8) ────────────────────────────────────────────
 // Shows salary benchmark + Claude market intel for the user's current title.
-function MarketPulseCard({ t, profile, authUser, userTier }) {
-  const [data, setData]         = useState(null);  // { min, max, median, source, occupationTitle }
-  const [insights, setInsights] = useState("");    // Claude market brief
-  const [loading, setLoading]   = useState(false);
-  const [error, setError]       = useState("");
-  const [open, setOpen]         = useState(false);
+function MarketPulseCard({ t, profile, authUser, userTier, opportunities }) {
+  const profileTitle = profile.currentTitle || (profile.targetRoles?.[0]) || "";
+
+  const [data, setData]             = useState(null);  // { min, max, median, source, occupationTitle }
+  const [insights, setInsights]     = useState("");    // Claude market brief
+  const [loading, setLoading]       = useState(false);
+  const [error, setError]           = useState("");
+  const [open, setOpen]             = useState(false);
+  const [searchTitle, setSearchTitle] = useState(profileTitle);
+  const [customInput, setCustomInput] = useState("");
+  const [showCustom, setShowCustom]   = useState(false);
 
   const isVantage = userTier === "vantage" || userTier === "vantage_lifetime";
-  const titleToLookup = profile.currentTitle || (profile.targetRoles?.[0]) || "";
+
+  // Unique scored role titles from opportunities (deduplicated, non-empty)
+  const scoredTitles = Array.from(
+    new Set(
+      (opportunities || [])
+        .map(o => o.role_title || o.roleTitle || "")
+        .filter(Boolean)
+    )
+  );
+
+  // When a chip or custom title is selected, reset previous results
+  function selectTitle(title) {
+    if (title === searchTitle) return;
+    setSearchTitle(title);
+    setData(null);
+    setInsights("");
+    setError("");
+    setOpen(false);
+  }
+
+  const titleToLookup = searchTitle || profileTitle;
 
   async function fetchMarketPulse() {
     if (!titleToLookup) { setError(t.marketNoData); setOpen(true); return; }
@@ -1347,7 +1372,7 @@ Respond ONLY with valid JSON (no markdown):
             <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase", background: "var(--gold)", color: "#fff", padding: "2px 7px", borderRadius: 20 }}>Vantage</span>
           </div>
           <p style={{ fontSize: 12, color: "var(--muted)" }}>
-            {titleToLookup ? `${t.marketPulseSubtitle.replace("your title", `"${titleToLookup}"`)}` : t.marketPulseSubtitle}
+            {titleToLookup ? `Salary & market intel for "${titleToLookup}"` : t.marketPulseSubtitle}
           </p>
         </div>
         <button
@@ -1360,6 +1385,95 @@ Respond ONLY with valid JSON (no markdown):
             ? <><span className="spinner" style={{ width: 13, height: 13, borderWidth: 2 }} aria-hidden="true" /> {t.marketPulseLoading}</>
             : open && (data || error) ? "Hide" : t.getMarketPulse}
         </button>
+      </div>
+
+      {/* ── Role search toolbar ───────────────────────────────────────────── */}
+      <div style={{ marginTop: 14 }}>
+        {/* Chip strip: profile title + each scored role */}
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: scoredTitles.length > 0 || showCustom ? 10 : 0 }}>
+          {/* Profile title chip */}
+          {profileTitle && (
+            <button
+              onClick={() => { setShowCustom(false); setCustomInput(""); selectTitle(profileTitle); }}
+              style={{
+                fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, fontWeight: 700,
+                letterSpacing: ".08em", textTransform: "uppercase",
+                padding: "4px 10px", borderRadius: 20, border: "1.5px solid",
+                borderColor: searchTitle === profileTitle && !showCustom ? "var(--success)" : "var(--border)",
+                background: searchTitle === profileTitle && !showCustom ? "var(--success)" : "transparent",
+                color: searchTitle === profileTitle && !showCustom ? "#fff" : "var(--muted)",
+                cursor: "pointer", transition: "all .15s",
+              }}
+            >
+              {profileTitle}
+            </button>
+          )}
+
+          {/* Scored opportunity chips */}
+          {scoredTitles.filter(rt => rt !== profileTitle).map(title => (
+            <button
+              key={title}
+              onClick={() => { setShowCustom(false); setCustomInput(""); selectTitle(title); }}
+              style={{
+                fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, fontWeight: 700,
+                letterSpacing: ".08em", textTransform: "uppercase",
+                padding: "4px 10px", borderRadius: 20, border: "1.5px solid",
+                borderColor: searchTitle === title && !showCustom ? "var(--success)" : "var(--border)",
+                background: searchTitle === title && !showCustom ? "var(--success)" : "transparent",
+                color: searchTitle === title && !showCustom ? "#fff" : "var(--muted)",
+                cursor: "pointer", transition: "all .15s",
+              }}
+            >
+              {title}
+            </button>
+          ))}
+
+          {/* + Custom role chip */}
+          <button
+            onClick={() => { setShowCustom(true); }}
+            style={{
+              fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, fontWeight: 700,
+              letterSpacing: ".08em", textTransform: "uppercase",
+              padding: "4px 10px", borderRadius: 20, border: "1.5px dashed",
+              borderColor: showCustom ? "var(--success)" : "var(--border)",
+              background: "transparent",
+              color: showCustom ? "var(--success)" : "var(--muted)",
+              cursor: "pointer", transition: "all .15s",
+            }}
+          >
+            + Custom Role
+          </button>
+        </div>
+
+        {/* Custom text input */}
+        {showCustom && (
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <input
+              type="text"
+              placeholder="e.g. VP of Operations"
+              value={customInput}
+              onChange={e => setCustomInput(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === "Enter" && customInput.trim()) {
+                  selectTitle(customInput.trim());
+                }
+              }}
+              style={{
+                flex: 1, padding: "8px 12px", borderRadius: "var(--r)",
+                border: "1.5px solid var(--border)", fontSize: 13,
+                fontFamily: "'IBM Plex Mono', monospace",
+                outline: "none", background: "var(--cream)",
+              }}
+            />
+            <button
+              className="btn btn-secondary btn-sm"
+              onClick={() => { if (customInput.trim()) selectTitle(customInput.trim()); }}
+              disabled={!customInput.trim()}
+            >
+              Search
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Content */}
@@ -1527,7 +1641,7 @@ function Dashboard({ t, profile, filters, lang, opportunities, loading, scoringP
       )}
 
       {/* Market Pulse card — Vantage only */}
-      <MarketPulseCard t={t} profile={profile} authUser={authUser} userTier={userTier} />
+      <MarketPulseCard t={t} profile={profile} authUser={authUser} userTier={userTier} opportunities={opportunities} />
 
       {loading ? (
         <ScoringProgress phase={scoringPhase} />
@@ -1905,7 +2019,13 @@ export default function App() {
     try {
       // Use native Swift plugin if available (native iOS), else fallback message
       if (window.Capacitor?.isNativePlatform?.()) {
-        const result = await window.Capacitor.Plugins.SignInWithApplePlugin.authorize();
+        const plugin = window.Capacitor?.Plugins?.SignInWithApplePlugin;
+        if (!plugin) {
+          const bridgeErr = new Error("SignInWithApplePlugin not registered in Capacitor bridge");
+          handleError(bridgeErr, "apple_sign_in_bridge");
+          throw bridgeErr;
+        }
+        const result = await plugin.authorize();
 
         if (result.error) throw new Error(result.message || "Sign in failed");
         const { identityToken, givenName, familyName } = result.response;

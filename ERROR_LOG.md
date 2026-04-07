@@ -1,6 +1,6 @@
 # Vetted: Career Intelligence — Error Report & Fix Log
-**Compiled:** April 5, 2026
-**Versions covered:** v1.0 through v2.0.2 (build 15)
+**Compiled:** April 6, 2026
+**Versions covered:** v1.0 through v2.0.3 (build 16)
 **Source:** Full development chat history
 
 ---
@@ -347,12 +347,30 @@
 
 ---
 
+## Error 39 — Sign In with Apple sheet never appears on fresh App Store install
+**Build:** v2.0.2 (build 15) — App Store
+**Symptom:** After deleting and reinstalling from App Store, tapping "Sign in with Apple" showed no auth sheet and no error. No activity in `apple-auth` Netlify log. Wife's existing install continued to work.
+**Root cause:** Race condition in `AppDelegate.swift`. Plugin registration ran in `applicationDidBecomeActive` — but `vc.bridge` was `nil` on cold launch (bridge not yet initialized). Optional chaining silently skipped `registerPluginInstance(...)`. Critically, `pluginRegistered = true` was set regardless, permanently blocking all retry attempts on future activations.
+**Fix:** Wrapped registration in `if let bridge = vc.bridge` — `pluginRegistered` now only sets to `true` when the bridge is confirmed non-nil, allowing retry on next `applicationDidBecomeActive`. Also added JS guard: checks `window.Capacitor.Plugins.SignInWithApplePlugin` exists before calling `.authorize()`, logs to Sentry if missing.
+**Deployed:** v2.0.3 (build 16)
+
+---
+
+## Error 40 — IAP products returning "Product not found" (not configured in App Store Connect)
+**Build:** v2.0.2 (build 15) — App Store
+**Symptom:** Tapping any subscription or lifetime purchase button showed "Product not found" error for all four product IDs.
+**Root cause:** Monthly subscription products (`com.vettedai.app.signal.monthly`, `com.vettedai.app.vantage.monthly`) had never been created in App Store Connect. Lifetime products (`com.vettedai.app.signal.lifetime`, `com.vettedai.app.vantage.lifetime`) existed but were in "Missing Metadata" state — StoreKit will not serve products in this state.
+**Fix:** Created subscription group "Vetted Plans" in App Store Connect with both monthly products. Completed metadata (display name, description, price, review screenshot) on all four products. Corrected subscription group order: Vantage (Level 1) → Signal (Level 2) per Apple's highest-to-lowest tier requirement.
+**Deployed:** v2.0.3 (build 16) — all four IAP products submitted for review alongside build
+
+---
+
 ## Open Items (updated April 6, 2026)
 
 | Issue | Priority | Target Build |
 |---|---|---|
+| VQ scoring loading visuals never rendered (spinner/phase animations broken in live builds) | High | v2.1 |
 | App Store Server Notifications — subscription renewal/cancellation lifecycle | High | v2.1 |
-| O*NET credentials — awaiting approval, adds live salary data to Market Pulse | High | v2.1 |
 | Streaming AI responses — scoring still ~12s | High | v2.1 |
 | Supabase RLS — enable after IAP launch confirmed stable | Medium | v2.1 |
 | ADA — focus trap in modals, aria-live on filter carousel | Medium | v2.1 |
@@ -378,4 +396,5 @@
 | v2.0 | 9–12 | Superseded | Paywall, Stripe integration, lifetime tiers, session bridge |
 | v2.0 | 13 | Superseded | Incremented before submission |
 | v2.0.1 | 14 | Accepted — login broken | Carousels missing (not synced), Sign In with Apple failing (bundle ID typo) |
-| v2.0.2 | 15 | Ready to submit | Login fix, both carousels, session restore, Restore Purchases button |
+| v2.0.2 | 15 | Approved — IAP not configured | Login fix, both carousels, session restore, Restore Purchases button |
+| v2.0.3 | 16 | Submitted | AppDelegate plugin race fix, Market Pulse role toolbar, all 4 IAP products submitted |

@@ -13,10 +13,15 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func applicationDidBecomeActive(_ application: UIApplication) {
         guard !pluginRegistered else { return }
-        if let vc = window?.rootViewController as? CAPBridgeViewController {
-            vc.bridge?.registerPluginInstance(SignInWithApplePlugin())
-            pluginRegistered = true
+        if let vc = window?.rootViewController as? CAPBridgeViewController,
+           let bridge = vc.bridge {
+            bridge.registerPluginInstance(SignInWithApplePlugin())
+            bridge.registerPluginInstance(StoreKitPlugin())
+            bridge.registerPluginInstance(PrintPlugin())
+            pluginRegistered = true  // only lock once bridge is confirmed non-nil
         }
+        // if bridge is nil, pluginRegistered stays false so applicationDidBecomeActive
+        // will retry on the next activation (e.g. user backgrounds then foregrounds)
     }
 
     func applicationWillResignActive(_ application: UIApplication) {}
