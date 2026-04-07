@@ -57,3 +57,8 @@
 
 [functions."stripe-webhook"]
   timeout = 26
+
+[[redirects]]
+  from = "/privacy"
+  to = "/privacy.html"
+  status = 200
