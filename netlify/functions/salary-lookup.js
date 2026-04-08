@@ -257,7 +257,12 @@ function matchTable(table, title) {
   let bestLen = 0;
   for (const row of table) {
     for (const kw of row.keywords) {
-      if (lower.includes(kw) && kw.length > bestLen) {
+      // Word-boundary regex prevents short abbreviations (cto, coo, cfo, cso)
+      // from matching as substrings inside longer words like "director" or "coordinator".
+      // Escape regex special chars in the keyword before building the pattern.
+      const escaped = kw.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const pattern = new RegExp(`\\b${escaped}\\b`);
+      if (pattern.test(lower) && kw.length > bestLen) {
         best = row;
         bestLen = kw.length;
       }
