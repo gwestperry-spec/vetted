@@ -35,7 +35,16 @@ public class SignInWithApplePlugin: CAPPlugin, CAPBridgedPlugin,
     }
 
     // ─── Presentation anchor ──────────────────────────────────────────────
+    // On iPad, ASAuthorizationController requires a valid window anchor or the
+    // sheet is silently discarded. UIWindow() (detached, no frame) was the
+    // previous fallback — it fails on iPad. Ask the Capacitor bridge first;
+    // that window is guaranteed to exist while the plugin is active.
     public func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {
+        // 1. Capacitor bridge window — most reliable on iPhone and iPad
+        if let window = self.bridge?.viewController?.view?.window {
+            return window
+        }
+        // 2. Scene-based key window (covers multi-window iPadOS)
         for scene in UIApplication.shared.connectedScenes {
             if let ws = scene as? UIWindowScene {
                 if let window = ws.keyWindow { return window }
@@ -43,7 +52,8 @@ public class SignInWithApplePlugin: CAPPlugin, CAPBridgedPlugin,
                 if let window = ws.windows.first { return window }
             }
         }
-        return UIWindow()
+        // 3. Legacy fallback (should never reach here)
+        return UIApplication.shared.windows.first ?? UIWindow()
     }
 
     // ─── Auth success ─────────────────────────────────────────────────────
