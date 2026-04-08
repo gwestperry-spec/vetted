@@ -154,6 +154,7 @@ function onetRequest(path, username, password) {
       res.on("end", () => resolve({ status: res.statusCode, body: data }));
     });
     req.on("error", reject);
+    req.setTimeout(7000, () => { req.destroy(); reject(new Error("O*NET timeout")); });
     req.end();
   });
 }
@@ -382,28 +383,33 @@ exports.handler = async function (event) {
   }
 
   try {
+    // Run O*NET first — this is the primary data source
     const onetResult = await lookupOnet(title, onetUsername, onetPassword);
     if (!onetResult) {
       return { statusCode: 200, headers: corsHeaders(origin), body: JSON.stringify({ error: "No salary data found" }) };
     }
 
     // ── BLS OES geographic enhancement ────────────────────────────────────────
-    // O*NET returns national averages. If user has a location, run BLS OES in
-    // parallel to get state-level wages for geographic context.
+    // Run in parallel with a hard 5s timeout so it never blocks the response.
     const stateFips = extractStateFips(location);
     let blsResult = null;
 
-    if (onetResult.occupationCode) {
-      // Try state-level first, fall back to BLS national if no location
-      blsResult = await lookupBLS(onetResult.occupationCode, stateFips).catch(() => null);
+    if (onetResult.occupationCode && stateFips) {
+      const blsTimeout = new Promise(resolve => setTimeout(() => resolve(null), 5000));
+      blsResult = await Promise.race([
+        lookupBLS(onetResult.occupationCode, stateFips).catch(() => null),
+        blsTimeout,
+      ]);
     }
+
+    // Strip internal occupationCode from response (not needed client-side)
+    const { occupationCode: _code, ...onetOut } = onetResult;
 
     return {
       statusCode: 200,
       headers: corsHeaders(origin),
       body: JSON.stringify({
-        ...onetResult,
-        // Include BLS geographic data if available
+        ...onetOut,
         ...(blsResult ? {
           geo: {
             min:    blsResult.min,
