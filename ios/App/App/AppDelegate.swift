@@ -13,15 +13,28 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func applicationDidBecomeActive(_ application: UIApplication) {
         guard !pluginRegistered else { return }
+        attemptPluginRegistration(retryCount: 0)
+    }
+
+    /// Tries to register Capacitor plugins, retrying every 500 ms if the bridge
+    /// isn't ready yet (cold launch / fresh install race condition).
+    /// Gives up after 10 attempts (~5 s) — by then the app is in a bad state anyway.
+    private func attemptPluginRegistration(retryCount: Int) {
+        guard !pluginRegistered else { return }
+        guard retryCount < 10 else { return }
+
         if let vc = window?.rootViewController as? CAPBridgeViewController,
            let bridge = vc.bridge {
             bridge.registerPluginInstance(SignInWithApplePlugin())
             bridge.registerPluginInstance(StoreKitPlugin())
             bridge.registerPluginInstance(PrintPlugin())
-            pluginRegistered = true  // only lock once bridge is confirmed non-nil
+            pluginRegistered = true
+        } else {
+            // Bridge not ready yet — schedule a retry on the main thread
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+                self?.attemptPluginRegistration(retryCount: retryCount + 1)
+            }
         }
-        // if bridge is nil, pluginRegistered stays false so applicationDidBecomeActive
-        // will retry on the next activation (e.g. user backgrounds then foregrounds)
     }
 
     func applicationWillResignActive(_ application: UIApplication) {}
