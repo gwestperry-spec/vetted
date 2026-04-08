@@ -2100,14 +2100,30 @@ export default function App() {
       }
     } catch (err) {
       handleError(err, "apple_sign_in");
-      if (err?.message?.includes("cancelled") || err?.message?.includes("canceled")) {
-        setAuthError("Sign in was cancelled.");
+      const msg = err?.message?.toLowerCase() || "";
+      if (msg.includes("cancelled") || msg.includes("canceled")) {
+        setAuthError("cancelled");
+      } else if (msg.includes("not registered") || msg.includes("bridge") || msg.includes("plugin")) {
+        setAuthError("bridge_error");
+      } else if (msg.includes("network") || msg.includes("fetch") || msg.includes("timeout")) {
+        setAuthError("network_error");
+      } else if (msg.includes("server") || msg.includes("verification") || msg.includes("403")) {
+        setAuthError("server_error");
       } else {
-        setAuthError("Sign in failed. Please try again.");
+        setAuthError("unknown_error");
       }
     } finally {
       setAuthLoading(false);
     }
+  }
+
+  // Clear all auth state — gives members a clean retry without reinstalling
+  function clearAuthState() {
+    localStorage.removeItem("vetted_user");
+    localStorage.removeItem("vetted_session_token");
+    sessionStorage.removeItem("vetted_session_token");
+    setAuthUser(null);
+    setAuthError("");
   }
 
   function handleSignOut() {
@@ -2283,6 +2299,7 @@ export default function App() {
             onSignIn={handleSignInWithApple}
             authLoading={authLoading}
             authError={authError}
+            onClearAuth={clearAuthState}
           />
         </div>
       </>
