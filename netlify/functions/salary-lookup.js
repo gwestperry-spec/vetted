@@ -119,12 +119,147 @@ const RH_TABLE = [
   { keywords: ["general manager", "gm"],                                     title: "General Manager",                       min: 120000, median: 168000, max: 225000 },
 ];
 
-function matchRobertHalf(title) {
+// ─── Kinsa Food & Beverage Salary Table ──────────────────────────────────────
+// Source: Kinsa Group 2026 Food & Beverage Salary Guide
+// Data from 6,000+ candidate interviews across the US food & beverage industry.
+// Covers CPG, food manufacturing, food service, and food retail.
+// All figures are USD annual base salary (national median).
+// COL adjustments available per Kinsa guide (city/state multipliers on page 9).
+const KINSA_TABLE = [
+
+  // ── Food Science / Product Development ──
+  { keywords: ["chief science officer", "sr vp r&d", "svp r&d"],                          title: "Chief Science Officer / Sr VP R&D",         min: 175000, median: 220000, max: 350000 },
+  { keywords: ["vp r&d and innovation", "vp of r&d and innovation", "vice president r&d and innovation", "vp of r&d", "vp r&d", "vice president r&d", "vice president research and development"], title: "VP of R&D & Innovation", min: 130000, median: 200000, max: 280000 },
+  { keywords: ["director of r&d", "r&d director", "director research and development", "director of research and development"], title: "Director of R&D", min: 100000, median: 170000, max: 260000 },
+  { keywords: ["principal scientist", "principal food scientist", "lead scientist"],        title: "Principal Scientist",                       min: 130000, median: 170000, max: 250000 },
+  { keywords: ["r&d manager", "research and development manager", "r and d manager", "research & development manager"], title: "R&D Manager",    min:  80000, median: 135000, max: 180000 },
+  { keywords: ["r&d project manager", "research and development project manager"],          title: "R&D Project Manager",                       min:  80000, median: 130000, max: 165000 },
+  { keywords: ["senior food scientist", "sr food scientist", "sr. food scientist"],         title: "Senior Food Scientist",                     min: 100000, median: 130000, max: 160000 },
+  { keywords: ["food scientist"],                                                            title: "Food Scientist",                            min:  70000, median: 100000, max: 150000 },
+  { keywords: ["food technologist"],                                                         title: "Food Technologist",                         min:  70000, median:  90000, max: 130000 },
+  { keywords: ["r&d coordinator", "r&d specialist", "research and development coordinator", "research and development specialist"], title: "R&D Coordinator / Specialist", min: 60000, median: 90000, max: 120000 },
+  { keywords: ["product development lab technician", "lab technician food", "food lab technician"], title: "Product Development Lab Technician", min: 50000, median: 70000, max: 110000 },
+  { keywords: ["r&d intern", "research assistant food", "food research intern"],             title: "R&D Intern / Research Assistant",           min:  50000, median:  70000, max:  90000 },
+
+  // ── Quality / Food Safety / Regulatory ──
+  { keywords: ["vp of quality", "vp quality", "vp food safety", "vp of food safety", "vice president quality", "vice president food safety"], title: "VP of Quality / Food Safety", min: 160000, median: 200000, max: 300000 },
+  { keywords: ["director food safety and quality", "director of food safety and quality", "director of quality and food safety", "fsq director", "director of fsqa"], title: "Director of Food Safety & Quality", min: 90000, median: 160000, max: 260000 },
+  { keywords: ["regulatory manager", "regulatory director", "director of regulatory", "regulatory affairs manager", "regulatory affairs director"], title: "Regulatory Manager / Director", min: 100000, median: 140000, max: 200000 },
+  { keywords: ["food safety quality assurance manager", "fsqa manager", "food safety and quality assurance manager", "food safety qa manager", "quality assurance manager", "qa manager", "quality manager", "food safety manager", "manager of food safety"], title: "Food Safety & QA Manager", min: 80000, median: 120000, max: 160000 },
+  { keywords: ["quality engineer"],                                                          title: "Quality Engineer",                          min:  80000, median: 115000, max: 160000 },
+  { keywords: ["fsqa auditor", "food safety auditor", "quality auditor"],                   title: "FSQA Auditor",                              min:  75000, median:  90000, max: 140000 },
+  { keywords: ["quality analyst"],                                                           title: "Quality Analyst",                           min:  50000, median:  90000, max: 125000 },
+  { keywords: ["quality assurance supervisor", "qa supervisor", "quality control supervisor", "qc supervisor"], title: "QA / QC Supervisor",  min:  60000, median:  85000, max: 115000 },
+  { keywords: ["food safety coordinator", "haccp coordinator", "fsqa coordinator"],         title: "Food Safety Coordinator",                   min:  55000, median:  85000, max: 120000 },
+  { keywords: ["quality technician", "qa technician", "qc technician"],                    title: "Quality Technician",                        min:  50000, median:  60000, max:  70000 },
+  { keywords: ["regulatory specialist", "regulatory affairs specialist"],                   title: "Regulatory Specialist",                     min:  70000, median: 100000, max: 130000 },
+  { keywords: ["quality specialist", "qa specialist"],                                      title: "Quality Specialist",                        min:  70000, median:  95000, max: 140000 },
+  { keywords: ["sanitation manager", "director of sanitation", "sanitation director"],      title: "Sanitation Manager",                        min:  80000, median: 100000, max: 145000 },
+  { keywords: ["sanitation supervisor"],                                                     title: "Sanitation Supervisor",                     min:  60000, median:  85000, max: 115000 },
+
+  // ── Operations / Production (Food Manufacturing) ──
+  { keywords: ["vp of operations", "vice president of operations", "vp operations"],        title: "VP of Operations (Food)",                   min: 150000, median: 240000, max: 300000 },
+  { keywords: ["director of operations", "operations director"],                            title: "Director of Operations (Food)",             min: 100000, median: 180000, max: 260000 },
+  { keywords: ["plant manager", "manufacturing plant manager"],                             title: "Plant Manager",                             min: 100000, median: 160000, max: 250000 },
+  { keywords: ["continuous improvement manager", "continuous improvement director", "ci manager", "ci director", "lean manager", "lean director", "opex manager"], title: "Continuous Improvement Manager / Director", min: 90000, median: 140000, max: 220000 },
+  { keywords: ["brewing manager", "distillery manager", "brewery manager"],                 title: "Brewing / Distillery Manager",              min:  75000, median: 120000, max: 195000 },
+  { keywords: ["production manager", "operations manager", "manufacturing manager"],        title: "Production / Operations Manager",           min:  70000, median: 120000, max: 225000 },
+  { keywords: ["demand planning manager", "master scheduler", "demand planner"],           title: "Demand Planning Manager / Master Scheduler", min: 70000, median: 125000, max: 170000 },
+  { keywords: ["plant superintendent", "production superintendent"],                        title: "Production / Plant Superintendent",         min: 105000, median: 110000, max: 115000 },
+  { keywords: ["production supervisor", "manufacturing supervisor"],                        title: "Production Supervisor",                     min:  60000, median:  80000, max: 130000 },
+
+  // ── Supply Chain / Procurement (Food Industry) ──
+  { keywords: ["chief supply chain officer", "csco"],                                       title: "Chief Supply Chain Officer",                min: 180000, median: 280000, max: 400000 },
+  { keywords: ["vp supply chain", "vice president supply chain", "vp of supply chain", "vp supply chain and purchasing", "vp of purchasing"], title: "VP Supply Chain & Purchasing", min: 150000, median: 230000, max: 350000 },
+  { keywords: ["procurement director", "director of procurement", "director of purchasing"], title: "Procurement Director",                      min: 110000, median: 180000, max: 225000 },
+  { keywords: ["supply chain director", "director of supply chain", "director supply chain"], title: "Supply Chain Director",                   min: 120000, median: 175000, max: 265000 },
+  { keywords: ["logistics director", "transportation director", "director of logistics", "director of transportation"], title: "Logistics / Transportation Director", min: 120000, median: 170000, max: 225000 },
+  { keywords: ["logistics manager", "transportation manager", "director of logistics"],     title: "Logistics / Transportation Manager",        min: 100000, median: 130000, max: 150000 },
+  { keywords: ["supply chain manager", "manager of supply chain"],                          title: "Supply Chain Manager",                      min:  80000, median: 130000, max: 180000 },
+  { keywords: ["purchasing manager", "sourcing manager", "procurement manager"],            title: "Purchasing / Sourcing Manager",             min:  80000, median: 125000, max: 160000 },
+  { keywords: ["warehouse manager", "distribution manager", "warehouse director"],          title: "Warehouse / Distribution Manager",          min:  80000, median: 120000, max: 200000 },
+  { keywords: ["buyer", "ingredient buyer", "commodity buyer", "raw material buyer"],       title: "Buyer",                                     min:  70000, median: 105000, max: 150000 },
+  { keywords: ["warehouse supervisor"],                                                      title: "Warehouse Supervisor",                      min:  80000, median: 105000, max: 120000 },
+  { keywords: ["inventory specialist", "supply chain specialist", "logistics specialist"],  title: "Inventory / Supply Chain Specialist",       min:  80000, median:  90000, max: 120000 },
+
+  // ── Engineering (Food Manufacturing) ──
+  { keywords: ["vp of engineering", "vice president engineering", "vp engineering"],        title: "VP of Engineering",                         min: 170000, median: 230000, max: 300000 },
+  { keywords: ["director of engineering", "engineering director"],                          title: "Director of Engineering",                   min: 170000, median: 200000, max: 250000 },
+  { keywords: ["engineering manager"],                                                       title: "Engineering Manager",                       min: 120000, median: 160000, max: 225000 },
+  { keywords: ["engineering project manager"],                                               title: "Engineering Project Manager",               min: 100000, median: 150000, max: 225000 },
+  { keywords: ["reliability engineer", "reliability manager"],                               title: "Reliability Engineer / Manager",            min: 110000, median: 150000, max: 225000 },
+  { keywords: ["project engineer"],                                                          title: "Project Engineer",                          min: 100000, median: 140000, max: 150000 },
+  { keywords: ["plant engineer", "mechanical engineer food", "food plant engineer"],         title: "Plant Engineer / Mechanical Engineer",      min: 110000, median: 135000, max: 150000 },
+  { keywords: ["process engineer", "r&d engineer", "food process engineer"],                title: "Process / R&D Engineer",                    min:  80000, median: 120000, max: 170000 },
+  { keywords: ["control systems engineer", "automation engineer", "controls engineer"],     title: "Control Systems Engineer",                  min: 100000, median: 135000, max: 160000 },
+  { keywords: ["sales engineer"],                                                            title: "Sales Engineer",                            min:  80000, median: 120000, max: 225000 },
+
+  // ── Maintenance ──
+  { keywords: ["maintenance manager"],                                                       title: "Maintenance Manager",                       min:  90000, median: 130000, max: 180000 },
+  { keywords: ["maintenance supervisor"],                                                    title: "Maintenance Supervisor",                    min:  90000, median: 110000, max: 140000 },
+  { keywords: ["maintenance technician"],                                                    title: "Maintenance Technician",                    min:  60000, median: 100000, max: 120000 },
+
+  // ── Environmental Health & Safety ──
+  { keywords: ["environmental health and safety manager", "ehs manager", "environmental health safety manager", "esh manager", "health and safety manager"], title: "Environmental Health & Safety Manager", min: 90000, median: 125000, max: 160000 },
+
+  // ── Food Service / Restaurant ──
+  { keywords: ["director of culinary", "culinary director"],                                title: "Director of Culinary",                      min:  75000, median: 160000, max: 225000 },
+  { keywords: ["executive chef"],                                                            title: "Executive Chef",                            min:  80000, median: 120000, max: 180000 },
+  { keywords: ["sous chef"],                                                                 title: "Sous Chef",                                 min:  60000, median:  75000, max:  80000 },
+  { keywords: ["restaurant manager"],                                                        title: "Restaurant Manager",                        min:  50000, median:  90000, max: 150000 },
+  { keywords: ["food and beverage manager", "food & beverage manager", "f&b manager", "food and beverage director", "food & beverage director"], title: "Food & Beverage Manager / Director", min: 70000, median: 100000, max: 180000 },
+
+  // ── Sales / Business Development (Food Industry) ──
+  { keywords: ["vp of sales", "vice president sales", "vp sales"],                          title: "VP of Sales (Food & Beverage)",             min: 120000, median: 200000, max: 280000 },
+  { keywords: ["international sales manager", "international sales director"],               title: "International Sales Manager / Director",    min: 100000, median: 160000, max: 275000 },
+  { keywords: ["director of sales", "sales director"],                                      title: "Director of Sales (Food & Beverage)",       min:  80000, median: 160000, max: 275000 },
+  { keywords: ["national sales manager", "national account manager", "national accounts manager"], title: "National Sales Manager / National Accounts", min: 90000, median: 150000, max: 250000 },
+  { keywords: ["category manager"],                                                          title: "Category Manager",                          min:  90000, median: 150000, max: 180000 },
+  { keywords: ["industrial sales manager", "b2b sales manager"],                            title: "Industrial / B2B Sales Manager",            min:  80000, median: 140000, max: 180000 },
+  { keywords: ["key account manager"],                                                       title: "Key Account Manager",                       min:  80000, median: 130000, max: 215000 },
+  { keywords: ["business development manager"],                                              title: "Business Development Manager",              min:  80000, median: 130000, max: 200000 },
+  { keywords: ["regional sales manager"],                                                    title: "Regional Sales Manager",                    min:  80000, median: 130000, max: 200000 },
+  { keywords: ["sales manager"],                                                             title: "Sales Manager",                             min:  80000, median: 120000, max: 235000 },
+  { keywords: ["account manager"],                                                           title: "Account Manager",                           min:  80000, median: 120000, max: 190000 },
+  { keywords: ["district sales manager"],                                                    title: "District Sales Manager",                    min:  80000, median: 110000, max: 140000 },
+  { keywords: ["account executive"],                                                         title: "Account Executive",                         min:  70000, median: 100000, max: 175000 },
+  { keywords: ["territory sales manager", "area sales manager"],                             title: "Area / Territory Sales Manager",            min:  70000, median: 100000, max: 140000 },
+  { keywords: ["sales representative"],                                                      title: "Sales Representative",                      min:  50000, median:  80000, max: 140000 },
+
+  // ── Marketing (Food Industry) ──
+  { keywords: ["vp of marketing", "vice president marketing", "vp marketing"],               title: "VP of Marketing (Food & Beverage)",         min: 140000, median: 200000, max: 275000 },
+  { keywords: ["marketing director", "director of marketing"],                               title: "Marketing Director (Food & Beverage)",      min: 100000, median: 170000, max: 250000 },
+  { keywords: ["brand manager", "senior brand manager", "sr brand manager"],                 title: "Brand Manager / Sr Brand Manager",          min:  90000, median: 150000, max: 210000 },
+  { keywords: ["product manager"],                                                            title: "Product Manager (Food & Beverage)",         min: 100000, median: 150000, max: 200000 },
+  { keywords: ["marketing manager"],                                                          title: "Marketing Manager",                         min:  80000, median: 135000, max: 180000 },
+  { keywords: ["digital marketing manager", "ecommerce manager", "e-commerce manager"],      title: "Digital Marketing / E-Commerce Manager",    min:  90000, median: 110000, max: 150000 },
+  { keywords: ["marketing specialist", "marketing analyst"],                                  title: "Marketing Specialist / Analyst",            min:  75000, median:  90000, max: 130000 },
+
+  // ── Human Resources (Food Industry) ──
+  { keywords: ["chief people officer", "chief human resources officer", "chro"],            title: "Chief People Officer / VP of HR",           min: 150000, median: 235000, max: 350000 },
+  { keywords: ["director of human resources", "hr director", "human resources director"],   title: "Director of Human Resources",               min: 100000, median: 160000, max: 240000 },
+  { keywords: ["human resources manager", "hr manager"],                                     title: "Human Resources Manager",                   min:  80000, median: 125000, max: 150000 },
+  { keywords: ["recruiter", "talent acquisition manager", "talent acquisition specialist"], title: "Recruiter / Talent Acquisition Manager",    min:  70000, median:  90000, max: 125000 },
+
+  // ── Finance / Accounting (Food Industry) ──
+  { keywords: ["vice president of finance", "vp of finance", "vp finance"],                 title: "VP of Finance (Food Industry)",             min: 160000, median: 225000, max: 285000 },
+  { keywords: ["director of finance", "finance director"],                                   title: "Director of Finance (Food Industry)",       min: 150000, median: 180000, max: 225000 },
+  { keywords: ["controller"],                                                                 title: "Controller (Food Industry)",                min: 130000, median: 160000, max: 200000 },
+  { keywords: ["accounting manager", "finance manager", "manager of accounting"],           title: "Manager, Accounting / Finance",             min: 100000, median: 135000, max: 150000 },
+  { keywords: ["financial analyst"],                                                          title: "Financial Analyst",                         min:  90000, median: 110000, max: 150000 },
+  { keywords: ["accountant", "senior accountant"],                                           title: "Accountant / Senior Accountant",            min:  80000, median: 100000, max: 120000 },
+
+  // ── C-Suite / Executive (Food Industry specific) ──
+  { keywords: ["chief commercial officer", "cco"],                                           title: "Chief Commercial Officer",                  min: 165000, median: 250000, max: 450000 },
+  { keywords: ["chief supply chain officer", "csco"],                                        title: "Chief Supply Chain Officer",                min: 180000, median: 280000, max: 400000 },
+  { keywords: ["general manager", "managing director"],                                      title: "General Manager / Managing Director",       min: 120000, median: 200000, max: 450000 },
+];
+
+function matchTable(table, title) {
   const lower = (title || "").toLowerCase().trim();
-  // Exact / substring keyword match — use longest keyword match wins
   let best = null;
   let bestLen = 0;
-  for (const row of RH_TABLE) {
+  for (const row of table) {
     for (const kw of row.keywords) {
       if (lower.includes(kw) && kw.length > bestLen) {
         best = row;
@@ -134,6 +269,9 @@ function matchRobertHalf(title) {
   }
   return best;
 }
+
+function matchRobertHalf(title) { return matchTable(RH_TABLE, title); }
+function matchKinsa(title)       { return matchTable(KINSA_TABLE, title); }
 
 // ─── O*NET Helper ─────────────────────────────────────────────────────────────
 function onetRequest(path, username, password) {
@@ -358,7 +496,7 @@ exports.handler = async function (event) {
     }
   }
 
-  // ── Robert Half lookup (fast, no network) ────────────────────────────────────
+  // ── Tier 1: Robert Half (executive / professional roles) ─────────────────────
   console.log(`[salary-lookup] title="${title}" location="${location || ""}"`);
   const rhMatch = matchRobertHalf(title);
   console.log(`[salary-lookup] RH match: ${rhMatch ? rhMatch.title : "none"}`);
@@ -376,7 +514,24 @@ exports.handler = async function (event) {
     };
   }
 
-  // ── O*NET + BLS parallel lookup ──────────────────────────────────────────────
+  // ── Tier 2: Kinsa (food & beverage industry roles) ───────────────────────────
+  const kinsaMatch = matchKinsa(title);
+  console.log(`[salary-lookup] Kinsa match: ${kinsaMatch ? kinsaMatch.title : "none"}`);
+  if (kinsaMatch) {
+    return {
+      statusCode: 200,
+      headers: corsHeaders(origin),
+      body: JSON.stringify({
+        min:    kinsaMatch.min,
+        median: kinsaMatch.median,
+        max:    kinsaMatch.max,
+        source: "Kinsa 2026",
+        occupationTitle: kinsaMatch.title,
+      }),
+    };
+  }
+
+  // ── Tier 3: O*NET + BLS parallel lookup ──────────────────────────────────────
   const onetUsername = process.env.ONET_USERNAME || "";
   const onetPassword = process.env.ONET_PASSWORD || "";
 
