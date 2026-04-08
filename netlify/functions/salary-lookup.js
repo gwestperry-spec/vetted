@@ -81,20 +81,16 @@ const RH_TABLE = [
   { keywords: ["hr business partner", "senior hr business partner", "hrbp"], title: "Senior HR Business Partner",           min:  90000, median: 120000, max: 155000 },
 
   // ── Operations & Supply Chain ──
+  // NOTE: VP/Director-level operations, supply chain, procurement, and logistics
+  // roles are intentionally deferred to the Kinsa table (Tier 2) which has
+  // food-industry-specific data from 6,000+ candidate interviews. Only the
+  // C-suite COO is kept here for generic cross-industry searches.
   { keywords: ["chief operating officer", "coo"],                           title: "Chief Operating Officer (COO)",         min: 215000, median: 298000, max: 395000 },
-  { keywords: ["vp operations", "vp of operations", "vice president operations"], title: "VP of Operations",                min: 165000, median: 222000, max: 295000 },
-  { keywords: ["director of operations", "operations director"],            title: "Director of Operations",                min: 115000, median: 158000, max: 210000 },
-  { keywords: ["vp supply chain", "vp of supply chain", "vice president supply chain"], title: "VP of Supply Chain",        min: 160000, median: 215000, max: 285000 },
-  { keywords: ["director of supply chain", "supply chain director"],        title: "Director of Supply Chain",              min: 115000, median: 155000, max: 205000 },
-  { keywords: ["director of logistics", "logistics director", "vp logistics"], title: "Director of Logistics",              min: 105000, median: 142000, max: 188000 },
-  { keywords: ["vp procurement", "director of procurement", "procurement director"], title: "Director of Procurement",      min: 118000, median: 158000, max: 210000 },
-  { keywords: ["operations manager", "senior operations manager"],          title: "Senior Operations Manager",             min:  85000, median: 115000, max: 150000 },
 
   // ── Sales ──
+  // NOTE: VP Sales, Director of Sales, Regional Sales Manager deferred to Kinsa (food industry).
+  // CRO, enterprise AE, and BD director kept here for cross-industry / SaaS / tech contexts.
   { keywords: ["chief revenue officer", "cro"],                             title: "Chief Revenue Officer (CRO)",           min: 200000, median: 278000, max: 370000 },
-  { keywords: ["vp sales", "vp of sales", "vice president sales"],         title: "VP of Sales",                           min: 175000, median: 238000, max: 315000 },
-  { keywords: ["director of sales", "sales director"],                     title: "Director of Sales",                     min: 120000, median: 165000, max: 220000 },
-  { keywords: ["regional sales manager", "area sales manager"],             title: "Regional Sales Manager",                min:  90000, median: 125000, max: 165000 },
   { keywords: ["enterprise account executive", "senior account executive"], title: "Enterprise Account Executive",          min: 100000, median: 145000, max: 200000 },
   { keywords: ["vp business development", "vp of business development"],   title: "VP of Business Development",            min: 165000, median: 225000, max: 300000 },
   { keywords: ["director of business development", "bd director"],         title: "Director of Business Development",      min: 118000, median: 158000, max: 210000 },
