@@ -205,7 +205,116 @@ async function lookupOnet(title, username, password) {
     max:    Math.round((p75  || median * 1.18) / 1000) * 1000,
     source: "O*NET",
     occupationTitle: occTitle,
+    occupationCode: code, // pass to BLS for geographic lookup
   };
+}
+
+// ─── State abbreviation → FIPS code ──────────────────────────────────────────
+const STATE_FIPS = {
+  AL:"01",AK:"02",AZ:"04",AR:"05",CA:"06",CO:"08",CT:"09",DE:"10",
+  FL:"12",GA:"13",HI:"15",ID:"16",IL:"17",IN:"18",IA:"19",KS:"20",
+  KY:"21",LA:"22",ME:"23",MD:"24",MA:"25",MI:"26",MN:"27",MS:"28",
+  MO:"29",MT:"30",NE:"31",NV:"32",NH:"33",NJ:"34",NM:"35",NY:"36",
+  NC:"37",ND:"38",OH:"39",OK:"40",OR:"41",PA:"42",RI:"44",SC:"45",
+  SD:"46",TN:"47",TX:"48",UT:"49",VT:"50",VA:"51",WA:"53",WV:"54",
+  WI:"55",WY:"56",DC:"11",
+};
+
+// Extract 2-letter state abbreviation from a location string like "Dallas, TX"
+function extractStateFips(location) {
+  if (!location) return null;
+  const match = location.match(/\b([A-Z]{2})\b/);
+  if (match && STATE_FIPS[match[1]]) return STATE_FIPS[match[1]];
+  // Try full state name match
+  const lower = location.toLowerCase();
+  const nameMap = {
+    "alabama":"01","alaska":"02","arizona":"04","arkansas":"05","california":"06",
+    "colorado":"08","connecticut":"09","delaware":"10","florida":"12","georgia":"13",
+    "hawaii":"15","idaho":"16","illinois":"17","indiana":"18","iowa":"19","kansas":"20",
+    "kentucky":"21","louisiana":"22","maine":"23","maryland":"24","massachusetts":"25",
+    "michigan":"26","minnesota":"27","mississippi":"28","missouri":"29","montana":"30",
+    "nebraska":"31","nevada":"32","new hampshire":"33","new jersey":"34","new mexico":"35",
+    "new york":"36","north carolina":"37","north dakota":"38","ohio":"39","oklahoma":"40",
+    "oregon":"41","pennsylvania":"42","rhode island":"44","south carolina":"45",
+    "south dakota":"46","tennessee":"47","texas":"48","utah":"49","vermont":"50",
+    "virginia":"51","washington":"53","west virginia":"54","wisconsin":"55","wyoming":"56",
+  };
+  for (const [name, fips] of Object.entries(nameMap)) {
+    if (lower.includes(name)) return fips;
+  }
+  return null;
+}
+
+// Convert O*NET SOC code ("15-1252.00") to BLS 6-digit occupation code ("151252")
+function socToBls(socCode) {
+  return (socCode || "").replace(/[-\.]/g, "").substring(0, 6);
+}
+
+// ─── BLS OES Helper ────────────────────────────────────────────────────────────
+// Queries Bureau of Labor Statistics Occupational Employment & Wage Statistics.
+// Returns state-level wages when location is provided, national otherwise.
+// Series ID format: OEUS{2-digit-fips}0000000{6-digit-SOC}03 (state annual mean)
+//                   OEUN0000000000000{6-digit-SOC}03         (national annual mean)
+async function lookupBLS(socCode, stateFips) {
+  const occ = socToBls(socCode);
+  if (!occ || occ.length < 6) return null;
+
+  const seriesId = stateFips
+    ? `OEUS${stateFips}0000000${occ}03`
+    : `OEUN0000000000000${occ}03`;
+
+  return new Promise((resolve) => {
+    const body = JSON.stringify({
+      seriesid: [seriesId],
+      startyear: "2023",
+      endyear: "2024",
+    });
+
+    const options = {
+      hostname: "api.bls.gov",
+      path: "/publicAPI/v2/timeseries/data/",
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Content-Length": Buffer.byteLength(body),
+      },
+    };
+
+    const req = https.request(options, (res) => {
+      let data = "";
+      res.on("data", (chunk) => { data += chunk; });
+      res.on("end", () => {
+        try {
+          const json = JSON.parse(data);
+          const series = json?.Results?.series?.[0];
+          const dataPoints = series?.data;
+          if (!Array.isArray(dataPoints) || dataPoints.length === 0) {
+            resolve(null); return;
+          }
+          // Most recent year, annual period
+          const annual = dataPoints.find(d => d.period === "A01") || dataPoints[0];
+          const mean = parseInt((annual?.value || "").replace(/,/g, ""), 10);
+          if (!mean || isNaN(mean)) { resolve(null); return; }
+
+          resolve({
+            min:    Math.round(mean * 0.80 / 1000) * 1000,
+            median: Math.round(mean / 1000) * 1000,
+            max:    Math.round(mean * 1.22 / 1000) * 1000,
+            source: stateFips ? "BLS OES (State)" : "BLS OES (National)",
+            occupationTitle: socCode,
+            geographic: !!stateFips,
+          });
+        } catch {
+          resolve(null);
+        }
+      });
+    });
+
+    req.on("error", () => resolve(null));
+    req.setTimeout(8000, () => { req.destroy(); resolve(null); });
+    req.write(body);
+    req.end();
+  });
 }
 
 // ─── Handler ──────────────────────────────────────────────────────────────────
@@ -231,7 +340,7 @@ exports.handler = async function (event) {
   try { parsed = JSON.parse(event.body || "{}"); }
   catch { return { statusCode: 400, headers: corsHeaders(origin), body: JSON.stringify({ error: "Invalid JSON" }) }; }
 
-  const { title, appleId, sessionToken } = parsed;
+  const { title, appleId, sessionToken, location } = parsed;
 
   if (!appleId || !sessionToken || !title) {
     return { statusCode: 400, headers: corsHeaders(origin), body: JSON.stringify({ error: "Missing required fields" }) };
@@ -264,7 +373,7 @@ exports.handler = async function (event) {
     };
   }
 
-  // ── O*NET fallback ───────────────────────────────────────────────────────────
+  // ── O*NET + BLS parallel lookup ──────────────────────────────────────────────
   const onetUsername = process.env.ONET_USERNAME || "";
   const onetPassword = process.env.ONET_PASSWORD || "";
 
@@ -274,12 +383,40 @@ exports.handler = async function (event) {
 
   try {
     const onetResult = await lookupOnet(title, onetUsername, onetPassword);
-    if (onetResult) {
-      return { statusCode: 200, headers: corsHeaders(origin), body: JSON.stringify(onetResult) };
+    if (!onetResult) {
+      return { statusCode: 200, headers: corsHeaders(origin), body: JSON.stringify({ error: "No salary data found" }) };
     }
-    return { statusCode: 200, headers: corsHeaders(origin), body: JSON.stringify({ error: "No salary data found" }) };
+
+    // ── BLS OES geographic enhancement ────────────────────────────────────────
+    // O*NET returns national averages. If user has a location, run BLS OES in
+    // parallel to get state-level wages for geographic context.
+    const stateFips = extractStateFips(location);
+    let blsResult = null;
+
+    if (onetResult.occupationCode) {
+      // Try state-level first, fall back to BLS national if no location
+      blsResult = await lookupBLS(onetResult.occupationCode, stateFips).catch(() => null);
+    }
+
+    return {
+      statusCode: 200,
+      headers: corsHeaders(origin),
+      body: JSON.stringify({
+        ...onetResult,
+        // Include BLS geographic data if available
+        ...(blsResult ? {
+          geo: {
+            min:    blsResult.min,
+            median: blsResult.median,
+            max:    blsResult.max,
+            source: blsResult.source,
+            location: location || null,
+          }
+        } : {}),
+      }),
+    };
   } catch (err) {
-    console.error("O*NET error:", err.message);
+    console.error("Salary lookup error:", err.message);
     return { statusCode: 200, headers: corsHeaders(origin), body: JSON.stringify({ error: "Salary lookup unavailable" }) };
   }
 };

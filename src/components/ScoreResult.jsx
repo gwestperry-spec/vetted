@@ -131,16 +131,17 @@ function SectionCarousel({ opp, t }) {
 
   return (
     <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-      {/* Tab strip */}
-      <div style={{ display: "flex", borderBottom: "1px solid var(--border)", overflowX: "auto", scrollbarWidth: "none" }}>
+      {/* Tab strip — wraps to 2 rows on small screens, never scrolls horizontally */}
+      <div style={{ display: "flex", flexWrap: "wrap", borderBottom: "1px solid var(--border)" }}>
         {sections.map((s, i) => (
           <button
             key={s.key}
             onClick={() => setIdx(i)}
             style={{
-              flex: "0 0 auto",
-              padding: "10px 14px",
-              fontSize: 11, fontWeight: 600,
+              flex: "1 1 auto",
+              minWidth: 0,
+              padding: "10px 10px",
+              fontSize: 10, fontWeight: 600,
               fontFamily: "'IBM Plex Mono', monospace",
               letterSpacing: ".06em",
               textTransform: "uppercase",
@@ -150,7 +151,10 @@ function SectionCarousel({ opp, t }) {
               color: i === idx ? s.color : "var(--muted)",
               cursor: "pointer",
               whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
               transition: "all .15s",
+              textAlign: "center",
             }}
           >
             {s.icon} {s.label}
