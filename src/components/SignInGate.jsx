@@ -15,8 +15,9 @@ const ERROR_GUIDANCE = {
     title: "The Sign in with Apple service didn't load.",
     steps: [
       "Close Vetted completely — swipe it away in the app switcher.",
-      "Wait 5 seconds, then reopen the app.",
-      "Tap Sign in with Apple again.",
+      "Wait 5 seconds, then reopen the app and try again.",
+      "If it still fails: restart your iPhone, then reopen Vetted.",
+      "Last resort: delete Vetted, restart your iPhone, and reinstall from the App Store. Your account and data are saved — nothing will be lost.",
     ],
     showRetry: true,
     showClear: true,
@@ -27,6 +28,7 @@ const ERROR_GUIDANCE = {
       "Check your Wi-Fi or cellular connection.",
       "If you're on VPN, try disabling it temporarily.",
       "Tap Try Again when your connection is restored.",
+      "If the issue persists, restart your iPhone and try again.",
     ],
     showRetry: true,
     showClear: false,
@@ -36,7 +38,8 @@ const ERROR_GUIDANCE = {
     steps: [
       "Tap Reset & Try Again below — this clears any stale session data.",
       "Sign in fresh with your Apple ID.",
-      "If this continues, contact support at support@tryvettedai.com.",
+      "If this continues: restart your iPhone, reopen Vetted, and try once more.",
+      "Still blocked? Email us at hello@tryvettedai.com and we'll sort it out.",
     ],
     showRetry: true,
     showClear: true,
@@ -45,8 +48,9 @@ const ERROR_GUIDANCE = {
     title: "Something went wrong during sign in.",
     steps: [
       "Tap Reset & Try Again to clear any stale session data.",
-      "If the issue persists, close and reopen the app.",
-      "Still having trouble? Email support@tryvettedai.com.",
+      "If the issue persists: close Vetted, restart your iPhone, and reopen the app.",
+      "Last resort: delete Vetted, restart your iPhone, and reinstall from the App Store. Your account and data are saved.",
+      "Still having trouble? Email hello@tryvettedai.com.",
     ],
     showRetry: true,
     showClear: true,
@@ -142,8 +146,8 @@ export default function SignInGate({ t, lang, setLang, onSignIn, authLoading, au
       {/* ── Support footer ── */}
       <p style={{ textAlign: "center", fontSize: 11, color: "var(--muted)", marginTop: 16, lineHeight: 1.7 }}>
         Need help?{" "}
-        <a href="mailto:support@tryvettedai.com" style={{ color: "var(--muted)" }}>
-          support@tryvettedai.com
+        <a href="mailto:hello@tryvettedai.com" style={{ color: "var(--muted)" }}>
+          hello@tryvettedai.com
         </a>
       </p>
     </div>
