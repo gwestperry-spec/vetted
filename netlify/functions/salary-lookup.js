@@ -359,7 +359,9 @@ exports.handler = async function (event) {
   }
 
   // ── Robert Half lookup (fast, no network) ────────────────────────────────────
+  console.log(`[salary-lookup] title="${title}" location="${location || ""}"`);
   const rhMatch = matchRobertHalf(title);
+  console.log(`[salary-lookup] RH match: ${rhMatch ? rhMatch.title : "none"}`);
   if (rhMatch) {
     return {
       statusCode: 200,
