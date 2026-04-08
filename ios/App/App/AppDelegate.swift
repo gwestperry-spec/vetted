@@ -5,36 +5,14 @@ import Capacitor
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
     var window: UIWindow?
-    private var pluginRegistered = false
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+        // SignInWithApplePlugin, StoreKitPlugin, and PrintPlugin all conform to
+        // CAPBridgedPlugin, so Capacitor auto-registers them when the bridge
+        // initialises — no manual registerPluginInstance() needed or wanted.
+        // Manual registration was the root cause of all sign-in race conditions
+        // (cold launch, reinstall without restart, iPad, warm launch).
         return true
-    }
-
-    func applicationDidBecomeActive(_ application: UIApplication) {
-        guard !pluginRegistered else { return }
-        attemptPluginRegistration(retryCount: 0)
-    }
-
-    /// Tries to register Capacitor plugins, retrying every 500 ms if the bridge
-    /// isn't ready yet (cold launch / fresh install race condition).
-    /// Gives up after 10 attempts (~5 s) — by then the app is in a bad state anyway.
-    private func attemptPluginRegistration(retryCount: Int) {
-        guard !pluginRegistered else { return }
-        guard retryCount < 10 else { return }
-
-        if let vc = window?.rootViewController as? CAPBridgeViewController,
-           let bridge = vc.bridge {
-            bridge.registerPluginInstance(SignInWithApplePlugin())
-            bridge.registerPluginInstance(StoreKitPlugin())
-            bridge.registerPluginInstance(PrintPlugin())
-            pluginRegistered = true
-        } else {
-            // Bridge not ready yet — schedule a retry on the main thread
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-                self?.attemptPluginRegistration(retryCount: retryCount + 1)
-            }
-        }
     }
 
     func applicationWillResignActive(_ application: UIApplication) {}
