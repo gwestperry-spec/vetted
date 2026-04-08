@@ -1295,10 +1295,12 @@ function MarketPulseCard({ t, profile, authUser, userTier, opportunities }) {
     setError("");
     setOpen(true);
 
-    try {
-      const secret = authUser?.sessionToken || "";
+    const secret = authUser?.sessionToken || "";
 
-      // ── Step 1: salary lookup ──────────────────────────────────────────────
+    // ── Step 1: salary lookup (critical — abort on failure) ────────────────
+    let salaryJson;
+    try {
+      console.log("[MarketPulse] fetching salary for:", titleToLookup);
       const salaryRes = await fetch(ENDPOINTS.salaryLookup, {
         method: "POST",
         headers: { "Content-Type": "application/json", "X-Vetted-Token": secret },
@@ -1309,16 +1311,28 @@ function MarketPulseCard({ t, profile, authUser, userTier, opportunities }) {
           location: profile.locationPrefs?.[0] || "",
         }),
       });
-      const salaryJson = await salaryRes.json();
+      salaryJson = await salaryRes.json();
+      console.log("[MarketPulse] salary response:", JSON.stringify(salaryJson));
+    } catch (salaryErr) {
+      handleError(salaryErr, "market_pulse_salary");
+      console.error("[MarketPulse] salary fetch error:", salaryErr);
+      setError(t.marketNoData);
+      setLoading(false);
+      return;
+    }
 
-      if (salaryJson.error || !salaryJson.median) {
-        setError(t.marketNoData);
-        setLoading(false);
-        return;
-      }
-      setData(salaryJson);
+    if (salaryJson.error || !salaryJson.median) {
+      console.log("[MarketPulse] no salary data — error:", salaryJson.error, "median:", salaryJson.median);
+      setError(t.marketNoData);
+      setLoading(false);
+      return;
+    }
 
-      // ── Step 2: Claude market intelligence brief ───────────────────────────
+    console.log("[MarketPulse] salary OK — median:", salaryJson.median);
+    setData(salaryJson);
+
+    // ── Step 2: Claude market intelligence brief (non-critical — graceful skip) ──
+    try {
       const prompt = `You are a labor market analyst. Write a concise, factual market intelligence brief for a senior professional considering roles as: ${titleToLookup}.
 
 Context:
@@ -1337,6 +1351,9 @@ Respond ONLY with valid JSON (no markdown):
   "comp_context": "1–2 sentences on how the salary range compares to broader market and what drives the top of the range."
 }`;
 
+      const claudeController = new AbortController();
+      const claudeTimeoutId = setTimeout(() => claudeController.abort(), 25000);
+
       const claudeRes = await fetch(ENDPOINTS.anthropic, {
         method: "POST",
         headers: { "Content-Type": "application/json", "X-Vetted-Token": secret },
@@ -1345,7 +1362,10 @@ Respond ONLY with valid JSON (no markdown):
           appleId: authUser?.id,
           sessionToken: authUser?.sessionToken || "",
         }),
+        signal: claudeController.signal,
       });
+
+      clearTimeout(claudeTimeoutId);
 
       if (claudeRes.ok) {
         const claudeData = await claudeRes.json();
@@ -1353,11 +1373,12 @@ Respond ONLY with valid JSON (no markdown):
         try {
           const raw = JSON.parse(text.replace(/```json|```/g, "").trim());
           setInsights(raw);
-        } catch { /* show salary data even if insights parse fails */ }
+        } catch { /* salary data already visible — insights parse fail is silent */ }
       }
-    } catch (err) {
-      handleError(err, "market_pulse");
-      setError(t.marketError);
+    } catch (claudeErr) {
+      // Claude is supplementary — salary data already displayed. Log but don't error.
+      handleError(claudeErr, "market_pulse_claude");
+      console.warn("[MarketPulse] Claude step failed (non-fatal):", claudeErr?.message);
     } finally {
       setLoading(false);
     }
