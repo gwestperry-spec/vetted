@@ -1848,9 +1848,41 @@ export default function App() {
             }
           }
         }
-      } catch (e) { console.warn("[restoreSession]", e?.message); }
+      } catch (e) {
+        console.warn("[restoreSession]", e?.message);
+        // Network may not be ready yet on warm launch — don't clear auth state,
+        // just leave the member where they are. They can retry manually.
+      }
     }
     restoreSession();
+
+    // ── Warm launch recovery ─────────────────────────────────────────────────
+    // iOS sometimes reloads the WebView on foreground under memory pressure.
+    // When that happens, React remounts and restoreSession fires — but the
+    // network radio may not be ready, causing a silent fetch failure that
+    // leaves the member on the sign-in screen.
+    // Solution: listen for appStateChange (foreground) and re-run restoreSession
+    // with a short delay to let the network stabilize.
+    let warmLaunchHandler = null;
+    if (window.Capacitor?.isNativePlatform?.()) {
+      warmLaunchHandler = window.Capacitor?.Plugins?.App?.addListener?.(
+        "appStateChange",
+        (state) => {
+          if (state?.isActive) {
+            // Only re-run if we're on the sign-in screen (authUser not set)
+            // and we have stored credentials to restore from.
+            const stored = localStorage.getItem("vetted_user");
+            if (stored && !authUser) {
+              setTimeout(() => restoreSession(), 1200);
+            }
+          }
+        }
+      );
+    }
+
+    return () => {
+      warmLaunchHandler?.remove?.();
+    };
   }, []);
 
   // Show walkthrough once on first dashboard visit
