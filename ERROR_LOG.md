@@ -510,19 +510,72 @@
 
 ---
 
-## Open Items (updated April 10, 2026)
+## Error 55 — MarketPulse salary lookup failing for geographic-qualified titles
+**Build:** v2.001.1 (build 22) — live production
+**Symptom:** "VP, Supply Chain North America" returned `{"error":"No salary data found"}` in Market Pulse logs. Salary data correctly existed in Kinsa table for "vp supply chain" but never matched.
+**Root cause:** O*NET receives the raw title including "North America". O*NET's keyword search treats "North America" as a required job function term, returning zero occupation matches. The Kinsa table match also failed because the full normalized title "vp supply chain north america" did not contain the keyword phrase "vp supply chain" as a word-boundary match when geographic words were included.
+**Fix:** Added geographic qualifier stripping before the O*NET call — regex removes North America, South America, EMEA, APAC, Global, Regional, National, and directional qualifiers (North, South, East, West, Midwest, etc.) before the title is sent to O*NET. Stripped title "VP Supply Chain" then correctly matches Kinsa keyword `"vp supply chain"`.
+**Deployed:** v2.001.1 (build 22) — `netlify/functions/salary-lookup.js`
+
+---
+
+## Error 56 — MarketPulse compound/unusual director titles returning no salary data
+**Build:** v2.001.1 (build 22) — live production
+**Symptom:** "Director, Business Model Enablement" and "Director, Distribution and Field Service" both returned `{"error":"No salary data found"}`.
+**Root cause (title 1):** "Business Model Enablement" has no keyword match in either table. O*NET keyword search for this highly specific title returns zero occupations.
+**Root cause (title 2):** Kinsa table had `"distribution director"` as a keyword but the normalized title is `"director distribution and field service"` — phrase `\bdistribution director\b` requires those two words adjacent in that order, which doesn't match.
+**Fix (three-part):**
+1. Added `"director distribution"`, `"director of distribution"`, `"director field service"` as keywords to the Kinsa Logistics/Transportation Director row.
+2. Added `"enablement director"`, `"business model director"`, `"director business model"`, `"director of transformation"` as keywords to the RH Director of Strategy row.
+3. Added O*NET condensed-title retry: on null result, extract seniority + 2 core content words and retry (e.g., "Director Business Model" → cleaner O*NET query).
+4. Added seniority-based salary fallback: if O*NET still returns null, return a benchmark range based on detected seniority level (C-Suite / VP / Director / Manager) labeled "Vetted Benchmark" — no more error states for valid seniority titles.
+**Deployed:** v2.001.1 (build 22) — `netlify/functions/salary-lookup.js`
+
+---
+
+## Error 57 — Wife's device showing free tier despite account being Vantage
+**Build:** v2.001.1 (build 22) — live production
+**Symptom:** Market Pulse and Career Coaching not visible on secondary test device. App correctly showed paid features on primary device.
+**Root cause:** The secondary device's Supabase `profiles` row had `tier = null` (never been updated). The app reads `p.tier` on sign-in and defaults to `"free"` if null. No code path automatically upgrades a profile row — tier must be set in Supabase explicitly.
+**Fix:** Updated Supabase `profiles` row directly via SQL: `UPDATE profiles SET tier = 'vantage_lifetime' WHERE apple_id = '...'`. App detects tier on next cold launch without any code change.
+**Deployed:** Supabase direct SQL — no code change required.
+
+---
+
+## Error 58 — App Store Connect upload timeout on build 22
+**Build:** v2.001.1 (build 22)
+**Symptom:** Xcode upload failed with "The request timed out. REQUEST CREATE CONTAINER (ASSET_UPLOAD) did not receive a response. Received status -19235."
+**Root cause:** Apple's asset upload CDN server timed out — a transient server-side failure unrelated to the build or code.
+**Fix:** Retry from the existing archive in Organizer. Build does not need to be recompiled. Resolved on second attempt.
+**Deployed:** v2.001.1 (build 22) — submitted successfully on retry.
+
+---
+
+## Error 59 — Scorecard incorrectly flagged JWS and RLS as unresolved security gaps
+**Build:** v2.001.1 (build 22) — scorecard audit
+**Symptom:** Product scorecard scored Security at 4/10 with "JWS cert chain still partially verified" and "RLS still disabled" as the two blockers.
+**Root cause (JWS):** `apple-auth.js` was not inspected before the scorecard was written. Code review confirmed full verification: RS256 algorithm check, key match by `kid`, `crypto.verify` with RSA-PKCS1 padding, issuer, expiry, and audience validation. The claim was incorrect.
+**Root cause (RLS):** `rls-policies.sql` existed in the repo but it was not confirmed whether the SQL had been applied to the database. SQL query against `pg_tables` confirmed `rowsecurity = true` on all four tables — RLS is live in production.
+**Fix:** Corrected scorecard Security score from 4 → 7. No code changes required. Both items were implemented in a prior sprint and simply had not been verified in this session.
+**Deployed:** N/A — scorecard correction only.
+
+---
+
+## Open Items (updated April 11, 2026)
 
 | Issue | Priority | Target Build |
 |---|---|---|
-| Supabase RLS — enable after v2.1 launch confirmed stable | Medium | v2.2 |
-| App Store Server Notifications — subscription renewal/cancellation lifecycle | High | v2.2 |
-| Streaming AI responses — scoring still ~12s | High | v2.2 |
+| App Store Server Notifications — register endpoint URL in App Store Connect + sandbox test | High | v2.2 |
+| Staging environment — create Supabase staging project + Netlify staging branch | Medium | v2.2 |
+| App.jsx decomposition — RegionGate, OnboardStep, Dashboard, useAuth hook remaining | Medium | v2.2 |
 | ADA — focus trap in modals, aria-live on filter carousel | Medium | v2.2 |
-| Component splitting — App.jsx god component | Medium | v2.2 |
-| JWS certificate chain verification (leaf → Apple Root CA) | Medium | v2.2 |
-| macOS Catalyst — make app available on MacBook | Medium | v2.2 |
-| Live mode Stripe env vars — swap when ready for real payments | Blocked on approval | — |
-| Subscription disclosure (Terms + Privacy links in paywall) | High | Build 22 ✅ |
+| Automated testing — Playwright E2E for 3 core flows | Medium | v2.2 |
+| macOS Catalyst — make app available on MacBook | Low | v2.3 |
+| Live mode Stripe env vars — swap when ready for real payments | Blocked on Apple approval | — |
+| ~~Supabase RLS~~ | ~~Medium~~ | ~~v2.2~~ | ✅ Verified live Apr 11 |
+| ~~Streaming AI responses~~ | ~~High~~ | ~~v2.2~~ | ✅ Complete — build 22 |
+| ~~JWS certificate chain verification~~ | ~~Medium~~ | ~~v2.2~~ | ✅ Verified complete Apr 11 |
+| ~~Subscription disclosure (Terms + Privacy links in paywall)~~ | ~~High~~ | ~~Build 22~~ | ✅ Complete |
 
 ---
 
@@ -549,4 +602,4 @@
 | v2.001.1 | 19 | Failed processing | ITSAppUsesNonExemptEncryption missing from Info.plist |
 | v2.001.1 | 20 | Rejected at upload | TARGETED_DEVICE_FAMILY changed to "1" — cannot remove iPad support |
 | v2.001.1 | 21 | In review | All fixes applied (authController retain, foreground scene anchor, export compliance, iPad orientations) — resubmitted after orientation validation fix; awaiting Apple Review |
-| v2.001.1 | 22 | Staged — not yet submitted | PaywallModal subscription disclosure, salary table corrections, Terms of Use link |
+| v2.001.1 | 22 | Submitted Apr 11 | Typography system (IBM Plex Mono + Inter), sign-in polish, iOS safe area fix, salary lookup geo-qualifier fix, compound-title retry, seniority fallback, application status tracker, PaywallModal disclosure |
