@@ -2,20 +2,20 @@ import UIKit
 import Capacitor
 
 /// MainViewController subclasses CAPBridgeViewController so we can register
-/// local plugins at the only moment the bridge is guaranteed to be non-nil:
-/// immediately after super.viewDidLoad() returns.
+/// local plugins at the correct Capacitor 8 lifecycle point: capacitorDidLoad().
 ///
-/// This is the definitive fix for all sign-in timing failures. Unlike AppDelegate
-/// lifecycle hooks (applicationDidBecomeActive, didFinishLaunching), viewDidLoad
-/// fires as part of the bridge initialisation sequence itself — no race possible.
+/// Capacitor 8 lifecycle (CAPBridgeViewController source, loadView → viewDidLoad):
+///   1. loadView()          → creates WKWebView + CapacitorBridge → calls capacitorDidLoad()
+///   2. capacitorDidLoad()  ← OUR HOOK: bridge & webView are set, web content not yet loaded
+///   3. viewDidLoad()       → calls loadWebView() → index.html begins loading
+///
+/// Registering in viewDidLoad (after super) is too late: loadWebView() has already fired.
+/// Registering in AppDelegate is too early: the bridge doesn't exist yet.
+/// capacitorDidLoad() is the only window where bridge is live and the web view is idle.
+@objc(MainViewController)
 class MainViewController: CAPBridgeViewController {
 
-    override func viewDidLoad() {
-        super.viewDidLoad()
-
-        // Bridge is guaranteed non-nil here — super.viewDidLoad() completes
-        // bridge setup before returning. These registrations run once, correctly,
-        // on every launch type: cold, warm, reinstall, iPad, background-refresh.
+    override func capacitorDidLoad() {
         bridge?.registerPluginInstance(SignInWithApplePlugin())
         bridge?.registerPluginInstance(StoreKitPlugin())
         bridge?.registerPluginInstance(PrintPlugin())

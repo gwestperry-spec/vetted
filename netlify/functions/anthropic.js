@@ -325,7 +325,7 @@ exports.handler = async function (event) {
   // ── Strip model/system overrides, proxy to Anthropic ──────────────────
   const safeBody = JSON.stringify({
     model: "claude-haiku-4-5-20251001",
-    max_tokens: parsedBody.max_tokens || 2000,
+    max_tokens: parsedBody.max_tokens || 4096,
     messages: messages || [],
   });
 

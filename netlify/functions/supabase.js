@@ -152,6 +152,15 @@ async function deleteOpportunity(appleId, oppId) {
   );
 }
 
+// Mark an opportunity as applied
+async function markApplied(appleId, oppId, appliedAt) {
+  return supabaseRequest(
+    "PATCH",
+    `/opportunities?apple_id=eq.${encodeURIComponent(appleId)}&id=eq.${encodeURIComponent(oppId)}`,
+    { applied_at: appliedAt }
+  );
+}
+
 // ─── Handler ──────────────────────────────────────────────────────────────
 exports.handler = async (event) => {
   const origin = event.headers?.origin || event.headers?.Origin || "";
@@ -240,6 +249,43 @@ exports.handler = async (event) => {
         return { statusCode: 200, headers: corsHeaders(origin), body: JSON.stringify({ ok: true }) };
       case "deleteOpportunity":
         result = await deleteOpportunity(appleId, body.opportunityId);
+        break;
+
+      case "markApplied":
+        result = await markApplied(appleId, body.opportunityId, body.appliedAt);
+        break;
+
+      case "updateApplicationStatus":
+        result = await supabaseRequest(
+          "PATCH",
+          `/opportunities?apple_id=eq.${encodeURIComponent(appleId)}&id=eq.${encodeURIComponent(body.opportunityId)}`,
+          { application_status: body.status, status_updated_at: new Date().toISOString() }
+        );
+        break;
+
+      case "loadInsight": {
+        const insightRes = await supabaseRequest(
+          "GET",
+          `/behavioral_insights?apple_id=eq.${encodeURIComponent(appleId)}&dismissed_at=is.null&order=created_at.desc&limit=1`
+        );
+        result = insightRes;
+        break;
+      }
+
+      case "dismissInsight":
+        result = await supabaseRequest(
+          "PATCH",
+          `/behavioral_insights?apple_id=eq.${encodeURIComponent(appleId)}&id=eq.${encodeURIComponent(body.insightId)}`,
+          { dismissed_at: new Date().toISOString() }
+        );
+        break;
+
+      case "actedOnInsight":
+        result = await supabaseRequest(
+          "PATCH",
+          `/behavioral_insights?apple_id=eq.${encodeURIComponent(appleId)}&id=eq.${encodeURIComponent(body.insightId)}`,
+          { acted_on_at: new Date().toISOString() }
+        );
         break;
 
       default:

@@ -5,12 +5,15 @@
 export const API_BASE = "https://celebrated-gelato-56d525.netlify.app";
 
 export const ENDPOINTS = {
-  anthropic:    `${API_BASE}/.netlify/functions/anthropic`,
+  anthropic:       `${API_BASE}/.netlify/functions/anthropic`,
+  anthropicStream: `${API_BASE}/.netlify/functions/anthropic-stream`,
   appleAuth:    `${API_BASE}/.netlify/functions/apple-auth`,
   supabase:     `${API_BASE}/.netlify/functions/supabase`,
   checkout:     `${API_BASE}/.netlify/functions/create-checkout-session`,
   appleIap:     `${API_BASE}/.netlify/functions/verify-apple-iap`,
   parseResume:  `${API_BASE}/.netlify/functions/parse-resume`,
   salaryLookup: `${API_BASE}/.netlify/functions/salary-lookup`,
+  behavioralIntelligence: `${API_BASE}/.netlify/functions/behavioral-intelligence`,
   privacy:      `${API_BASE}/privacy`,
+  terms:        "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/",
 };

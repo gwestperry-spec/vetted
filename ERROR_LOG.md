@@ -365,22 +365,168 @@
 
 ---
 
-## Open Items (updated April 6, 2026)
-
-| Issue | Priority | Target Build |
-|---|---|---|
-| VQ scoring loading visuals never rendered (spinner/phase animations broken in live builds) | High | v2.1 |
-| App Store Server Notifications — subscription renewal/cancellation lifecycle | High | v2.1 |
-| Streaming AI responses — scoring still ~12s | High | v2.1 |
-| Supabase RLS — enable after IAP launch confirmed stable | Medium | v2.1 |
-| ADA — focus trap in modals, aria-live on filter carousel | Medium | v2.1 |
-| Component splitting — App.jsx god component | Medium | v2.1 |
-| JWS certificate chain verification (leaf → Apple Root CA) | Medium | v2.1 |
-| Live mode Stripe env vars — swap when ready for real payments | Blocked on approval | — |
+## Error 41 — Market Pulse salary data silently swallowed by Claude timeout
+**Build:** v2.1 development
+**Symptom:** Market Pulse showed "Market data unavailable" even when server returned valid salary JSON. Salary fetch was succeeding; the error appeared to be in the function itself.
+**Root cause:** A single `try/catch` block wrapped both the salary fetch and the Claude (Anthropic) fetch. Claude has a 25-second timeout enforced via `AbortController`. When Claude timed out, the `catch` block fired, set the error state, and returned — discarding the salary data that had already been fetched successfully.
+**Fix:** Split into two independent `try/catch` blocks. Salary fetch is fatal: on failure, show error and return. Claude fetch is non-fatal: on failure, log warning and continue. `setData(salaryJson)` is called immediately after a successful salary fetch, before the Claude call begins. Salary data is visible to the user whether or not Claude returns insights.
+**Deployed:** v2.1 development
 
 ---
 
-## Build History Summary (updated April 6, 2026)
+## Error 42 — "Director of Procurement" returning CEO salary ($290K) — substring collision
+**Build:** v2.1 development
+**Symptom:** Pasting a Director of Procurement role into Market Pulse returned CEO / President salary ($250K–$600K) from Robert Half instead of procurement director data from Kinsa.
+**Root cause:** The keyword matching function used `.includes()` to test whether a keyword appeared in the job title. `"cto"` is a literal substring of `"director"` (dir**ecto**r contains the letters c-t-o sequentially — actually `dire**c**tor` contains the substring? No: "dirECTOr" → positions 4-6 are "ect" not "cto". Actually "dire**cto**r" — d-i-r-e-c-t-o-r. "cto" appears at positions 4-6 (c=4, t=5, o=6). So `"director".includes("cto")` returns `true`. This caused every "Director of X" role to match the CTO keyword row and return CTO salary.
+**Fix:** Replaced `.includes()` with word-boundary regex `\b${escaped}\b` in `matchTable()`. `\bcto\b` requires "cto" to appear as a complete word (surrounded by word boundaries), so it cannot match inside "director".
+**Deployed:** v2.1 development
+
+---
+
+## Error 43 — All director-level salary lookups broken after tier priority fix
+**Build:** v2.1 development
+**Symptom:** After the initial tier ordering fix (Robert Half → Kinsa → O*NET), all director-level roles returned "No salary data found." Roles that previously worked (Director of Finance, Director of Marketing) also failed.
+**Root cause:** Same word-boundary bug as Error 42, present throughout the entire `matchTable()` function before it was written. The `.includes()` approach caused collisions in multiple directions once the table order changed. The fix for Error 42 used `\b` regex globally, which also fixed all director-role matching.
+**Fix:** Implemented `matchTable()` with word-boundary regex and longest-match logic (longest matching keyword wins). Applied to both `matchRobertHalf()` and `matchKinsa()`.
+**Deployed:** v2.1 development
+
+---
+
+## Error 44 — Apple Review rejection (build 17) — Sign in with Apple non-functional on iPad
+**Build:** v2.0.3 (build 17) — Apple Review rejection, Guideline 2.1(a)
+**Symptom:** Apple reviewer reported Sign in with Apple failed on iPad. Auth sheet never appeared. No error message shown.
+**Root cause:** `presentationAnchor(for:)` in `SignInWithApple.swift` fell through to the `UIWindow()` fallback — a detached window with no frame, no scene, and no connection to the display hierarchy. On iPad, `ASAuthorizationController` requires a valid, visible window anchor. An unattached `UIWindow()` causes the auth sheet to be silently discarded.
+**Fix:** Rewrote `presentationAnchor` with a three-level fallback: (1) `self.bridge?.viewController?.view?.window` — the Capacitor bridge window, most reliable on both iPhone and iPad; (2) scene-based `keyWindow` / `windows.first` iteration for multi-window iPadOS; (3) `UIApplication.shared.windows.first` as legacy final fallback. The detached `UIWindow()` is never returned.
+**Deployed:** v2.1 (build 18) development
+
+---
+
+## Error 45 — Black screen after plugin registration moved to MainViewController (wrong lifecycle hook)
+**Build:** v2.1 (build 18) development
+**Symptom:** App launched to a completely black screen after `MainViewController` was introduced and the storyboard was updated to use it.
+**Root cause (part 1):** `AppDelegate` had been stripped of plugin registration on the assumption that `CAPBridgedPlugin` conformance auto-registers local plugins. It does not. Local plugins must be registered manually.
+**Root cause (part 2):** `MainViewController.viewDidLoad()` was overriding the UIKit lifecycle method and calling `super.viewDidLoad()` first. In Capacitor 8, `CAPBridgeViewController.viewDidLoad()` calls `loadWebView()`, which begins loading `index.html`. Plugin registration via `registerPluginInstance()` was called after `loadWebView()` — too late in the Capacitor 8 lifecycle. Plugins are expected to be registered before web content loads; calling `registerPluginInstance()` (which calls `JSExport.exportJS()`) after `loadWebView()` has fired produces undefined behavior, manifesting as a black screen.
+**Fix:** Changed `MainViewController` to override `capacitorDidLoad()` instead of `viewDidLoad()`. In Capacitor 8, `capacitorDidLoad()` is called from `loadView()` — before `viewDidLoad()` and therefore before `loadWebView()`. The bridge and web view are both live at this point; web content has not started loading. This is the documented and correct hook for local plugin registration.
+**Deployed:** v2.1 (build 18) development
+
+---
+
+## Error 46 — "Unknown class MainViewController in Interface Builder file"
+**Build:** v2.1 (build 18) development
+**Symptom:** App crashed at launch with runtime error: "Unknown class MainViewController in Interface Builder file." Storyboard could not instantiate the view controller.
+**Root cause:** When a Capacitor iOS project uses `use_frameworks!` in the Podfile, Swift classes may be registered in the Objective-C runtime with module-qualified names (e.g., `App.MainViewController`) rather than the bare class name (`MainViewController`). The storyboard uses `NSClassFromString("MainViewController")` to find the class at runtime — if the ObjC runtime name includes the module prefix, the lookup fails.
+**Fix:** Added `@objc(MainViewController)` to the class declaration. This explicitly pins the Objective-C runtime name to `"MainViewController"` regardless of module context. This is the same pattern used by every other plugin in the project (`@objc(SignInWithApplePlugin)`, `@objc(StoreKitPlugin)`, `@objc(PrintPlugin)`).
+**Deployed:** v2.1 (build 18) development
+
+---
+
+## Error 47 — Multiple food industry roles returning "No salary data found"
+**Build:** v2.1 development
+**Symptom:** Five distinct role types in Market Pulse returned "No salary data found" — logging confirmed the server received the titles and searched both tables with no match.
+
+**Five failures and their individual root causes:**
+
+1. **"Director of Dairy Procurement"** — The keyword `"director of procurement"` requires the words to appear contiguously. The word "dairy" between "director of" and "procurement" breaks the phrase. Word-boundary regex cannot match a non-contiguous sequence. **Fix:** Added `"dairy procurement"` and `"director of dairy procurement"` as explicit keywords to the procurement row.
+
+2. **"Senior Vice President, Foodservice Business Unit"** — The CEO row contained `"president"` as a keyword. `\bpresident\b` matches inside "vice president" and "senior vice president" because "president" is a complete word at the end of both phrases. The keyword length for `"president"` (9) was shorter than needed to be overridden. **Fix:** Removed `"president"` from CEO keywords entirely. Added a new SVP row (`"senior vice president"`, `"executive vice president"`, `"evp"`, `"svp"`) that now correctly matches these titles. SVP row added to Robert Half table before the CEO row.
+
+3. **"Director of Catering Strategy"** — Neither the Robert Half table nor the Kinsa table contained any keyword for catering or foodservice director roles. **Fix:** Added a new Kinsa row with keywords including `"director of catering"`, `"catering director"`, `"catering strategy"`, `"foodservice director"`, `"food service director"`.
+
+4. **"Senior Manager, Culinary Innovation & Commercialization"** — No keywords existed for culinary innovation or food product commercialization manager roles. **Fix:** Added a new Kinsa row with keywords including `"culinary innovation"`, `"culinary manager"`, `"commercialization manager"`, `"culinary development manager"`.
+
+5. **"Regional Senior Director, Operations"** — The existing keyword `"director of operations"` (22 characters) requires "director" and "operations" to be adjacent. The comma in "Regional Senior Director, Operations" separates them. `\bdirector of operations\b` does not match. **Fix:** Added a new Kinsa row for Senior Director of Operations with keywords including `"senior director of operations"` and `"regional senior director"` — both of which match the title via word boundaries despite the comma.
+
+**Deployed:** v2.1 development
+
+---
+
+## Error 48 — VQ loading screen had no meaningful loading visuals
+**Build:** v2.1 development
+**Symptom:** VQ loading screen displayed only a spinning circle and static text "Analyzing role against your framework…" on a blank background. No engagement, no context, no coaching during the wait.
+**Root cause:** The loading screen was a minimal inline render — `<div className="spinner" /> <p>{t.loadingMsg}</p>` — with no dynamic content.
+**Fix:** Replaced the inline render with a `VQLoadingScreen` component containing 60 coaching pairs (question + statement) drawn from across the emotional arc of a job search — encouraging, affirming, inquisitive, discerning, and reassuring. A random pair is selected on each mount; no pair repeats consecutively (tracked via module-level `_lastCoachingIdx`). The anchor pair ("What if this score — whatever it says — is exactly the information you needed today?" / "It is. That's why you're here.") is given 2× selection weight by appearing twice in the pool. Coaching content fades in with a 500ms delay so the spinner establishes context first. Question rendered in Playfair Display 17px/700. Statement in IBM Plex Mono 11px/400 muted. No new colors or fonts introduced.
+**Deployed:** v2.1 development
+
+---
+
+## Error 49 — Build 19 failed Apple processing (ITSAppUsesNonExemptEncryption missing)
+**Build:** v2.001.1 (build 19)
+**Symptom:** Build 19 uploaded successfully from Xcode but showed "Failed" status in App Store Connect TestFlight. Never appeared as a processable build. Builds 17 and 18 processed correctly.
+**Root cause:** `ITSAppUsesNonExemptEncryption` key was absent from `Info.plist`. Apple's processing servers require this key to determine export compliance. Without it, the build is rejected server-side during automated processing — after Xcode reports upload success but before App Store Connect shows the build. Builds 17 and 18 succeeded because the Xcode upload wizard prompted manual export compliance answers during those sessions; builds 19 and 20 used a flow where the prompt was bypassed.
+**Fix:** Added `<key>ITSAppUsesNonExemptEncryption</key><false/>` to `Info.plist`. Declares that Vetted uses only standard HTTPS/TLS, which is exempt from US export regulations. Apple's servers now read this key and skip the manual compliance review.
+**Deployed:** v2.001.1 (build 21) — fix included in build 21, currently In Review
+
+---
+
+## Error 50 — Build 20 upload rejected (TARGETED_DEVICE_FAMILY downgrade)
+**Build:** v2.001.1 (build 20)
+**Symptom:** Xcode upload completed but validation failed immediately with: "This bundle does not support one or more of the devices supported by the previous app version. Your app update must continue to support all devices previously supported."
+**Root cause:** In response to repeated iPad Sign in with Apple rejections, `TARGETED_DEVICE_FAMILY` was changed from `"1,2"` (iPhone + iPad) to `"1"` (iPhone only) in `project.pbxproj`. Apple's App Store policy prohibits removing device support in an update. Once a version ships supporting iPad, all future versions must continue to support it.
+**Fix:** Reverted `TARGETED_DEVICE_FAMILY` back to `"1,2"`. The iPad Sign in with Apple failure must be resolved in code, not by dropping device support.
+**Deployed:** Reverted immediately. Build 21 used corrected setting.
+
+---
+
+## Error 51 — Build 21 initial validation failed (UISupportedInterfaceOrientations~ipad removed)
+**Build:** v2.001.1 (build 21)
+**Symptom:** Xcode upload validation failed with: "The 'UIInterfaceOrientationPortrait' orientations were provided for UISupportedInterfaceOrientations but you need to include all four orientations to support iPad multitasking."
+**Root cause:** The `UISupportedInterfaceOrientations~ipad` key was removed from `Info.plist` in an earlier cleanup step (it was mistakenly treated as leftover iPad-specific metadata after the iPad removal attempt). This key is required for all apps supporting iPad — it declares that the app supports all four orientations, enabling iPadOS multitasking (Split View, Slide Over). Without it, Apple rejects the bundle at upload validation.
+**Fix:** Restored `UISupportedInterfaceOrientations~ipad` with all four orientation values: Portrait, PortraitUpsideDown, LandscapeLeft, LandscapeRight.
+**Deployed:** v2.001.1 (build 21) — fix applied and resubmitted as build 21; build is currently In Review
+
+---
+
+## Error 52 — iPad Sign in with Apple still failing after presentationAnchor rewrite (builds 17–18)
+**Build:** v2.001.1 (build 22) — root cause analysis and fix
+**Symptom:** Build 18 was rejected under Guideline 2.1(a) for the same iPad Sign in with Apple failure as build 17, despite the presentationAnchor rewrite in build 18.
+**Root cause (newly identified — two compounding issues):**
+1. **`ASAuthorizationController` premature deallocation.** The controller was created as a local variable inside `DispatchQueue.main.async { }`. Once `performRequests()` was called and the async block exited, ARC could release the controller before the iPad sheet completed its longer presentation path. On iPhone the presentation is faster and deallocation rarely races; on iPad the lifecycle is longer and the race is reproducible.
+2. **`presentationAnchor` window priority incorrect for iPad multi-window.** The bridge window (`self.bridge?.viewController?.view?.window`) was checked first. On iPad in Split View or Stage Manager configurations, this can resolve to a window that is not the key active window, causing the auth sheet to be silently discarded despite a non-nil return.
+**Fix:** (1) Stored `ASAuthorizationController` as a `private var authController` instance variable, retaining it for the full duration of the auth flow. `defer { authController = nil }` cleans up in both success and error handlers. (2) Reordered `presentationAnchor` to check the foreground-active scene's key window first — `UIApplication.shared.connectedScenes.first(where: { $0.activationState == .foregroundActive })` — before falling back to the bridge window. Scene-based foreground active window is the most reliable reference across all iPad configurations.
+**Additionally:** Removed the `@capacitor-community/apple-sign-in` community plugin from `packageClassList` in `capacitor.config.json`. The community plugin had no `presentationContextProvider` implementation (auth sheet silently discarded on iPad in all configurations) and force-unwrapped `identityToken!` (crash risk if nil). It was never called from JS — our local `SignInWithApplePlugin` handled all auth — but its presence as an auto-registered plugin was an active latent risk.
+**Deployed:** v2.001.1 (build 21) — fix included in build 21, currently In Review
+
+---
+
+## Error 53 — Guideline 3.1.2(c) rejection — subscription disclosure incomplete
+**Build:** v2.001.1 (build 21) — identified during review
+**Symptom:** Apple rejected the submission under Guideline 3.1.2(c): "The submission did not include all the required information for apps offering auto-renewable subscriptions." Specifically: missing functional links to Terms of Use (EULA) and Privacy Policy within the app's purchase flow, and missing EULA link in App Store metadata.
+**Root cause:** The `PaywallModal` component displayed pricing, tier names, and feature lists but contained no links to Privacy Policy or Terms of Use. The Apple-required auto-renewal disclosure language ("Payment will be charged to your Apple ID at confirmation of purchase. Subscriptions automatically renew unless cancelled...") was also absent. App Store Connect did not have the Privacy Policy URL field populated.
+**Fix applied in-app:** Added Privacy Policy link (`ENDPOINTS.privacy`) and Terms of Use link (Apple Standard EULA: `https://www.apple.com/legal/internet-services/itunes/dev/stdeula/`) to the PaywallModal footer. Added standard Apple auto-renewal disclosure paragraph above the links. Added `terms` key to `ENDPOINTS` in `config.js`. All links are functional — open in system browser via `target="_blank"`.
+**Fix applied in metadata:** Privacy Policy URL populated in App Store Connect → App Information. EULA field set to Apple Standard EULA.
+**Resolution:** Apple offered bug-fix approval for the current build (21) without resubmission. Replied requesting approval. Full in-app disclosure staged in build 22.
+**Deployed:** v2.001.1 (build 22) for in-app fix — staged, not yet submitted. Metadata fix (Privacy Policy URL, EULA link) applied immediately in App Store Connect without a new build.
+
+---
+
+## Error 54 — Salary table inconsistencies (duplicates and narrow ranges)
+**Build:** v2.001.1 — identified during audit
+**Symptom:** Three categories of incorrect salary data visible to users in Market Pulse:
+1. Unrealistically narrow salary ranges on three roles: Plant Superintendent ($105K–$115K, a $10K spread), Project Engineer ($140K–$150K max), Plant Engineer ($135K–$150K max).
+2. Duplicate `chief supply chain officer` entry in KINSA_TABLE — appeared at both the Supply Chain section (line 173) and the C-Suite section (line 257) with identical data. First match always won but the redundancy created maintenance risk.
+3. Duplicate keyword `"director of logistics"` in two KINSA rows — appeared in both the Logistics Director row and the Logistics Manager row. Both rows matched the same keyword at equal length; first-in-array won, masking the bug.
+**Fix:** Corrected Plant Superintendent to min: $85K / median: $110K / max: $155K. Corrected Project Engineer to min: $85K / median: $130K / max: $185K. Corrected Plant Engineer to min: $90K / median: $130K / max: $175K. Removed duplicate CSCO entry from the C-Suite section. Removed `"director of logistics"` from the Logistics Manager keywords (retained in Logistics Director row where it correctly belongs).
+**Deployed:** v2.001.1 (build 22) — staged, not yet submitted
+
+---
+
+## Open Items (updated April 10, 2026)
+
+| Issue | Priority | Target Build |
+|---|---|---|
+| Supabase RLS — enable after v2.1 launch confirmed stable | Medium | v2.2 |
+| App Store Server Notifications — subscription renewal/cancellation lifecycle | High | v2.2 |
+| Streaming AI responses — scoring still ~12s | High | v2.2 |
+| ADA — focus trap in modals, aria-live on filter carousel | Medium | v2.2 |
+| Component splitting — App.jsx god component | Medium | v2.2 |
+| JWS certificate chain verification (leaf → Apple Root CA) | Medium | v2.2 |
+| macOS Catalyst — make app available on MacBook | Medium | v2.2 |
+| Live mode Stripe env vars — swap when ready for real payments | Blocked on approval | — |
+| Subscription disclosure (Terms + Privacy links in paywall) | High | Build 22 ✅ |
+
+---
+
+## Build History Summary (updated April 9, 2026)
 
 | Version | Build | Status | Key Changes |
 |---|---|---|---|
@@ -398,3 +544,9 @@
 | v2.0.1 | 14 | Accepted — login broken | Carousels missing (not synced), Sign In with Apple failing (bundle ID typo) |
 | v2.0.2 | 15 | Approved — IAP not configured | Login fix, both carousels, session restore, Restore Purchases button |
 | v2.0.3 | 16 | Submitted | AppDelegate plugin race fix, Market Pulse role toolbar, all 4 IAP products submitted |
+| v2.0.3 | 17 | Rejected (2.1a) | iPad Sign in with Apple broken — presentationAnchor returned detached UIWindow() |
+| v2.1 | 18 | Rejected (2.1a) | Same iPad Sign in with Apple failure — authController deallocation + wrong window priority |
+| v2.001.1 | 19 | Failed processing | ITSAppUsesNonExemptEncryption missing from Info.plist |
+| v2.001.1 | 20 | Rejected at upload | TARGETED_DEVICE_FAMILY changed to "1" — cannot remove iPad support |
+| v2.001.1 | 21 | In review | All fixes applied (authController retain, foreground scene anchor, export compliance, iPad orientations) — resubmitted after orientation validation fix; awaiting Apple Review |
+| v2.001.1 | 22 | Staged — not yet submitted | PaywallModal subscription disclosure, salary table corrections, Terms of Use link |

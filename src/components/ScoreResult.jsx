@@ -142,7 +142,7 @@ function SectionCarousel({ opp, t }) {
               minWidth: 0,
               padding: "10px 10px",
               fontSize: 10, fontWeight: 600,
-              fontFamily: "'IBM Plex Mono', monospace",
+              fontFamily: "var(--font-data)",
               letterSpacing: ".06em",
               textTransform: "uppercase",
               border: "none",
@@ -180,7 +180,7 @@ function SectionCarousel({ opp, t }) {
           aria-label="Previous section"
           style={{ background: "none", border: "none", cursor: idx === 0 ? "default" : "pointer", opacity: idx === 0 ? 0.25 : 0.6, fontSize: 18, padding: "4px 8px", minHeight: 36 }}
         >‹</button>
-        <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: "var(--muted)", letterSpacing: ".1em" }}>
+        <span style={{ fontFamily: "var(--font-data)", fontSize: 11, color: "var(--muted)", letterSpacing: ".1em" }}>
           {idx + 1} / {total}  ·  SWIPE OR TAP
         </span>
         <button
@@ -221,7 +221,7 @@ function FilterCarousel({ filterScores, t }) {
       {/* Header row */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
         <h2 id="filter-bd-heading" className="section-label" style={{ marginBottom: 0 }}>{t.filterBreakdown}</h2>
-        <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: "var(--muted)", letterSpacing: ".08em" }}>
+        <span style={{ fontFamily: "var(--font-data)", fontSize: 11, color: "var(--muted)", letterSpacing: ".08em" }}>
           {idx + 1} / {total}
         </span>
       </div>
@@ -242,12 +242,12 @@ function FilterCarousel({ filterScores, t }) {
       >
         {/* Filter name + weight */}
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8, marginBottom: 18 }}>
-          <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 700, lineHeight: 1.3, flex: 1 }}>
+          <h3 style={{ fontFamily: "var(--font-prose)", fontSize: 18, fontWeight: 700, lineHeight: 1.3, flex: 1 }}>
             {fs.filter_name}
           </h3>
           {fs.weight && fs.weight !== 1.0 && (
             <span style={{
-              fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, fontWeight: 700,
+              fontFamily: "var(--font-data)", fontSize: 11, fontWeight: 700,
               letterSpacing: ".1em", textTransform: "uppercase",
               background: "var(--cream)", color: "var(--muted)",
               padding: "3px 8px", borderRadius: 20, flexShrink: 0, marginTop: 3,
@@ -259,7 +259,7 @@ function FilterCarousel({ filterScores, t }) {
 
         {/* Score */}
         <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 14 }}>
-          <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 38, fontWeight: 700, color: col, lineHeight: 1 }}>
+          <span style={{ fontFamily: "var(--font-data)", fontSize: 38, fontWeight: 500, color: col, lineHeight: 1 }}>
             {fs.score}
           </span>
           <div>
@@ -274,7 +274,7 @@ function FilterCarousel({ filterScores, t }) {
                 }} />
               ))}
             </div>
-            <span style={{ fontSize: 11, color: "var(--muted)", fontFamily: "'IBM Plex Mono', monospace" }}>out of 5</span>
+            <span style={{ fontSize: 11, color: "var(--muted)", fontFamily: "var(--font-data)" }}>out of 5</span>
           </div>
         </div>
 
@@ -448,8 +448,8 @@ Respond ONLY with valid JSON (no markdown) in exactly this shape:
       <button className="back-link" onClick={onBack}>{t.backDash}</button>
       <article aria-labelledby="result-title">
         <div className="card">
-          <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, letterSpacing: ".15em", textTransform: "uppercase", color: "var(--muted)", marginBottom: 6 }}>{opp.company}</p>
-          <h1 className="card-title" id="result-title" style={{ fontSize: 26 }}>{opp.role_title}</h1>
+          <p style={{ fontFamily: "var(--font-data)", fontSize: 11, letterSpacing: ".15em", textTransform: "uppercase", color: "var(--muted)", marginBottom: 6 }}>{opp.company}</p>
+          <h1 className="card-title" id="result-title" style={{ fontSize: 26, color: "#1A2E1A" }}>{opp.role_title}</h1>
           <div className="overall-score-display">
             <div className={`big-score ${sc}`} aria-label={`${t.weightedScore}: ${opp.overall_score.toFixed(1)}`}>{opp.overall_score.toFixed(1)}</div>
             <div className="score-meta">
@@ -472,9 +472,9 @@ Respond ONLY with valid JSON (no markdown) in exactly this shape:
           {/* Header row */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, gap: 12, flexWrap: "wrap" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <h2 id="coaching-heading" className="card-title" style={{ fontSize: 16, marginBottom: 0 }}>Career Coaching</h2>
+              <h2 id="coaching-heading" className="card-title" style={{ fontSize: 16, marginBottom: 0, color: "#1A2E1A" }}>Career Coaching</h2>
               {!canVantage && (
-                <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase", background: "var(--gold)", color: "#fff", padding: "2px 7px", borderRadius: 20 }}>Vantage</span>
+                <span style={{ fontFamily: "var(--font-data)", fontSize: 11, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase", background: "var(--gold)", color: "#fff", padding: "2px 7px", borderRadius: 20 }}>Vantage</span>
               )}
             </div>
 
@@ -510,7 +510,7 @@ Respond ONLY with valid JSON (no markdown) in exactly this shape:
 
           {/* Style description — shows current mode when open */}
           {canVantage && coachingOpen && coaching && (
-            <p style={{ fontSize: 11, color: "var(--muted)", fontFamily: "'IBM Plex Mono', monospace", letterSpacing: ".05em", marginBottom: 16 }}>
+            <p style={{ fontSize: 11, color: "var(--muted)", fontFamily: "var(--font-data)", letterSpacing: ".05em", marginBottom: 16 }}>
               {COACHING_STYLES[coachingStyle].description}
             </p>
           )}
@@ -547,7 +547,7 @@ Respond ONLY with valid JSON (no markdown) in exactly this shape:
 
               {coachingLoading && !coaching && (
                 <div style={{ padding: "24px 0", textAlign: "center" }}>
-                  <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: "var(--muted)", letterSpacing: ".1em" }}>
+                  <div style={{ fontFamily: "var(--font-data)", fontSize: 11, color: "var(--muted)", letterSpacing: ".1em" }}>
                     Generating {coachingStyle === "conservative" ? "advisor" : "advocate"} coaching…
                   </div>
                 </div>
@@ -564,7 +564,7 @@ Respond ONLY with valid JSON (no markdown) in exactly this shape:
                 <div key={section.key} style={{ marginBottom: 20, paddingBottom: 20, borderBottom: i < COACHING_SECTIONS.length - 1 ? "1px solid var(--cream)" : "none" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
                     <span aria-hidden="true" style={{ fontSize: 16 }}>{section.icon}</span>
-                    <h3 style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, fontWeight: 700, letterSpacing: ".15em", textTransform: "uppercase", color: "var(--muted)" }}>
+                    <h3 style={{ fontFamily: "var(--font-data)", fontSize: 11, fontWeight: 700, letterSpacing: ".15em", textTransform: "uppercase", color: "var(--muted)" }}>
                       {sectionLabels[section.key]}
                     </h3>
                   </div>
@@ -598,9 +598,9 @@ Respond ONLY with valid JSON (no markdown) in exactly this shape:
           <section className="card" aria-labelledby="support-heading" style={{ borderLeft: "3px solid var(--gold)" }}>
             <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
               <div>
-                <h2 id="support-heading" className="card-title" style={{ fontSize: 15, marginBottom: 4, display: "flex", alignItems: "center", gap: 8 }}>
+                <h2 id="support-heading" className="card-title" style={{ fontSize: 15, marginBottom: 4, color: "#1A2E1A", display: "flex", alignItems: "center", gap: 8 }}>
                   {t.prioritySupport || "Priority Support"}
-                  <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase", background: "var(--gold)", color: "#fff", padding: "2px 7px", borderRadius: 20 }}>Vantage</span>
+                  <span style={{ fontFamily: "var(--font-data)", fontSize: 11, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase", background: "var(--gold)", color: "#fff", padding: "2px 7px", borderRadius: 20 }}>Vantage</span>
                 </h2>
                 <p style={{ fontSize: 12, color: "var(--muted)", lineHeight: 1.5 }}>
                   {t.prioritySupportDesc || "Direct line to the Vetted team. We respond within 4 business hours."}

@@ -39,7 +39,7 @@ function OppHeader({ t, opp, profile, isWinner, onViewFull }) {
       {isWinner && (
         <div style={{
           display: "inline-flex", alignItems: "center", gap: 4,
-          fontFamily: "'IBM Plex Mono', monospace", fontSize: 9,
+          fontFamily: "var(--font-data)", fontSize: 11,
           fontWeight: 700, letterSpacing: ".12em", textTransform: "uppercase",
           background: "var(--accent)", color: "#fff",
           padding: "2px 8px", borderRadius: 20, marginBottom: 8,
@@ -48,24 +48,24 @@ function OppHeader({ t, opp, profile, isWinner, onViewFull }) {
         </div>
       )}
       <p style={{
-        fontFamily: "'IBM Plex Mono', monospace", fontSize: 10,
+        fontFamily: "var(--font-data)", fontSize: 10,
         letterSpacing: ".12em", textTransform: "uppercase",
         color: "var(--muted)", marginBottom: 4, wordBreak: "break-word",
       }}>{opp.company}</p>
       <h2 style={{
-        fontFamily: "'Playfair Display', serif", fontSize: 17,
-        fontWeight: 700, lineHeight: 1.25, marginBottom: 12,
+        fontFamily: "var(--font-prose)", fontSize: 17,
+        fontWeight: 600, lineHeight: 1.25, marginBottom: 12,
         wordBreak: "break-word",
       }}>{opp.role_title}</h2>
 
       {/* Big score */}
       <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 10 }}>
         <span style={{
-          fontFamily: "'Playfair Display', serif", fontSize: 44,
-          fontWeight: 700, lineHeight: 1, color: scoreColorClass,
+          fontFamily: "var(--font-data)", fontSize: 44,
+          fontWeight: 500, lineHeight: 1, color: scoreColorClass,
         }}>{opp.overall_score.toFixed(1)}</span>
         <span style={{
-          fontFamily: "'IBM Plex Mono', monospace", fontSize: 10,
+          fontFamily: "var(--font-data)", fontSize: 10,
           color: "var(--muted)", letterSpacing: ".1em", textTransform: "uppercase",
         }}>{t.weightedScore}</span>
       </div>
@@ -120,15 +120,15 @@ export default function CompareView({ t, profile, oppA, oppB, onBack, onViewOpp 
       <button className="back-link" onClick={onBack}>{t.compareBack}</button>
 
       <div style={{
-        fontFamily: "'IBM Plex Mono', monospace", fontSize: 10,
+        fontFamily: "var(--font-data)", fontSize: 10,
         letterSpacing: ".18em", textTransform: "uppercase",
         color: "var(--muted)", marginBottom: 8,
       }}>
         Vetted Quotient
       </div>
       <h1 style={{
-        fontFamily: "'Playfair Display', serif", fontSize: 24,
-        fontWeight: 700, marginBottom: 24, lineHeight: 1.2,
+        fontFamily: "var(--font-prose)", fontSize: 24,
+        fontWeight: 600, marginBottom: 24, lineHeight: 1.2,
       }}>{t.compareTitle}</h1>
 
       {/* ── Dual-column header card ── */}
@@ -153,12 +153,12 @@ export default function CompareView({ t, profile, oppA, oppB, onBack, onViewOpp 
         padding: "16px 20px", marginBottom: 16,
       }}>
         <p style={{
-          fontFamily: "'IBM Plex Mono', monospace", fontSize: 9,
+          fontFamily: "var(--font-data)", fontSize: 11,
           letterSpacing: ".15em", textTransform: "uppercase",
           color: "var(--muted)", marginBottom: 10,
         }}>VQ Delta</p>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 15, fontWeight: 700, color: winnerIsA ? "var(--success)" : "var(--muted)", minWidth: 32, textAlign: "right" }}>
+          <span style={{ fontFamily: "var(--font-data)", fontSize: 15, fontWeight: 700, color: winnerIsA ? "var(--success)" : "var(--muted)", minWidth: 32, textAlign: "right" }}>
             {oppA.overall_score.toFixed(1)}
           </span>
           <div style={{ flex: 1, height: 6, background: "var(--border)", borderRadius: 3, overflow: "hidden", position: "relative" }}>
@@ -175,7 +175,7 @@ export default function CompareView({ t, profile, oppA, oppB, onBack, onViewOpp 
             {/* Center line */}
             <div style={{ position: "absolute", top: 0, bottom: 0, left: "50%", width: 1.5, background: "var(--border)" }} />
           </div>
-          <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 15, fontWeight: 700, color: !winnerIsA ? "var(--success)" : "var(--muted)", minWidth: 32 }}>
+          <span style={{ fontFamily: "var(--font-data)", fontSize: 15, fontWeight: 700, color: !winnerIsA ? "var(--success)" : "var(--muted)", minWidth: 32 }}>
             {oppB.overall_score.toFixed(1)}
           </span>
         </div>
@@ -191,13 +191,13 @@ export default function CompareView({ t, profile, oppA, oppB, onBack, onViewOpp 
       }}>
         {/* Strengths A */}
         <div style={{ background: "#fff", border: "1.5px solid var(--border)", borderRadius: "var(--r)", padding: "16px 18px" }}>
-          <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: ".15em", textTransform: "uppercase", color: "var(--success)", marginBottom: 10, fontWeight: 700 }}>
+          <p style={{ fontFamily: "var(--font-data)", fontSize: 11, letterSpacing: ".15em", textTransform: "uppercase", color: "var(--success)", marginBottom: 10, fontWeight: 700 }}>
             {t.strengths} — {oppA.role_title}
           </p>
           <ul style={{ paddingLeft: 16 }}>
             {(oppA.strengths || []).map((s, i) => <li key={i} style={{ fontSize: 12, lineHeight: 1.6, marginBottom: 4, color: "var(--ink)" }}>{s}</li>)}
           </ul>
-          <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: ".15em", textTransform: "uppercase", color: "var(--pass)", marginTop: 14, marginBottom: 8, fontWeight: 700 }}>
+          <p style={{ fontFamily: "var(--font-data)", fontSize: 11, letterSpacing: ".15em", textTransform: "uppercase", color: "var(--pass)", marginTop: 14, marginBottom: 8, fontWeight: 700 }}>
             {t.gaps}
           </p>
           <ul style={{ paddingLeft: 16 }}>
@@ -206,13 +206,13 @@ export default function CompareView({ t, profile, oppA, oppB, onBack, onViewOpp 
         </div>
         {/* Strengths B */}
         <div style={{ background: "#fff", border: "1.5px solid var(--border)", borderRadius: "var(--r)", padding: "16px 18px" }}>
-          <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: ".15em", textTransform: "uppercase", color: "var(--success)", marginBottom: 10, fontWeight: 700 }}>
+          <p style={{ fontFamily: "var(--font-data)", fontSize: 11, letterSpacing: ".15em", textTransform: "uppercase", color: "var(--success)", marginBottom: 10, fontWeight: 700 }}>
             {t.strengths} — {oppB.role_title}
           </p>
           <ul style={{ paddingLeft: 16 }}>
             {(oppB.strengths || []).map((s, i) => <li key={i} style={{ fontSize: 12, lineHeight: 1.6, marginBottom: 4, color: "var(--ink)" }}>{s}</li>)}
           </ul>
-          <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: ".15em", textTransform: "uppercase", color: "var(--pass)", marginTop: 14, marginBottom: 8, fontWeight: 700 }}>
+          <p style={{ fontFamily: "var(--font-data)", fontSize: 11, letterSpacing: ".15em", textTransform: "uppercase", color: "var(--pass)", marginTop: 14, marginBottom: 8, fontWeight: 700 }}>
             {t.gaps}
           </p>
           <ul style={{ paddingLeft: 16 }}>
@@ -229,7 +229,7 @@ export default function CompareView({ t, profile, oppA, oppB, onBack, onViewOpp 
           padding: "20px 20px 8px", marginBottom: 16,
         }}>
           <p style={{
-            fontFamily: "'IBM Plex Mono', monospace", fontSize: 9,
+            fontFamily: "var(--font-data)", fontSize: 11,
             letterSpacing: ".18em", textTransform: "uppercase",
             color: "var(--muted)", marginBottom: 20, fontWeight: 700,
           }}>{t.filterBreakdown}</p>
@@ -252,7 +252,7 @@ export default function CompareView({ t, profile, oppA, oppB, onBack, onViewOpp 
                   <span style={{ fontSize: 13, fontWeight: 600, flex: 1 }}>{filterName}</span>
                   {weightLabel && (
                     <span style={{
-                      fontFamily: "'IBM Plex Mono', monospace", fontSize: 9,
+                      fontFamily: "var(--font-data)", fontSize: 11,
                       fontWeight: 700, color: "var(--muted)", letterSpacing: ".08em",
                     }}>{weightLabel}</span>
                   )}
@@ -268,7 +268,7 @@ export default function CompareView({ t, profile, oppA, oppB, onBack, onViewOpp 
                           <ScoreDots score={scoreA} />
                         </div>
                         <span style={{
-                          fontFamily: "'Playfair Display', serif", fontSize: 20, fontWeight: 700,
+                          fontFamily: "var(--font-data)", fontSize: 20, fontWeight: 500,
                           color: aWins ? scoreColor(scoreA) : "var(--muted)",
                         }}>{scoreA}</span>
                         {aWins && <span style={{ fontSize: 10, marginLeft: 4, color: "var(--success)" }}>↑</span>}
@@ -277,7 +277,7 @@ export default function CompareView({ t, profile, oppA, oppB, onBack, onViewOpp 
                   </div>
                   {/* vs divider */}
                   <div style={{
-                    fontFamily: "'IBM Plex Mono', monospace", fontSize: 9,
+                    fontFamily: "var(--font-data)", fontSize: 11,
                     color: "var(--muted)", letterSpacing: ".1em", textAlign: "center",
                   }}>vs</div>
                   {/* Opp B score */}
@@ -288,7 +288,7 @@ export default function CompareView({ t, profile, oppA, oppB, onBack, onViewOpp 
                           <ScoreDots score={scoreB} />
                         </div>
                         <span style={{
-                          fontFamily: "'Playfair Display', serif", fontSize: 20, fontWeight: 700,
+                          fontFamily: "var(--font-data)", fontSize: 20, fontWeight: 500,
                           color: bWins ? scoreColor(scoreB) : "var(--muted)",
                         }}>{scoreB}</span>
                         {bWins && <span style={{ fontSize: 10, marginLeft: 4, color: "var(--success)" }}>↑</span>}

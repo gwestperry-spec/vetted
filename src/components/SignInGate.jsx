@@ -61,94 +61,169 @@ export default function SignInGate({ t, lang, setLang, onSignIn, authLoading, au
   const guidance = authError ? ERROR_GUIDANCE[authError] : null;
 
   return (
-    <div className="region-gate">
-      <div style={{ textAlign: "center", marginBottom: 32 }}>
-        <p className="header-eyebrow">AI-Powered Opportunity Intelligence</p>
-        <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 32, fontWeight: 700, marginBottom: 8 }}>
-          <span style={{ color: "var(--accent)" }}>Vetted</span>
-        </h1>
-        <p style={{ color: "var(--muted)", fontSize: 14, lineHeight: 1.6, maxWidth: 320, margin: "0 auto" }}>
-          Filter The Noise. Score every role against what you actually care about.
-        </p>
+    <div style={{
+      maxWidth: 480,
+      margin: "0 auto",
+      paddingTop: 60,
+      paddingBottom: 48,
+      paddingLeft: 24,
+      paddingRight: 24,
+      background: "#FAFAF8",
+      minHeight: "100vh",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+    }}>
+      {/* ── Brand name ── */}
+      <h1 style={{
+        fontFamily: "var(--font-prose)",
+        fontSize: 32,
+        fontWeight: 700,
+        color: "#1A2E1A",
+        marginTop: 0,
+        marginBottom: 0,
+      }}>Vetted</h1>
+
+      {/* ── Tagline ── */}
+      <p style={{
+        fontFamily: "var(--font-data)",
+        fontSize: 11,
+        color: "#4A5A4A",
+        letterSpacing: "0.2em",
+        textTransform: "uppercase",
+        marginTop: 6,
+        marginBottom: 0,
+      }}>Career Intelligence</p>
+
+      {/* ── Green rule ── */}
+      <div style={{
+        height: 2,
+        width: 32,
+        background: "#1A2E1A",
+        borderRadius: 1,
+        margin: "20px auto",
+      }} />
+
+      {/* ── Brief copy ── */}
+      <p style={{
+        fontFamily: "var(--font-prose)",
+        fontSize: 14,
+        color: "#3A4A3A",
+        textAlign: "center",
+        maxWidth: 280,
+        lineHeight: 1.7,
+        marginBottom: 32,
+      }}>Score every opportunity against what actually matters to you.</p>
+
+      <div style={{ marginBottom: 28 }}>
+        <LangSwitcher lang={lang} setLang={setLang} />
       </div>
 
-      <LangSwitcher lang={lang} setLang={setLang} />
-
-      <div className="card" style={{ textAlign: "center" }}>
-        <h2 className="card-title" style={{ marginBottom: 8 }}>Welcome</h2>
-        <p className="card-subtitle">Sign in to access your personalized career intelligence framework.</p>
-
-        {/* ── Error state with actionable guidance ── */}
-        {guidance && (
-          <div role="alert" style={{
-            background: "var(--cream)", border: "1.5px solid var(--border)",
-            borderRadius: "var(--r)", padding: "16px", marginBottom: 16,
-            textAlign: "left",
-          }}>
-            <p style={{ fontWeight: 600, fontSize: 13, color: "var(--ink)", marginBottom: guidance.steps ? 10 : 0 }}>
-              {guidance.title}
-            </p>
-            {guidance.steps && (
-              <ol style={{ margin: 0, paddingLeft: 18 }}>
-                {guidance.steps.map((step, i) => (
-                  <li key={i} style={{ fontSize: 12, color: "var(--muted)", lineHeight: 1.7, marginBottom: 2 }}>
-                    {step}
-                  </li>
-                ))}
-              </ol>
-            )}
-            {guidance.showClear && onClearAuth && (
-              <button
-                onClick={onClearAuth}
-                style={{
-                  marginTop: 12, width: "100%", padding: "8px 12px",
-                  background: "transparent", border: "1.5px solid var(--border)",
-                  borderRadius: "var(--r)", fontSize: 12, color: "var(--muted)",
-                  cursor: "pointer", fontFamily: "'IBM Plex Mono', monospace",
-                  letterSpacing: ".06em", textTransform: "uppercase",
-                }}
-              >
-                Reset &amp; Try Again
-              </button>
-            )}
-          </div>
-        )}
-
-        {/* ── Sign in button ── */}
-        <button
-          className="btn btn-primary"
-          onClick={onSignIn}
-          disabled={authLoading}
-          aria-busy={authLoading}
-          style={{ width: "100%", marginBottom: 16, minHeight: 50, fontSize: 16, gap: 10 }}
-        >
-          {authLoading ? (
-            <>
-              <span className="spinner" style={{ width: 18, height: 18, borderWidth: 2 }} aria-hidden="true" />
-              Signing in…
-            </>
-          ) : (
-            <>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
-              </svg>
-              {guidance ? "Try Again" : "Sign in with Apple"}
-            </>
+      {/* ── Error state with actionable guidance ── */}
+      {guidance && (
+        <div role="alert" style={{
+          background: "#F0F4F0",
+          border: "1px solid #D8E8D8",
+          borderRadius: 10,
+          padding: "16px",
+          marginBottom: 16,
+          textAlign: "left",
+          width: "100%",
+          maxWidth: 320,
+        }}>
+          <p style={{ fontWeight: 600, fontSize: 13, color: "#1A2E1A", marginBottom: guidance.steps ? 10 : 0 }}>
+            {guidance.title}
+          </p>
+          {guidance.steps && (
+            <ol style={{ margin: 0, paddingLeft: 18 }}>
+              {guidance.steps.map((step, i) => (
+                <li key={i} style={{ fontSize: 12, color: "#8A9A8A", lineHeight: 1.7, marginBottom: 2 }}>
+                  {step}
+                </li>
+              ))}
+            </ol>
           )}
-        </button>
+          {guidance.showClear && onClearAuth && (
+            <button
+              onClick={onClearAuth}
+              style={{
+                marginTop: 12, width: "100%", padding: "8px 12px",
+                background: "transparent", border: "1px solid #D8E8D8",
+                borderRadius: 8, fontSize: 12, color: "#8A9A8A",
+                cursor: "pointer", fontFamily: "var(--font-data)",
+                letterSpacing: ".06em", textTransform: "uppercase",
+              }}
+            >
+              Reset &amp; Try Again
+            </button>
+          )}
+        </div>
+      )}
 
-        <p style={{ fontSize: 11, color: "var(--muted)", lineHeight: 1.6 }}>
-          Your data is private and never sold.{" "}
-          <a href={ENDPOINTS.privacy} target="_blank" rel="noopener noreferrer" style={{ color: "var(--muted)" }}>Privacy Policy</a>
-        </p>
-      </div>
+      {/* ── Sign in with Apple button ── */}
+      <button
+        onClick={onSignIn}
+        disabled={authLoading}
+        aria-busy={authLoading}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 8,
+          width: "100%",
+          maxWidth: 320,
+          minHeight: 52,
+          background: "#1A2E1A",
+          color: "#E8F0E8",
+          border: "none",
+          borderRadius: 10,
+          fontFamily: "var(--font-prose)",
+          fontSize: 16,
+          fontWeight: 500,
+          cursor: authLoading ? "not-allowed" : "pointer",
+          opacity: authLoading ? 0.75 : 1,
+          marginTop: 4,
+          marginBottom: 16,
+        }}
+      >
+        {authLoading ? (
+          <>
+            <span className="spinner" style={{ width: 18, height: 18, borderWidth: 2, borderColor: "rgba(232,240,232,0.3)", borderTopColor: "#E8F0E8" }} aria-hidden="true" />
+            Signing in…
+          </>
+        ) : (
+          <>
+            {/* Apple logo — 384×512 viewBox, aspect ratio 0.75, rendered at 18×24 */}
+            <svg width="18" height="24" viewBox="0 0 384 512" fill="#E8F0E8" aria-hidden="true" style={{ flexShrink: 0 }}>
+              <path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"/>
+            </svg>
+            {guidance ? "Try Again" : "Sign in with Apple"}
+          </>
+        )}
+      </button>
 
-      {/* ── Support footer ── */}
-      <p style={{ textAlign: "center", fontSize: 11, color: "var(--muted)", marginTop: 16, lineHeight: 1.7 }}>
-        Need help?{" "}
-        <a href="mailto:hello@tryvettedai.com" style={{ color: "var(--muted)" }}>
-          hello@tryvettedai.com
-        </a>
+      {/* ── Free note ── */}
+      <p style={{
+        fontFamily: "var(--font-prose)",
+        fontSize: 12,
+        color: "#5A6A5A",
+        textAlign: "center",
+        marginTop: 0,
+        marginBottom: 8,
+      }}>Free to download · No card required</p>
+
+      {/* ── Terms and Privacy ── */}
+      <p style={{
+        fontFamily: "var(--font-prose)",
+        fontSize: 11,
+        color: "#7A8A7A",
+        textAlign: "center",
+        lineHeight: 1.8,
+        marginTop: 8,
+      }}>
+        <a href={ENDPOINTS.privacy} target="_blank" rel="noopener noreferrer" style={{ color: "#7A8A7A", textDecoration: "none" }}>Terms of Use</a>
+        {"  ·  "}
+        <a href={ENDPOINTS.privacy} target="_blank" rel="noopener noreferrer" style={{ color: "#7A8A7A", textDecoration: "none" }}>Privacy Policy</a>
       </p>
     </div>
   );

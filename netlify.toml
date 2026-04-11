@@ -55,8 +55,37 @@
 [functions."anthropic"]
   timeout = 30
 
+# Streaming function — longer timeout to cover full Claude response stream.
+# X-Accel-Buffering: no is set in the function handler to disable nginx buffering.
+[functions."anthropic-stream"]
+  timeout = 30
+
 [functions."stripe-webhook"]
   timeout = 26
+
+[functions."behavioral-intelligence"]
+  timeout = 30
+
+# ── Staging context ───────────────────────────────────────────────────────────
+# Deploy the `staging` branch to a separate Netlify environment with its own
+# env vars (set in Netlify dashboard → Site configuration → Environment variables
+# → staging context): VT_DB_URL, VT_DB_KEY, ANTHROPIC_KEY, VETTED_SECRET.
+# Promotion to production is a manual step via Netlify dashboard or CLI.
+#
+# To activate:
+#   1. Create a Supabase staging project and copy the production schema to it.
+#   2. Push a `staging` branch to the remote.
+#   3. In Netlify dashboard: Deploys → Branch deploys → add `staging`.
+#   4. Set env vars for the staging context pointing to the staging Supabase project.
+[context.staging]
+  publish = "website"
+  functions = "netlify/functions"
+
+[context.staging.environment]
+  # NETLIFY_CONTEXT is automatically set to "staging" by Netlify.
+  # App-level env vars (VT_DB_URL, VT_DB_KEY, etc.) must be set per-context
+  # in the Netlify dashboard — they cannot be committed to this file.
+  NODE_ENV = "production"
 
 [[redirects]]
   from = "/privacy"

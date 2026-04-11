@@ -63,19 +63,19 @@ export async function exportOpportunityPdf(opp, profile) {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>VQ Report — ${opp.role_title || "Opportunity"} at ${opp.company || ""}</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=IBM+Plex+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500&display=swap');
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'DM Sans', sans-serif; color: #0f0e0c; background: #fff; padding: 48px 40px; max-width: 760px; margin: 0 auto; font-size: 14px; line-height: 1.6; }
-    h1 { font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 700; margin-bottom: 4px; }
-    h2 { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 700; margin-bottom: 14px; }
-    .eyebrow { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: #3a3a3a; margin-bottom: 8px; }
+    body { font-family: 'Inter', -apple-system, sans-serif; color: #0f0e0c; background: #fff; padding: 48px 40px; max-width: 760px; margin: 0 auto; font-size: 14px; line-height: 1.6; }
+    h1 { font-family: 'Inter', -apple-system, sans-serif; font-size: 28px; font-weight: 600; margin-bottom: 4px; }
+    h2 { font-family: 'Inter', -apple-system, sans-serif; font-size: 18px; font-weight: 600; margin-bottom: 14px; }
+    .eyebrow { font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: #3a3a3a; margin-bottom: 8px; }
     .section { margin-bottom: 32px; }
     .divider { border: none; border-top: 1px solid #e0ddd8; margin: 28px 0; }
     .narrative { background: #f5f5f0; border-left: 3px solid #0d5c2e; padding: 14px 16px; border-radius: 2px; font-size: 13px; line-height: 1.7; margin-bottom: 14px; }
     .narrative.gold { border-left-color: #8a6200; }
     ul { padding-left: 18px; }
     li { font-size: 13px; }
-    .footer { margin-top: 40px; padding-top: 16px; border-top: 1px solid #e0ddd8; font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #555; letter-spacing: .1em; text-transform: uppercase; display: flex; justify-content: space-between; }
+    .footer { margin-top: 40px; padding-top: 16px; border-top: 1px solid #e0ddd8; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #555; letter-spacing: .1em; text-transform: uppercase; display: flex; justify-content: space-between; }
     @media print {
       body { padding: 24px; }
       @page { margin: 1cm; }
@@ -85,13 +85,13 @@ export async function exportOpportunityPdf(opp, profile) {
 <body>
   <div class="section">
     <div class="eyebrow">Vetted Quotient Report</div>
-    <p style="font-size:12px;color:#3a3a3a;font-family:'IBM Plex Mono',monospace;margin-bottom:12px;">${opp.company || ""}</p>
+    <p style="font-size:11px;color:#3a3a3a;font-family:'IBM Plex Mono',monospace;margin-bottom:12px;">${opp.company || ""}</p>
     <h1>${opp.role_title || "Unknown Role"}</h1>
 
     <div style="display:flex;align-items:center;gap:20px;margin-top:20px;flex-wrap:wrap;">
       <div style="text-align:center;">
-        <div style="font-family:'Playfair Display',serif;font-size:52px;font-weight:700;color:${scoreColor(opp.overall_score)};line-height:1;">${(opp.overall_score || 0).toFixed(1)}</div>
-        <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#3a3a3a;letter-spacing:.1em;text-transform:uppercase;margin-top:4px;">VQ Score</div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:52px;font-weight:500;color:${scoreColor(opp.overall_score)};line-height:1;">${(opp.overall_score || 0).toFixed(1)}</div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#3a3a3a;letter-spacing:.1em;text-transform:uppercase;margin-top:4px;">VQ Score</div>
       </div>
       <div>
         <span style="display:inline-flex;align-items:center;padding:8px 18px;border-radius:4px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;border:1.5px solid ${recColor};color:${recColor};background:${recBgCol};">${rec}</span>

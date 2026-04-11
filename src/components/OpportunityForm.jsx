@@ -46,8 +46,8 @@ export default function OpportunityForm({ t, onScore, loading, error }) {
 
   return (
     <div className="card">
-      <h2 className="card-title">{t.submitTitle}</h2>
-      <p className="card-subtitle">{t.submitSubtitle}</p>
+      <h2 className="card-title" style={{ color: "#1A2E1A" }}>{t.submitTitle}</h2>
+      <p className="card-subtitle" style={{ color: "#5A6A5A" }}>{t.submitSubtitle}</p>
       <div role="tablist" className="tabs">
         <button role="tab" className="tab-btn" aria-selected={tabMode === "paste"} aria-controls="panel-paste" id="tab-paste" onClick={() => setTabMode("paste")}>{t.tabPaste}</button>
         <button role="tab" className="tab-btn" aria-selected={tabMode === "url"} aria-controls="panel-url" id="tab-url" onClick={() => setTabMode("url")}>{t.tabUrl}</button>

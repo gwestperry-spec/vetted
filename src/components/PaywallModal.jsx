@@ -2,6 +2,8 @@ import { useState } from "react";
 import { ENDPOINTS } from "../config.js";
 import { handleError } from "../handleError.js";
 
+const LINK = { color: "var(--muted)", textDecoration: "underline" };
+
 const TIERS = [
   {
     id: "signal",
@@ -271,10 +273,10 @@ export default function PaywallModal({ authUser, onClose }) {
 
         {/* Header */}
         <div style={{ textAlign: "center", marginBottom: 28 }}>
-          <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, letterSpacing: ".2em", textTransform: "uppercase", color: "var(--muted)", marginBottom: 8 }}>
+          <p style={{ fontFamily: "var(--font-data)", fontSize: 10, letterSpacing: ".2em", textTransform: "uppercase", color: "var(--muted)", marginBottom: 8 }}>
             You've used all 10 free scores this month
           </p>
-          <h2 id="paywall-title" style={{ fontFamily: "'Playfair Display', serif", fontSize: 26, fontWeight: 700, marginBottom: 8 }}>
+          <h2 id="paywall-title" style={{ fontFamily: "var(--font-prose)", fontSize: 26, fontWeight: 700, marginBottom: 8 }}>
             Upgrade to keep scoring
           </h2>
           <p style={{ fontSize: 14, color: "var(--muted)", lineHeight: 1.6, maxWidth: 380, margin: "0 auto" }}>
@@ -296,15 +298,15 @@ export default function PaywallModal({ authUser, onClose }) {
                   background: tier.accent, color: "#fff",
                   fontSize: 10, fontWeight: 700, padding: "2px 10px",
                   borderRadius: 20, letterSpacing: ".05em",
-                  fontFamily: "'IBM Plex Mono', monospace",
+                  fontFamily: "var(--font-data)",
                 }}>{tier.badge}</div>
               )}
-              <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 700, marginBottom: 2 }}>
+              <div style={{ fontFamily: "var(--font-prose)", fontSize: 18, fontWeight: 700, marginBottom: 2 }}>
                 {tier.name}
               </div>
               <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 12 }}>{tier.tagline}</div>
               <div style={{ marginBottom: 16 }}>
-                <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 26, fontWeight: 700 }}>{tier.price}</span>
+                <span style={{ fontFamily: "var(--font-prose)", fontSize: 26, fontWeight: 700 }}>{tier.price}</span>
                 <span style={{ fontSize: 12, color: "var(--muted)", marginLeft: 4 }}>{tier.period}</span>
               </div>
               <ul style={{ listStyle: "none", margin: 0, padding: 0, marginBottom: 18 }}>
@@ -333,7 +335,7 @@ export default function PaywallModal({ authUser, onClose }) {
         {/* Founding member section */}
         <div style={{ borderTop: "1px solid var(--border)", paddingTop: 18, marginBottom: 20 }}>
           <div style={{ textAlign: "center", marginBottom: 14 }}>
-            <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, letterSpacing: ".2em", textTransform: "uppercase", color: "var(--muted)", marginBottom: 4 }}>
+            <p style={{ fontFamily: "var(--font-data)", fontSize: 10, letterSpacing: ".2em", textTransform: "uppercase", color: "var(--muted)", marginBottom: 4 }}>
               Founding Member — Limited Seats
             </p>
             <p style={{ fontSize: 12, color: "var(--muted)", lineHeight: 1.5 }}>
@@ -347,12 +349,12 @@ export default function PaywallModal({ authUser, onClose }) {
                 borderRadius: 6, padding: "16px 14px",
                 background: "#fff", opacity: 0.92,
               }}>
-                <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 15, fontWeight: 700, marginBottom: 2 }}>
+                <div style={{ fontFamily: "var(--font-prose)", fontSize: 15, fontWeight: 700, marginBottom: 2 }}>
                   {tier.name}
                 </div>
                 <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 12, lineHeight: 1.4 }}>{tier.tagline}</div>
                 <div style={{ marginBottom: 14 }}>
-                  <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, fontWeight: 700 }}>{tier.price}</span>
+                  <span style={{ fontFamily: "var(--font-prose)", fontSize: 22, fontWeight: 700 }}>{tier.price}</span>
                   <span style={{ fontSize: 11, color: "var(--muted)", marginLeft: 4 }}>one-time</span>
                 </div>
                 <button
@@ -385,10 +387,22 @@ export default function PaywallModal({ authUser, onClose }) {
 
         {/* Footer */}
         <div style={{ textAlign: "center" }}>
-          <p style={{ fontSize: 11, color: "var(--muted)", lineHeight: 1.6, marginBottom: isNativeApp ? 10 : 0 }}>
+          {/* Apple-required auto-renewal disclosure */}
+          {isNativeApp && (
+            <p style={{ fontSize: 11, color: "var(--muted)", lineHeight: 1.6, marginBottom: 8 }}>
+              Payment will be charged to your Apple ID at confirmation of purchase. Subscriptions automatically renew unless cancelled at least 24 hours before the end of the current period. Manage or cancel anytime in your Apple ID account settings.
+            </p>
+          )}
+          <p style={{ fontSize: 11, color: "var(--muted)", lineHeight: 1.6, marginBottom: 10 }}>
             {isNativeApp
-              ? "Subscriptions managed through your Apple ID. Cancel anytime in Settings."
+              ? "Vetted · Career Intelligence Subscription"
               : "Payment processed securely by Stripe. Subscriptions can be cancelled anytime."}
+          </p>
+          {/* Required links */}
+          <p style={{ fontSize: 11, color: "var(--muted)", marginBottom: isNativeApp ? 6 : 0 }}>
+            <a href={ENDPOINTS.privacy} target="_blank" rel="noopener noreferrer" style={LINK}>Privacy Policy</a>
+            <span style={{ margin: "0 8px" }}>·</span>
+            <a href={ENDPOINTS.terms} target="_blank" rel="noopener noreferrer" style={LINK}>Terms of Use</a>
           </p>
           {isNativeApp && (
             <button

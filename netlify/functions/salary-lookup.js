@@ -110,7 +110,9 @@ const RH_TABLE = [
   { keywords: ["director of mergers", "m&a director", "m&a"],              title: "Director of M&A",                       min: 160000, median: 218000, max: 290000 },
 
   // ── General Executive ──
-  { keywords: ["chief executive officer", "ceo", "president"],              title: "CEO / President",                       min: 250000, median: 375000, max: 600000 },
+  // "president" removed — word-boundary matches inside "vice president" / "senior vice president"
+  { keywords: ["senior vice president", "executive vice president", "evp", "svp"], title: "Senior Vice President / EVP", min: 200000, median: 310000, max: 500000 },
+  { keywords: ["chief executive officer", "ceo"],                           title: "CEO / President",                       min: 250000, median: 375000, max: 600000 },
   { keywords: ["managing director", "md"],                                   title: "Managing Director",                     min: 185000, median: 255000, max: 340000 },
   { keywords: ["general manager", "gm"],                                     title: "General Manager",                       min: 120000, median: 168000, max: 225000 },
 ];
@@ -155,22 +157,25 @@ const KINSA_TABLE = [
 
   // ── Operations / Production (Food Manufacturing) ──
   { keywords: ["vp of operations", "vice president of operations", "vp operations"],        title: "VP of Operations (Food)",                   min: 150000, median: 240000, max: 300000 },
+  // "regional senior director" catches "Regional Senior Director, Operations" —
+  // comma after "director" breaks "director of operations" phrase match
+  { keywords: ["senior director of operations", "senior director operations", "regional director of operations", "regional senior director", "senior operations director"], title: "Senior Director of Operations", min: 130000, median: 200000, max: 280000 },
   { keywords: ["director of operations", "operations director"],                            title: "Director of Operations (Food)",             min: 100000, median: 180000, max: 260000 },
   { keywords: ["plant manager", "manufacturing plant manager"],                             title: "Plant Manager",                             min: 100000, median: 160000, max: 250000 },
   { keywords: ["continuous improvement manager", "continuous improvement director", "ci manager", "ci director", "lean manager", "lean director", "opex manager"], title: "Continuous Improvement Manager / Director", min: 90000, median: 140000, max: 220000 },
   { keywords: ["brewing manager", "distillery manager", "brewery manager"],                 title: "Brewing / Distillery Manager",              min:  75000, median: 120000, max: 195000 },
   { keywords: ["production manager", "operations manager", "manufacturing manager"],        title: "Production / Operations Manager",           min:  70000, median: 120000, max: 225000 },
   { keywords: ["demand planning manager", "master scheduler", "demand planner"],           title: "Demand Planning Manager / Master Scheduler", min: 70000, median: 125000, max: 170000 },
-  { keywords: ["plant superintendent", "production superintendent"],                        title: "Production / Plant Superintendent",         min: 105000, median: 110000, max: 115000 },
+  { keywords: ["plant superintendent", "production superintendent"],                        title: "Production / Plant Superintendent",         min:  85000, median: 110000, max: 155000 },
   { keywords: ["production supervisor", "manufacturing supervisor"],                        title: "Production Supervisor",                     min:  60000, median:  80000, max: 130000 },
 
   // ── Supply Chain / Procurement (Food Industry) ──
   { keywords: ["chief supply chain officer", "csco"],                                       title: "Chief Supply Chain Officer",                min: 180000, median: 280000, max: 400000 },
   { keywords: ["vp supply chain", "vice president supply chain", "vp of supply chain", "vp supply chain and purchasing", "vp of purchasing"], title: "VP Supply Chain & Purchasing", min: 150000, median: 230000, max: 350000 },
-  { keywords: ["procurement director", "director of procurement", "director of purchasing"], title: "Procurement Director",                      min: 110000, median: 180000, max: 225000 },
+  { keywords: ["procurement director", "director of procurement", "director of purchasing", "dairy procurement", "director of dairy procurement", "director of commodity procurement", "commodity procurement"], title: "Procurement Director", min: 110000, median: 180000, max: 225000 },
   { keywords: ["supply chain director", "director of supply chain", "director supply chain"], title: "Supply Chain Director",                   min: 120000, median: 175000, max: 265000 },
   { keywords: ["logistics director", "transportation director", "director of logistics", "director of transportation"], title: "Logistics / Transportation Director", min: 120000, median: 170000, max: 225000 },
-  { keywords: ["logistics manager", "transportation manager", "director of logistics"],     title: "Logistics / Transportation Manager",        min: 100000, median: 130000, max: 150000 },
+  { keywords: ["logistics manager", "transportation manager"],                               title: "Logistics / Transportation Manager",        min: 100000, median: 130000, max: 150000 },
   { keywords: ["supply chain manager", "manager of supply chain"],                          title: "Supply Chain Manager",                      min:  80000, median: 130000, max: 180000 },
   { keywords: ["purchasing manager", "sourcing manager", "procurement manager"],            title: "Purchasing / Sourcing Manager",             min:  80000, median: 125000, max: 160000 },
   { keywords: ["warehouse manager", "distribution manager", "warehouse director"],          title: "Warehouse / Distribution Manager",          min:  80000, median: 120000, max: 200000 },
@@ -184,8 +189,8 @@ const KINSA_TABLE = [
   { keywords: ["engineering manager"],                                                       title: "Engineering Manager",                       min: 120000, median: 160000, max: 225000 },
   { keywords: ["engineering project manager"],                                               title: "Engineering Project Manager",               min: 100000, median: 150000, max: 225000 },
   { keywords: ["reliability engineer", "reliability manager"],                               title: "Reliability Engineer / Manager",            min: 110000, median: 150000, max: 225000 },
-  { keywords: ["project engineer"],                                                          title: "Project Engineer",                          min: 100000, median: 140000, max: 150000 },
-  { keywords: ["plant engineer", "mechanical engineer food", "food plant engineer"],         title: "Plant Engineer / Mechanical Engineer",      min: 110000, median: 135000, max: 150000 },
+  { keywords: ["project engineer"],                                                          title: "Project Engineer",                          min:  85000, median: 130000, max: 185000 },
+  { keywords: ["plant engineer", "mechanical engineer food", "food plant engineer"],         title: "Plant Engineer / Mechanical Engineer",      min:  90000, median: 130000, max: 175000 },
   { keywords: ["process engineer", "r&d engineer", "food process engineer"],                title: "Process / R&D Engineer",                    min:  80000, median: 120000, max: 170000 },
   { keywords: ["control systems engineer", "automation engineer", "controls engineer"],     title: "Control Systems Engineer",                  min: 100000, median: 135000, max: 160000 },
   { keywords: ["sales engineer"],                                                            title: "Sales Engineer",                            min:  80000, median: 120000, max: 225000 },
@@ -200,6 +205,8 @@ const KINSA_TABLE = [
 
   // ── Food Service / Restaurant ──
   { keywords: ["director of culinary", "culinary director"],                                title: "Director of Culinary",                      min:  75000, median: 160000, max: 225000 },
+  { keywords: ["director of catering", "catering director", "catering strategy", "director of foodservice", "foodservice director", "food service director", "director of food service", "foodservice operations director", "director of catering and events"], title: "Director of Catering / Foodservice", min: 90000, median: 140000, max: 190000 },
+  { keywords: ["culinary innovation", "culinary manager", "senior culinary manager", "culinary commercialization", "commercialization manager", "director of culinary innovation", "culinary development manager", "culinary innovation manager"], title: "Senior Culinary / Innovation Manager", min: 90000, median: 130000, max: 175000 },
   { keywords: ["executive chef"],                                                            title: "Executive Chef",                            min:  80000, median: 120000, max: 180000 },
   { keywords: ["sous chef"],                                                                 title: "Sous Chef",                                 min:  60000, median:  75000, max:  80000 },
   { keywords: ["restaurant manager"],                                                        title: "Restaurant Manager",                        min:  50000, median:  90000, max: 150000 },
@@ -247,12 +254,19 @@ const KINSA_TABLE = [
 
   // ── C-Suite / Executive (Food Industry specific) ──
   { keywords: ["chief commercial officer", "cco"],                                           title: "Chief Commercial Officer",                  min: 165000, median: 250000, max: 450000 },
-  { keywords: ["chief supply chain officer", "csco"],                                        title: "Chief Supply Chain Officer",                min: 180000, median: 280000, max: 400000 },
   { keywords: ["general manager", "managing director"],                                      title: "General Manager / Managing Director",       min: 120000, median: 200000, max: 450000 },
 ];
 
 function matchTable(table, title) {
-  const lower = (title || "").toLowerCase().trim();
+  // Normalize: lowercase, strip commas/punctuation, collapse spaces.
+  // "VP, Supply Chain North America" → "vp supply chain north america"
+  // This allows keyword "vp supply chain" to match regardless of comma or
+  // geographic qualifiers appended to the title.
+  const lower = (title || "")
+    .toLowerCase()
+    .replace(/[,;|]/g, " ")   // commas, semicolons, pipes → space
+    .replace(/\s+/g, " ")     // collapse multiple spaces
+    .trim();
   let best = null;
   let bestLen = 0;
   for (const row of table) {
@@ -541,8 +555,13 @@ exports.handler = async function (event) {
   }
 
   try {
+    // Strip geographic qualifiers before O*NET lookup — they confuse keyword matching
+    // e.g. "VP, Supply Chain North America" → "VP Supply Chain"
+    const GEO_QUALIFIERS = /\b(north america|south america|latin america|emea|apac|amer|asia pacific|americas|pacific rim|global|international|worldwide|enterprise|north|south|east|west|midwest|northeast|southeast|northwest|southwest|regional|national|domestic|canada|mexico)\b/gi;
+    const onetTitle = title.replace(/[,;|]/g, " ").replace(GEO_QUALIFIERS, "").replace(/\s+/g, " ").trim() || title;
+
     // Run O*NET first — this is the primary data source
-    const onetResult = await lookupOnet(title, onetUsername, onetPassword);
+    const onetResult = await lookupOnet(onetTitle, onetUsername, onetPassword);
     if (!onetResult) {
       return { statusCode: 200, headers: corsHeaders(origin), body: JSON.stringify({ error: "No salary data found" }) };
     }

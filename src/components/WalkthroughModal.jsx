@@ -69,8 +69,8 @@ export default function WalkthroughModal({ t, userTier, onDismiss }) {
       >
         {/* ── Eyebrow ── */}
         <p style={{
-          fontFamily: "'IBM Plex Mono', monospace",
-          fontSize: 9, fontWeight: 700,
+          fontFamily: "var(--font-data)",
+          fontSize: 11, fontWeight: 700,
           letterSpacing: ".22em", textTransform: "uppercase",
           color: "var(--accent)", marginBottom: 12,
         }}>
@@ -81,7 +81,7 @@ export default function WalkthroughModal({ t, userTier, onDismiss }) {
         <h1
           id="wt-title"
           style={{
-            fontFamily: "'Playfair Display', serif",
+            fontFamily: "var(--font-prose)",
             fontSize: 28, fontWeight: 700,
             lineHeight: 1.15, marginBottom: 6,
           }}
@@ -129,8 +129,8 @@ export default function WalkthroughModal({ t, userTier, onDismiss }) {
                   </span>
                   {f.badge && (
                     <span style={{
-                      fontFamily: "'IBM Plex Mono', monospace",
-                      fontSize: 8, fontWeight: 700,
+                      fontFamily: "var(--font-data)",
+                      fontSize: 11, fontWeight: 700,
                       letterSpacing: ".1em", textTransform: "uppercase",
                       background: isVantage ? "var(--gold)" : "var(--border)",
                       color: isVantage ? "#fff" : "var(--muted)",
