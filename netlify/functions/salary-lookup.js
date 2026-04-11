@@ -105,7 +105,7 @@ const RH_TABLE = [
   // ── Strategy & Corporate Development ──
   { keywords: ["chief strategy officer", "cso strategy"],                   title: "Chief Strategy Officer",                min: 195000, median: 268000, max: 358000 },
   { keywords: ["vp strategy", "vp of strategy", "vice president strategy"], title: "VP of Strategy",                        min: 170000, median: 230000, max: 305000 },
-  { keywords: ["director of strategy", "strategy director"],                title: "Director of Strategy",                  min: 130000, median: 175000, max: 232000 },
+  { keywords: ["director of strategy", "strategy director", "director of enablement", "enablement director", "business model director", "director of business model", "director business model", "director of transformation", "transformation director", "director of growth", "growth director"], title: "Director of Strategy",                  min: 130000, median: 175000, max: 232000 },
   { keywords: ["vp corporate development", "director of corporate development", "corp dev"], title: "VP / Director of Corporate Development", min: 165000, median: 225000, max: 298000 },
   { keywords: ["director of mergers", "m&a director", "m&a"],              title: "Director of M&A",                       min: 160000, median: 218000, max: 290000 },
 
@@ -174,7 +174,7 @@ const KINSA_TABLE = [
   { keywords: ["vp supply chain", "vice president supply chain", "vp of supply chain", "vp supply chain and purchasing", "vp of purchasing"], title: "VP Supply Chain & Purchasing", min: 150000, median: 230000, max: 350000 },
   { keywords: ["procurement director", "director of procurement", "director of purchasing", "dairy procurement", "director of dairy procurement", "director of commodity procurement", "commodity procurement"], title: "Procurement Director", min: 110000, median: 180000, max: 225000 },
   { keywords: ["supply chain director", "director of supply chain", "director supply chain"], title: "Supply Chain Director",                   min: 120000, median: 175000, max: 265000 },
-  { keywords: ["logistics director", "transportation director", "director of logistics", "director of transportation"], title: "Logistics / Transportation Director", min: 120000, median: 170000, max: 225000 },
+  { keywords: ["logistics director", "transportation director", "director of logistics", "director of transportation", "director of distribution", "distribution director", "director distribution", "director of field service", "field service director", "director field service"], title: "Logistics / Transportation Director", min: 120000, median: 170000, max: 225000 },
   { keywords: ["logistics manager", "transportation manager"],                               title: "Logistics / Transportation Manager",        min: 100000, median: 130000, max: 150000 },
   { keywords: ["supply chain manager", "manager of supply chain"],                          title: "Supply Chain Manager",                      min:  80000, median: 130000, max: 180000 },
   { keywords: ["purchasing manager", "sourcing manager", "procurement manager"],            title: "Purchasing / Sourcing Manager",             min:  80000, median: 125000, max: 160000 },
@@ -561,8 +561,59 @@ exports.handler = async function (event) {
     const onetTitle = title.replace(/[,;|]/g, " ").replace(GEO_QUALIFIERS, "").replace(/\s+/g, " ").trim() || title;
 
     // Run O*NET first — this is the primary data source
-    const onetResult = await lookupOnet(onetTitle, onetUsername, onetPassword);
+    let onetResult = await lookupOnet(onetTitle, onetUsername, onetPassword);
+
+    // ── O*NET retry: condense to "Level + primary function" ───────────────────
+    // Handles unusual compound titles like "Director, Business Model Enablement"
+    // or "Director, Distribution and Field Service" that O*NET can't match verbatim.
     if (!onetResult) {
+      const SENIORITY = /\b(chief|president|executive vice president|senior vice president|evp|svp|vice president|vp|senior director|director|senior manager|manager|senior|lead|principal|staff|head of)\b/gi;
+      const seniority = (onetTitle.match(SENIORITY) || [])[0] || "";
+      // Strip filler words to isolate core function: "and", "of", "the", "&", plus the seniority token itself
+      const STOP_WORDS = /\b(and|of|the|&|for|in|at|with|by)\b/gi;
+      const coreWords = onetTitle
+        .replace(new RegExp(`\\b${seniority}\\b`, "gi"), "")
+        .replace(STOP_WORDS, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+        .split(" ")
+        .slice(0, 2)   // take up to 2 most significant content words
+        .join(" ");
+      const condensed = seniority && coreWords ? `${seniority} ${coreWords}`.trim() : onetTitle;
+      if (condensed !== onetTitle) {
+        console.log(`[salary-lookup] O*NET retry with condensed title: "${condensed}"`);
+        onetResult = await lookupOnet(condensed, onetUsername, onetPassword);
+      }
+    }
+
+    // ── Seniority-based fallback ───────────────────────────────────────────────
+    // If O*NET still returns nothing, return a reasonable range based on seniority
+    // level so the user always gets a useful data point rather than an error.
+    if (!onetResult) {
+      const t = onetTitle.toLowerCase();
+      const seniorityFallback =
+        /\b(chief|ceo|president|coo|cto|cfo|ciso|cmo|cro|chro)\b/.test(t)          ? { min: 215000, median: 300000, max: 420000, title: "C-Suite Executive" } :
+        /\b(executive vice president|evp|senior vice president|svp)\b/.test(t)       ? { min: 200000, median: 290000, max: 420000, title: "SVP / EVP" } :
+        /\b(vice president|vp)\b/.test(t)                                            ? { min: 155000, median: 215000, max: 300000, title: "Vice President" } :
+        /\b(senior director)\b/.test(t)                                              ? { min: 140000, median: 195000, max: 270000, title: "Senior Director" } :
+        /\b(director)\b/.test(t)                                                     ? { min: 115000, median: 160000, max: 220000, title: "Director" } :
+        /\b(senior manager|sr\.? manager)\b/.test(t)                                 ? { min:  95000, median: 130000, max: 175000, title: "Senior Manager" } :
+        /\b(manager)\b/.test(t)                                                      ? { min:  75000, median: 105000, max: 145000, title: "Manager" } :
+        null;
+      if (seniorityFallback) {
+        console.log(`[salary-lookup] using seniority fallback for: "${title}" → ${seniorityFallback.title}`);
+        return {
+          statusCode: 200,
+          headers: corsHeaders(origin),
+          body: JSON.stringify({
+            min:    seniorityFallback.min,
+            median: seniorityFallback.median,
+            max:    seniorityFallback.max,
+            source: "Vetted Benchmark",
+            occupationTitle: seniorityFallback.title,
+          }),
+        };
+      }
       return { statusCode: 200, headers: corsHeaders(origin), body: JSON.stringify({ error: "No salary data found" }) };
     }
 
