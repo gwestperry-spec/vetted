@@ -2093,6 +2093,15 @@ export default function App() {
         )}
         {step === "result" && (
           <ScoreResult t={t} lang={lang} opp={currentOpp} profile={profile} userTier={devTierOverride || userTier} authUser={authUser} onUpgrade={() => setShowPaywall(true)} onBack={() => setStep("dashboard")}
+            onUpdateStatus={(oppId, status) => {
+              const now = new Date().toISOString();
+              setOpportunities(prev => prev.map(o => o.id === oppId ? { ...o, application_status: status, status_updated_at: now } : o));
+              setCurrentOpp(prev => prev?.id === oppId ? { ...prev, application_status: status, status_updated_at: now } : prev);
+              if (authUser?.id) {
+                dbCall("updateApplicationStatus", { action: "updateApplicationStatus", appleId: authUser.id, opportunityId: oppId, status })
+                  .catch(err => handleError(err, "update_status"));
+              }
+            }}
             onRemove={() => {
               setOpportunities(prev => prev.filter(o => o.id !== currentOpp.id));
               setStep("dashboard");

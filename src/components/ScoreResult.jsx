@@ -53,6 +53,85 @@ const LANG_NAMES = {
   fr: "French",  ar: "Arabic",  vi: "Vietnamese",
 };
 
+// ─── Application Status Tracker ──────────────────────────────────────────────
+const FUNNEL_STAGES = [
+  { key: "applied",      label: "Applied" },
+  { key: "phone_screen", label: "Phone Screen" },
+  { key: "interview",    label: "Interview" },
+  { key: "final_round",  label: "Final Round" },
+];
+
+const OUTCOMES = [
+  { key: "offer",    label: "Offer",    color: "var(--success)" },
+  { key: "rejected", label: "Rejected", color: "var(--accent)" },
+  { key: "withdrew", label: "Withdrew", color: "var(--muted)" },
+];
+
+function ApplicationStatusTracker({ status, onUpdateStatus }) {
+  const isTerminal = ["offer", "rejected", "withdrew"].includes(status);
+  const activeFunnelIdx = FUNNEL_STAGES.findIndex(s => s.key === status);
+
+  return (
+    <div className="card" style={{ padding: "16px 20px" }}>
+      <p style={{
+        fontFamily: "var(--font-data)", fontSize: 11, letterSpacing: ".15em",
+        textTransform: "uppercase", color: "var(--muted)", marginBottom: 12, fontWeight: 700,
+      }}>
+        Application Status
+      </p>
+
+      {/* Funnel stage pills */}
+      <div style={{ display: "flex", gap: 4, marginBottom: 10 }}>
+        {FUNNEL_STAGES.map((stage, i) => {
+          const isPast    = !isTerminal && activeFunnelIdx > i;
+          const isCurrent = !isTerminal && activeFunnelIdx === i;
+          return (
+            <button
+              key={stage.key}
+              onClick={() => onUpdateStatus?.(stage.key)}
+              style={{
+                flex: 1, padding: "7px 4px", borderRadius: 6, border: "1.5px solid",
+                borderColor: (isCurrent || isPast) ? "var(--success)" : "var(--border)",
+                background: isCurrent ? "var(--success)" : isPast ? "rgba(26,46,26,0.07)" : "transparent",
+                color: isCurrent ? "#fff" : isPast ? "var(--success)" : "var(--muted)",
+                fontFamily: "var(--font-data)", fontSize: 10, fontWeight: 700,
+                letterSpacing: ".04em", textTransform: "uppercase",
+                cursor: "pointer", transition: "all .15s", textAlign: "center", lineHeight: 1.3,
+              }}
+            >
+              {stage.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Terminal outcome chips */}
+      <div style={{ display: "flex", gap: 6 }}>
+        {OUTCOMES.map(outcome => {
+          const isActive = status === outcome.key;
+          return (
+            <button
+              key={outcome.key}
+              onClick={() => onUpdateStatus?.(outcome.key)}
+              style={{
+                padding: "4px 12px", borderRadius: 20, border: "1.5px solid",
+                borderColor: isActive ? outcome.color : "var(--border)",
+                background: isActive ? outcome.color : "transparent",
+                color: isActive ? "#fff" : "var(--muted)",
+                fontFamily: "var(--font-data)", fontSize: 10, fontWeight: 700,
+                letterSpacing: ".06em", textTransform: "uppercase",
+                cursor: "pointer", transition: "all .15s",
+              }}
+            >
+              {outcome.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ─── Section Carousel — VQ insight panels ────────────────────────────────────
 function SectionCarousel({ opp, t }) {
   const sections = [
@@ -327,8 +406,16 @@ function FilterCarousel({ filterScores, t }) {
   );
 }
 
-export default function ScoreResult({ t, lang, opp, profile, onBack, onRemove, userTier, authUser, onUpgrade }) {
+export default function ScoreResult({ t, lang, opp, profile, onBack, onRemove, onUpdateStatus, userTier, authUser, onUpgrade }) {
   if (!opp) return null;
+
+  // Local status state — gives immediate UI feedback; parent persists async
+  const [localStatus, setLocalStatus] = useState(opp.application_status || "applied");
+
+  function handleStatusUpdate(newStatus) {
+    setLocalStatus(newStatus);
+    onUpdateStatus?.(opp.id, newStatus);
+  }
 
   // Cache coaching per style so switching doesn't re-fetch unnecessarily
   const [coachingCache, setCoachingCache] = useState({});
@@ -459,6 +546,8 @@ Respond ONLY with valid JSON (no markdown) in exactly this shape:
             </div>
           </div>
         </div>
+
+        <ApplicationStatusTracker status={localStatus} onUpdateStatus={handleStatusUpdate} />
 
         <SectionCarousel opp={opp} t={t} />
 

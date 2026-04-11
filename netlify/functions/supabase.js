@@ -144,6 +144,17 @@ async function saveOpportunity(appleId, opp) {
   return supabaseRequest("POST", "/opportunities", row);
 }
 
+// Update application status for a single opportunity
+async function updateApplicationStatus(appleId, oppId, status) {
+  const VALID = ["applied", "phone_screen", "interview", "final_round", "offer", "rejected", "withdrew"];
+  if (!VALID.includes(status)) throw new Error(`Invalid status: ${status}`);
+  return supabaseRequest(
+    "PATCH",
+    `/opportunities?apple_id=eq.${encodeURIComponent(appleId)}&id=eq.${encodeURIComponent(oppId)}`,
+    { application_status: status, status_updated_at: new Date().toISOString() }
+  );
+}
+
 // Delete a single opportunity
 async function deleteOpportunity(appleId, oppId) {
   return supabaseRequest(
@@ -246,6 +257,9 @@ exports.handler = async (event) => {
         return { statusCode: 200, headers: corsHeaders(origin), body: JSON.stringify(await checkScoreLimit(appleId)) };
       case "incrementScoreCount":
         await incrementScoreCount(appleId);
+        return { statusCode: 200, headers: corsHeaders(origin), body: JSON.stringify({ ok: true }) };
+      case "updateApplicationStatus":
+        await updateApplicationStatus(appleId, body.opportunityId, body.status);
         return { statusCode: 200, headers: corsHeaders(origin), body: JSON.stringify({ ok: true }) };
       case "deleteOpportunity":
         result = await deleteOpportunity(appleId, body.opportunityId);
