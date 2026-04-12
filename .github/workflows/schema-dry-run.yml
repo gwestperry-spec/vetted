@@ -1,0 +1,139 @@
+name: Schema Dry Run (PR)
+
+on:
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      app_schemas:
+        description: "Comma-separated schemas"
+        required: true
+        default: "public"
+
+jobs:
+  dry-run:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Install PostgreSQL client tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Validate secret
+        run: |
+          test -n "${{ secrets.PROD_DB_URL }}"
+
+      - name: Generate schema dumps and diff
+        id: dryrun
+        shell: bash
+        env:
+          PROD_DB_URL: ${{ secrets.PROD_DB_URL }}
+          APP_SCHEMAS: ${{ github.event.inputs.app_schemas || 'public' }}
+        run: |
+          set -Eeuo pipefail
+
+          TS="$(date +%Y%m%d_%H%M%S)"
+          OUTDIR=".schema_dry_run/${TS}"
+          mkdir -p "${OUTDIR}"
+
+          PROD_DUMP="${OUTDIR}/prod_schema.sql"
+          REPO_RLS="supabase/rls-policies.sql"
+          REPO_SCHEMA="supabase/schema.sql"
+          DIFF_FILE="${OUTDIR}/schema.diff"
+
+          SCHEMA_ARGS=()
+          IFS=',' read -ra SCHEMA_LIST <<< "${APP_SCHEMAS}"
+          for s in "${SCHEMA_LIST[@]}"; do
+            s_trimmed="$(echo "$s" | xargs)"
+            [[ -n "${s_trimmed}" ]] && SCHEMA_ARGS+=(--schema "${s_trimmed}")
+          done
+
+          if [[ ${#SCHEMA_ARGS[@]} -eq 0 ]]; then
+            echo "No valid schemas provided."
+            exit 1
+          fi
+
+          echo "Dumping production schema..."
+          supabase db dump \
+            --db-url "${PROD_DB_URL}" \
+            "${SCHEMA_ARGS[@]}" \
+            --schema-only \
+            -f "${PROD_DUMP}"
+
+          if [[ -f "${REPO_SCHEMA}" ]]; then
+            echo "Diffing against ${REPO_SCHEMA}..."
+            set +e
+            diff -u "${REPO_SCHEMA}" "${PROD_DUMP}" > "${DIFF_FILE}"
+            DIFF_EXIT=$?
+            set -e
+          else
+            echo "Repo schema file not found at ${REPO_SCHEMA}" > "${DIFF_FILE}"
+            DIFF_EXIT=2
+          fi
+
+          # Build markdown summary
+          SUMMARY="${OUTDIR}/summary.md"
+          {
+            echo "## Schema Dry Run Summary"
+            echo
+            echo "- Schemas: \`${APP_SCHEMAS}\`"
+            echo "- Prod dump: \`${PROD_DUMP}\`"
+            echo "- Repo schema baseline: \`${REPO_SCHEMA}\`"
+            if [[ -f "${REPO_RLS}" ]]; then
+              echo "- RLS file found: \`${REPO_RLS}\`"
+            else
+              echo "- RLS file missing: \`${REPO_RLS}\`"
+            fi
+            echo
+            if [[ ${DIFF_EXIT} -eq 0 ]]; then
+              echo "✅ No schema diff."
+            elif [[ ${DIFF_EXIT} -eq 1 ]]; then
+              echo "⚠️ Schema diff detected."
+              echo
+              echo "<details><summary>Show first 200 lines</summary>"
+              echo
+              echo '```diff'
+              sed -n '1,200p' "${DIFF_FILE}"
+              echo '```'
+              echo "</details>"
+            else
+              echo "ℹ️ Diff baseline missing or diff not comparable."
+              echo
+              echo '```'
+              sed -n '1,80p' "${DIFF_FILE}"
+              echo '```'
+            fi
+          } > "${SUMMARY}"
+
+          echo "summary_file=${SUMMARY}" >> "$GITHUB_OUTPUT"
+          echo "diff_exit=${DIFF_EXIT}" >> "$GITHUB_OUTPUT"
+
+      - name: Add PR comment with summary
+        if: github.event_name == 'pull_request'
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          path: ${{ steps.dryrun.outputs.summary_file }}
+
+      - name: Upload dry-run artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: schema-dry-run-artifacts
+          path: .schema_dry_run/
+
+      # Optional: fail PR if diff exists
+      - name: Enforce no-diff policy
+        if: github.event_name == 'pull_request'
+        run: |
+          if [[ "${{ steps.dryrun.outputs.diff_exit }}" == "1" ]]; then
+            echo "Schema diff detected."
+            exit 1
+          fi
