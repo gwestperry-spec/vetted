@@ -268,8 +268,33 @@ _Last updated: April 10, 2026_
 - [x] 100% — `netlify.toml` — `[context.staging]` block added with `publish`, `functions`, `NODE_ENV`
 - [x] 100% — `netlify.toml` — inline comments document all 4 activation steps
 - [x] 100% — `supabase/rls-policies.sql` — ready to apply to staging Supabase project
-- [ ] 0% — Create Supabase staging project — copy production schema using `supabase db dump | supabase db restore`, seed test data
-- [ ] 0% — Create `staging` branch in git; push to remote
+- [ ] 0% — Create Supabase staging project — copy production schema using commands below, then apply RLS policies separately
+
+**Schema copy commands (run once staging project is active):**
+```bash
+# 1. Dump public schema only — excludes Supabase-managed schemas (auth, storage, etc.)
+supabase db dump \
+  --db-url "postgresql://postgres:<password>@<prod-host>:5432/postgres" \
+  --schema public \
+  --schema-only \
+  -f schema.sql
+
+# 2. Apply schema to staging — stop on first error
+psql "postgresql://postgres:<password>@<staging-host>:5432/postgres" \
+  -v ON_ERROR_STOP=1 -f schema.sql
+
+# 3. Apply RLS policies separately (avoids duplicate policy errors from dump)
+psql "postgresql://postgres:<password>@<staging-host>:5432/postgres" \
+  -v ON_ERROR_STOP=1 -f supabase/rls-policies.sql
+```
+
+**Validate after apply:**
+```bash
+psql "<staging-url>" -c "\dt public.*"     # confirms tables exist
+psql "<staging-url>" -c "\dRp+"            # confirms RLS policies applied
+SELECT tablename, rowsecurity FROM pg_tables WHERE schemaname = 'public'; -- all four = true
+```
+- [x] 100% — Create `staging` branch in git; push to remote ✅ (origin/staging live)
 - [ ] 0% — Netlify dashboard → Deploys → Branch deploys → add `staging` branch
 - [ ] 0% — Set staging env vars in Netlify dashboard (staging context): `VT_DB_URL`, `VT_DB_KEY`, `ANTHROPIC_KEY`, `VETTED_SECRET`
 - [ ] 0% — Run smoke test checklist against staging deploy and resolve any config gaps
@@ -395,7 +420,7 @@ _Last updated: April 11, 2026_
 | P3 | Supabase RLS | 1 | 100% | ✅ Verified live Apr 11 | Security |
 | P4 | JWS cert chain | 2 | 100% | ✅ Code-verified Apr 11 | Fraud prevention |
 | P6 | App Store Server Notifications | 2 | 100% | ✅ Complete — endpoint registered pre-build 22 | Revenue integrity |
-| P7 | Staging environment | 3 | 65% | 🔄 Manual steps remaining | Operational safety |
+| P7 | Staging environment | 3 | 75% | 🔄 Supabase project + Netlify dashboard + env vars remaining | Operational safety |
 | P5 | App.jsx decomposition | 3 | 100% | ✅ Complete — 695 lines (76% reduction from 2,846) | Acquirability |
 | P8 | Accessibility | 4 | 0% | 🔲 Not started | Market expansion |
 | P9 | Automated testing | 4 | 0% | 🔲 Not started | Deployment confidence |

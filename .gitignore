@@ -6,3 +6,4 @@ dist
 .claude/
 **/.claude/
 ios/App/App.xcodeproj/.claude/
+.db_promotion/
