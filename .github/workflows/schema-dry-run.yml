@@ -18,11 +18,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install Supabase CLI
-        uses: supabase/setup-cli@v1
-        with:
-          version: latest
-
       - name: Install PostgreSQL client tools
         run: |
           sudo apt-get update
@@ -54,7 +49,7 @@ jobs:
           IFS=',' read -ra SCHEMA_LIST <<< "${APP_SCHEMAS}"
           for s in "${SCHEMA_LIST[@]}"; do
             s_trimmed="$(echo "$s" | xargs)"
-            [[ -n "${s_trimmed}" ]] && SCHEMA_ARGS+=(--schema "${s_trimmed}")
+            [[ -n "${s_trimmed}" ]] && SCHEMA_ARGS+=(-n "${s_trimmed}")
           done
 
           if [[ ${#SCHEMA_ARGS[@]} -eq 0 ]]; then
@@ -63,10 +58,9 @@ jobs:
           fi
 
           echo "Dumping production schema..."
-          supabase db dump \
-            --db-url "${PROD_DB_URL}" \
-            "${SCHEMA_ARGS[@]}" \
+          pg_dump "${PROD_DB_URL}" \
             --schema-only \
+            "${SCHEMA_ARGS[@]}" \
             -f "${PROD_DUMP}"
 
           if [[ -f "${REPO_SCHEMA}" ]]; then

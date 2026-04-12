@@ -32,7 +32,7 @@ SCHEMA_ARGS=()
 IFS=',' read -ra SCHEMA_LIST <<< "${APP_SCHEMAS}"
 for s in "${SCHEMA_LIST[@]}"; do
   s_trimmed="$(echo "$s" | xargs)"
-  [[ -n "${s_trimmed}" ]] && SCHEMA_ARGS+=(--schema "${s_trimmed}")
+  [[ -n "${s_trimmed}" ]] && SCHEMA_ARGS+=(-n "${s_trimmed}")
 done
 
 if [[ ${#SCHEMA_ARGS[@]} -eq 0 ]]; then
@@ -41,18 +41,16 @@ if [[ ${#SCHEMA_ARGS[@]} -eq 0 ]]; then
 fi
 
 echo "==> 1) Backup current staging schema (rollback asset)" | tee -a "${LOG_FILE}"
-supabase db dump \
-  --db-url "${STAGING_DB_URL}" \
-  "${SCHEMA_ARGS[@]}" \
+pg_dump "${STAGING_DB_URL}" \
   --schema-only \
-  -f "${STAGING_PRE_BACKUP}" | tee -a "${LOG_FILE}"
+  "${SCHEMA_ARGS[@]}" \
+  -f "${STAGING_PRE_BACKUP}" 2>&1 | tee -a "${LOG_FILE}"
 
 echo "==> 2) Dump production schema-only" | tee -a "${LOG_FILE}"
-supabase db dump \
-  --db-url "${PROD_DB_URL}" \
-  "${SCHEMA_ARGS[@]}" \
+pg_dump "${PROD_DB_URL}" \
   --schema-only \
-  -f "${SCHEMA_DUMP}" | tee -a "${LOG_FILE}"
+  "${SCHEMA_ARGS[@]}" \
+  -f "${SCHEMA_DUMP}" 2>&1 | tee -a "${LOG_FILE}"
 
 echo "==> 3) Apply schema dump to staging" | tee -a "${LOG_FILE}"
 psql "${STAGING_DB_URL}" -v ON_ERROR_STOP=1 -f "${SCHEMA_DUMP}" | tee -a "${LOG_FILE}"
