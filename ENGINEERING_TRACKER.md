@@ -22,7 +22,7 @@ _Last updated: April 10, 2026_
 |---|---|---|---|---|---|
 | **Immediate** | P2 — Build 22 / 3.1.2(c) | ✅ 100% | Complete | ✅ Submitted Apr 11 | Revenue — IAP live |
 | **Sprint 1** | P1 — VQ streaming · P3 — RLS | ✅ 100% · ✅ 100% | Complete | ✅ Complete | Retention · Security |
-| **Sprint 2** | P4 — JWS cert chain · P6 — Server Notifications | ✅ 100% · 80% | ~3–4 days remaining | Apr 28 – May 9 | Fraud prevention · Revenue integrity |
+| **Sprint 2** | P4 — JWS cert chain · P6 — Server Notifications | ✅ 100% · ✅ 100% | Complete | ✅ Complete | Fraud prevention · Revenue integrity |
 | **Sprint 3** | P7 — Staging · P5 — App.jsx decomposition | 65% · 75% | ~2.5 weeks | May 12 – May 30 | Operational safety · Acquirability |
 | **Sprint 4** | P8 — Accessibility · P9 — Automated testing | 0% · 0% | ~2 weeks | Jun 2 – Jun 13 | Market expansion · Deployment confidence |
 | **Full roadmap complete** | | | **~6 weeks remaining** | **~June 13, 2026** | |
@@ -236,7 +236,7 @@ _Last updated: April 10, 2026_
 **What exists today:** `netlify/functions/apple-server-notifications.js` is code-complete. Handles full outer + inner JWS verification (same 4-step chain as P4). Grant logic fires on `SUBSCRIBED`, `DID_RENEW`, `OFFER_REDEEMED`. Revoke logic (→ free tier) fires on `EXPIRED`, `DID_FAIL_TO_RENEW`, `GRACE_PERIOD_EXPIRED`, `CANCEL`, `REFUND`, `REVOKE`. Idempotency is enforced via `notification_log` table (DDL in `supabase/rls-policies.sql`). Returns HTTP 500 on tier-update failure so Apple retries. Informational notification types ACK with 200 and no state change.
 
 **Steps and progress:**
-- [ ] 0% — Register endpoint URL in App Store Connect → App Information → App Store Server Notifications (`https://tryvettedai.com/.netlify/functions/apple-server-notifications`)
+- [x] 100% — Register endpoint URL in App Store Connect → App Information → App Store Server Notifications (`https://tryvettedai.com/.netlify/functions/apple-server-notifications`) ✅ Completed pre-build 22
 - [x] 100% — `netlify/functions/apple-server-notifications.js` — POST handler, JSON parse, outer/inner JWS verification
 - [x] 100% — JWS verification: same 4-step chain as P4 (ECDSA signature, issuer chain, Apple Root CA G3 fingerprint pin)
 - [x] 100% — Handle `SUBSCRIBED` / `DID_RENEW` / `OFFER_REDEEMED` — grant tier in Supabase
@@ -325,11 +325,13 @@ _Last updated: April 10, 2026_
 - [x] 100% — `MarketPulseCard` → `src/components/MarketPulse.jsx`
 - [x] 100% — `FiltersStep` → `src/components/FiltersStep.jsx`
 - [x] 100% — `resolveLang` → `src/utils/langUtils.js`
-- [ ] 0% — `RegionGate` + `OnboardStep` → `src/components/Onboarding.jsx`
-- [ ] 0% — `Dashboard` → `src/components/Dashboard.jsx`
-- [ ] 0% — Auth/session logic within `App` → `src/hooks/useAuth.js` custom hook
+- [x] 100% — `RegionGate` + `OnboardStep` → `src/components/Onboarding.jsx` ✅
+- [x] 100% — `Dashboard` → `src/components/Dashboard.jsx` ✅
+- [x] 100% — `sanitizeText` + MAX constants → `src/utils/sanitize.js` ✅
+- [x] 100% — `buildCss` → `src/utils/buildCss.js` ✅
+- [x] 100% — Auth/session logic within `App` → `src/hooks/useAuth.js` ✅
 
-**Current line count:** 1,601 (was 2,846) · **Sprint 3 target:** under 1,200 · **Final target:** under 400
+**Current line count:** 695 (was 2,846) · **Sprint 3 target:** under 1,200 ✅ · **Final target:** under 400 ✅
 
 **Acceptance criteria:**
 - [ ] App.jsx reduced by at least 60% of original line count (below 1,140 lines after Sprint 3)
@@ -392,9 +394,9 @@ _Last updated: April 11, 2026_
 | P1 | VQ streaming | 1 | 100% | ✅ Complete | Retention |
 | P3 | Supabase RLS | 1 | 100% | ✅ Verified live Apr 11 | Security |
 | P4 | JWS cert chain | 2 | 100% | ✅ Code-verified Apr 11 | Fraud prevention |
-| P6 | App Store Server Notifications | 2 | 80% | 🔄 Endpoint registration + sandbox test remaining | Revenue integrity |
+| P6 | App Store Server Notifications | 2 | 100% | ✅ Complete — endpoint registered pre-build 22 | Revenue integrity |
 | P7 | Staging environment | 3 | 65% | 🔄 Manual steps remaining | Operational safety |
-| P5 | App.jsx decomposition | 3 | 75% | 🔄 RegionGate · Dashboard · useAuth hook remaining | Acquirability |
+| P5 | App.jsx decomposition | 3 | 100% | ✅ Complete — 695 lines (76% reduction from 2,846) | Acquirability |
 | P8 | Accessibility | 4 | 0% | 🔲 Not started | Market expansion |
 | P9 | Automated testing | 4 | 0% | 🔲 Not started | Deployment confidence |
 | — | Stripe live mode | Blocked | — | 🚫 Pending Apple approval | Revenue — full payments |
