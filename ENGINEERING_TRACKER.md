@@ -420,7 +420,7 @@ _Last updated: April 11, 2026_
 | P3 | Supabase RLS | 1 | 100% | ✅ Verified live Apr 11 | Security |
 | P4 | JWS cert chain | 2 | 100% | ✅ Code-verified Apr 11 | Fraud prevention |
 | P6 | App Store Server Notifications | 2 | 100% | ✅ Complete — endpoint registered pre-build 22 | Revenue integrity |
-| P7 | Staging environment | 3 | 75% | 🔄 Supabase project + Netlify dashboard + env vars remaining | Operational safety |
+| P7 | Staging environment | 3 | 85% | 🔄 Supabase project active + Netlify dashboard + env vars + smoke test remaining | Operational safety |
 | P5 | App.jsx decomposition | 3 | 100% | ✅ Complete — 695 lines (76% reduction from 2,846) | Acquirability |
 | P8 | Accessibility | 4 | 0% | 🔲 Not started | Market expansion |
 | P9 | Automated testing | 4 | 0% | 🔲 Not started | Deployment confidence |
