@@ -16,7 +16,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install PostgreSQL 17 client tools
         run: |
@@ -123,7 +123,7 @@ jobs:
           path: ${{ steps.dryrun.outputs.summary_file }}
 
       - name: Upload dry-run artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: schema-dry-run-artifacts
           path: .schema_dry_run/

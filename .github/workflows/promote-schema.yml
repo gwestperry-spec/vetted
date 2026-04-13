@@ -22,7 +22,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install PostgreSQL 17 client tools
         run: |
@@ -101,7 +101,7 @@ jobs:
           psql "${STAGING_DB_URL}" -v ON_ERROR_STOP=1 -c "\dRp+" | tee -a "${LOG_FILE}"
 
       - name: Upload promotion artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: db-promotion-artifacts
           path: .db_promotion/
