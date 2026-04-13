@@ -425,8 +425,25 @@ Unit tests are lower priority than E2E at this stage — test the flows users ex
 
 ---
 
+## Apple Review Error Log
+
+| Date | Build | Status | Guideline | Rejection Reason | Response Sent | Response Type |
+|---|---|---|---|---|---|---|
+| Apr 8, 2026 7:59 PM | 22 | Submitted | — | — | — | Initial submission |
+| Apr 9, 2026 | 22 | ❌ Rejected | 3.1.2(c) + Guideline 3 | EULA link missing from App Description. IAP pricing not confirmed (Founding Member lifetime tiers flagged as annual recurring) | Apr 9, 2026 | Resolution Center reply — clarified non-consumable one-time pricing, added EULA statement |
+| Apr 11, 2026 | 22 | ❌ Rejected | TBD | Second rejection — reason under review | Apr 11, 2026 2:48 AM | Resolution Center reply sent 3:53 AM |
+| Apr 12, 2026 | 22 | 🔄 In Review | — | Awaiting Apple response | — | — |
+
+**Notes:**
+- 65-minute turnaround on Apr 11 rejection suggests automated flagging or priority-flagged app status from repeat submissions
+- Founding Member tiers ($399.99 Signal / $799.99 Vantage) are non-consumable one-time IAP — not annual recurring — confirmed in Resolution Center response
+- If Apr 11 rejection reason matches Apr 9, Resolution Center reply alone will not clear it — a metadata or binary fix will be required in Build 23
+- Do not submit Build 23 while Build 22 is in review — resets queue position
+
+---
+
 ## Summary Dashboard
-_Last updated: April 11, 2026_
+_Last updated: April 12, 2026_
 
 | # | Priority | Sprint | Progress | Status | Business Unlock |
 |---|---|---|---|---|---|
