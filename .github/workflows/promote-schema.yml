@@ -49,6 +49,7 @@ jobs:
           RLS_FILE: ${{ github.event.inputs.rls_file }}
         run: |
           set -Eeuo pipefail
+          export PATH="/usr/lib/postgresql/17/bin:$PATH"
 
           TS="$(date +%Y%m%d_%H%M%S)"
           WORKDIR=".db_promotion/${TS}"
