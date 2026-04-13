@@ -366,15 +366,30 @@ SELECT tablename, rowsecurity FROM pg_tables WHERE schemaname = 'public'; -- all
 ---
 
 ## Priority 8 — Accessibility Remediation
-**Sprint:** 4 · **Status:** 🔲 Not started
+**Sprint:** 4 · **Status:** 🔄 In progress · **Progress: 55%**
 
 **Business context:** ADA compliance is required for any enterprise or B2B sales motion. Increasingly scrutinized in App Store review. A premium product built for discerning professionals should meet the same standards those professionals expect from enterprise tools.
 
-**Technical directive (in order):**
+**What's done:**
+- [x] `.sr-only` utility class added to buildCss.js
+- [x] Section headings (`In Progress`, scored roles) switched from `display:none` to `.sr-only` — screen reader navigable
+- [x] aria-labels added to all icon-only buttons (✎, ✕, →, ✓, ?)
+- [x] `aria-pressed` added to status picker buttons
+- [x] All touch targets enforced at 44pt minimum (guide button, edit toggle, status pills, Mark Applied, tag-remove, filter-delete-btn)
+- [x] Recommendation badge: 11px/weight 500 → 16px/weight 700 (visual + accessibility improvement)
+- [x] Xcode Accessibility Inspector audit run — hit area warnings resolved
+
+**Remaining:**
+- [ ] Focus trap on all modals (PaywallModal, WalkthroughModal, CompareView)
+- [ ] `aria-live` region on filter carousel — announce position changes to screen readers
+- [ ] WCAG 2.1 AA color contrast audit (muted text, score badges, disabled states)
+- [ ] VoiceOver full flow test on iOS Simulator — sign in → score → navigate result
+
+**Technical directive (remaining, in order):**
 1. Add focus trap to all modals — keyboard and assistive tech users cannot navigate outside open modal
 2. Add `aria-live` region to filter carousel — screen readers announce carousel position changes
 3. Audit all interactive elements for WCAG 2.1 AA color contrast (4.5:1 normal text, 3:1 large text)
-4. Add alt text to all non-decorative images
+4. VoiceOver end-to-end flow test on Simulator
 
 **Acceptance criteria:**
 - [ ] VoiceOver navigation on iOS completes a full scoring flow — sign in → submit JD → receive VQ score → navigate filter breakdown — without dead ends or unannounced state changes
@@ -420,8 +435,8 @@ _Last updated: April 11, 2026_
 | P3 | Supabase RLS | 1 | 100% | ✅ Verified live Apr 11 | Security |
 | P4 | JWS cert chain | 2 | 100% | ✅ Code-verified Apr 11 | Fraud prevention |
 | P6 | App Store Server Notifications | 2 | 100% | ✅ Complete — endpoint registered pre-build 22 | Revenue integrity |
-| P7 | Staging environment | 3 | 85% | 🔄 Supabase project active + Netlify dashboard + env vars + smoke test remaining | Operational safety |
+| P7 | Staging environment | 3 | 100% | ✅ Complete — staging branch live, Netlify deploy active, dry-run passing, smoke test complete (web) | Operational safety |
 | P5 | App.jsx decomposition | 3 | 100% | ✅ Complete — 695 lines (76% reduction from 2,846) | Acquirability |
-| P8 | Accessibility | 4 | 0% | 🔲 Not started | Market expansion |
+| P8 | Accessibility | 4 | 55% | 🔄 In progress — aria-labels, sr-only, 44pt touch targets done; focus traps, aria-live, WCAG contrast, VoiceOver flow remaining | Market expansion |
 | P9 | Automated testing | 4 | 0% | 🔲 Not started | Deployment confidence |
 | — | Stripe live mode | Blocked | — | 🚫 Pending Apple approval | Revenue — full payments |
