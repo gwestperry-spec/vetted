@@ -180,7 +180,7 @@ export default function Dashboard({ t, profile, filters, lang, opportunities, lo
             onClick={openGuide}
             aria-label="Open dashboard guide"
             style={{
-              width: 28, height: 28, borderRadius: "50%",
+              width: 44, height: 44, borderRadius: "50%",
               background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.25)",
               color: "#E8F0E8", fontSize: 13, fontWeight: 600, cursor: "pointer",
               display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
@@ -324,7 +324,7 @@ export default function Dashboard({ t, profile, filters, lang, opportunities, lo
                         <button
                           onClick={() => setEditingStatusId(isEditing ? null : opp.id)}
                           aria-label={isEditing ? "Close status editor" : "Edit status"}
-                          style={{ background: "none", border: "none", cursor: "pointer", color: "#8A9A8A", fontSize: 14, lineHeight: 1, padding: "2px 4px" }}
+                          style={{ background: "none", border: "none", cursor: "pointer", color: "#8A9A8A", fontSize: 14, lineHeight: 1, minWidth: 44, minHeight: 44, display: "flex", alignItems: "center", justifyContent: "center" }}
                         >{isEditing ? "✕" : "✎"}</button>
                       </div>
                     </div>
@@ -346,6 +346,7 @@ export default function Dashboard({ t, profile, filters, lang, opportunities, lo
                                 border: `1px solid ${status === key ? "transparent" : "#D8E8D8"}`,
                                 borderRadius: 20, padding: "4px 12px", cursor: "pointer",
                                 fontWeight: status === key ? 600 : 400,
+                                minHeight: 44, display: "inline-flex", alignItems: "center",
                               }}
                             >{label}</button>
                           ))}
@@ -377,6 +378,7 @@ export default function Dashboard({ t, profile, filters, lang, opportunities, lo
                               fontFamily: "var(--font-data)", fontSize: 11, letterSpacing: ".06em",
                               background: "#1A2E1A", color: "#E8F0E8", border: "none",
                               borderRadius: 20, padding: "4px 12px", cursor: "pointer",
+                              minHeight: 44, display: "inline-flex", alignItems: "center",
                             }}>→ {STAGE_LABELS[nextStage]}</button>
                         )}
                         {isFinalRound && (
@@ -388,6 +390,7 @@ export default function Dashboard({ t, profile, filters, lang, opportunities, lo
                                 fontFamily: "var(--font-data)", fontSize: 11, letterSpacing: ".06em",
                                 background: "#1A2E1A", color: "#E8F0E8", border: "none",
                                 borderRadius: 20, padding: "4px 12px", cursor: "pointer",
+                                minHeight: 44, display: "inline-flex", alignItems: "center",
                               }}>✓ Offer Extended</button>
                             <button
                               onClick={() => onUpdateStatus(opp.id, "rejected")}
@@ -396,6 +399,7 @@ export default function Dashboard({ t, profile, filters, lang, opportunities, lo
                                 fontFamily: "var(--font-data)", fontSize: 11, letterSpacing: ".06em",
                                 background: "#F8ECEC", color: "#C05050", border: "1px solid #E8D0D0",
                                 borderRadius: 20, padding: "4px 12px", cursor: "pointer",
+                                minHeight: 44, display: "inline-flex", alignItems: "center",
                               }}>✕ Rejected</button>
                           </>
                         )}
@@ -407,6 +411,7 @@ export default function Dashboard({ t, profile, filters, lang, opportunities, lo
                               fontFamily: "var(--font-data)", fontSize: 11, letterSpacing: ".06em",
                               background: "transparent", color: "#8A9A8A", border: "1px solid #D8E8D8",
                               borderRadius: 20, padding: "4px 12px", cursor: "pointer",
+                              minHeight: 44, display: "inline-flex", alignItems: "center",
                             }}>Withdrew</button>
                         )}
                         {!isTerminal && !isFinalRound && stageIdx >= 1 && (
@@ -417,6 +422,7 @@ export default function Dashboard({ t, profile, filters, lang, opportunities, lo
                               fontFamily: "var(--font-data)", fontSize: 11, letterSpacing: ".06em",
                               background: "transparent", color: "#C05050", border: "1px solid #E8D0D0",
                               borderRadius: 20, padding: "4px 12px", cursor: "pointer",
+                              minHeight: 44, display: "inline-flex", alignItems: "center",
                             }}>✕ Rejected</button>
                         )}
                       </div>
@@ -517,7 +523,9 @@ export default function Dashboard({ t, profile, filters, lang, opportunities, lo
                         borderRadius: 20,
                         padding: "3px 10px",
                         cursor: isApplied ? "default" : "pointer",
-                        display: "block",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        minHeight: 44,
                         marginTop: 4,
                         marginLeft: "auto",
                         marginRight: 0,

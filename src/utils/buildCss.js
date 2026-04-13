@@ -57,7 +57,7 @@ body{font-family:${dir === "rtl" ? "'Noto Sans Arabic'" : "var(--font-prose)"};b
   .btn-actions{display:flex;gap:10px;margin-top:24px;align-items:center;flex-wrap:wrap}
   .tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
   .tag{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;background:var(--cream);border:1px solid var(--border);border-radius:20px;font-size:13px;font-weight:500}
-  .tag-remove{cursor:pointer;color:var(--muted);background:none;border:none;min-width:24px;min-height:24px;display:inline-flex;align-items:center;justify-content:center;border-radius:50%;font-size:16px;padding:0;transition:color .15s,background .15s}
+  .tag-remove{cursor:pointer;color:var(--muted);background:none;border:none;min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;border-radius:50%;font-size:16px;padding:0;transition:color .15s,background .15s}
   .tag-remove:hover{color:var(--accent);background:var(--pass-bg)}
   .tag-remove:focus-visible{outline:none;box-shadow:var(--focus)}
   .tabs{display:flex;margin-bottom:24px;border-bottom:1px solid var(--border)}
@@ -116,7 +116,7 @@ body{font-family:${dir === "rtl" ? "'Noto Sans Arabic'" : "var(--font-prose)"};b
   .alert-error{background:var(--pass-bg);color:var(--pass);border-${dir === "rtl" ? "right" : "left"}:3px solid var(--accent)}
   .custom-filter-row{display:flex;gap:10px;align-items:flex-start;padding:14px 0;border-bottom:1px solid var(--cream)}.custom-filter-row:last-child{border-bottom:none}
   .weight-select{width:110px;flex-shrink:0;min-height:44px}
-  .filter-delete-btn{flex-shrink:0;background:none;border:1.5px solid var(--border);color:var(--muted);cursor:pointer;min-width:36px;min-height:36px;display:flex;align-items:center;justify-content:center;border-radius:var(--r);font-size:18px;transition:color .15s,border-color .15s}
+  .filter-delete-btn{flex-shrink:0;background:none;border:1.5px solid var(--border);color:var(--muted);cursor:pointer;min-width:44px;min-height:44px;display:flex;align-items:center;justify-content:center;border-radius:var(--r);font-size:18px;transition:color .15s,border-color .15s}
   .filter-delete-btn:hover{color:var(--accent);border-color:var(--accent)}
   .filter-delete-btn:focus-visible{outline:none;box-shadow:var(--focus)}
   .region-gate{max-width:480px;margin:80px auto}
