@@ -284,7 +284,7 @@ export default function Dashboard({ t, profile, filters, lang, opportunities, lo
       {opportunities.some(o => o.applied_at) && (
         <section aria-labelledby="inprogress-heading" style={{ marginTop: 32 }}>
           <div className="section-label" aria-hidden="true">In Progress</div>
-          <h2 style={{ display: "none" }} id="inprogress-heading">In Progress</h2>
+          <h2 className="sr-only" id="inprogress-heading">In Progress</h2>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {opportunities
               .filter(o => o.applied_at)
@@ -309,6 +309,7 @@ export default function Dashboard({ t, profile, filters, lang, opportunities, lo
                       <div style={{ minWidth: 0, flex: 1 }}>
                         <button
                           onClick={() => onViewOpp(opp)}
+                          aria-label={`View ${opp.role_title} at ${opp.company}`}
                           style={{ background: "none", border: "none", padding: 0, cursor: "pointer", textAlign: "left", width: "100%" }}
                         >
                           <div style={{ fontFamily: "var(--font-prose)", fontSize: 15, fontWeight: 600, color: "#1A2E1A", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{opp.role_title}</div>
@@ -337,6 +338,7 @@ export default function Dashboard({ t, profile, filters, lang, opportunities, lo
                             <button
                               key={key}
                               onClick={() => { onUpdateStatus(opp.id, key); setEditingStatusId(null); }}
+                              aria-pressed={status === key}
                               style={{
                                 fontFamily: "var(--font-data)", fontSize: 11, letterSpacing: ".06em",
                                 background: status === key ? (STAGE_STYLE[key]?.bg || "#E0F0E0") : "#fff",
@@ -368,39 +370,54 @@ export default function Dashboard({ t, profile, filters, lang, opportunities, lo
                     {!isEditing && (
                       <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                         {nextStage && !isFinalRound && (
-                          <button onClick={() => onUpdateStatus(opp.id, nextStage)} style={{
-                            fontFamily: "var(--font-data)", fontSize: 11, letterSpacing: ".06em",
-                            background: "#1A2E1A", color: "#E8F0E8", border: "none",
-                            borderRadius: 20, padding: "4px 12px", cursor: "pointer",
-                          }}>→ {STAGE_LABELS[nextStage]}</button>
-                        )}
-                        {isFinalRound && (
-                          <>
-                            <button onClick={() => onUpdateStatus(opp.id, "offer")} style={{
+                          <button
+                            onClick={() => onUpdateStatus(opp.id, nextStage)}
+                            aria-label={`Move to ${STAGE_LABELS[nextStage]}`}
+                            style={{
                               fontFamily: "var(--font-data)", fontSize: 11, letterSpacing: ".06em",
                               background: "#1A2E1A", color: "#E8F0E8", border: "none",
                               borderRadius: 20, padding: "4px 12px", cursor: "pointer",
-                            }}>✓ Offer Extended</button>
-                            <button onClick={() => onUpdateStatus(opp.id, "rejected")} style={{
-                              fontFamily: "var(--font-data)", fontSize: 11, letterSpacing: ".06em",
-                              background: "#F8ECEC", color: "#C05050", border: "1px solid #E8D0D0",
-                              borderRadius: 20, padding: "4px 12px", cursor: "pointer",
-                            }}>✕ Rejected</button>
+                            }}>→ {STAGE_LABELS[nextStage]}</button>
+                        )}
+                        {isFinalRound && (
+                          <>
+                            <button
+                              onClick={() => onUpdateStatus(opp.id, "offer")}
+                              aria-label="Mark as Offer Extended"
+                              style={{
+                                fontFamily: "var(--font-data)", fontSize: 11, letterSpacing: ".06em",
+                                background: "#1A2E1A", color: "#E8F0E8", border: "none",
+                                borderRadius: 20, padding: "4px 12px", cursor: "pointer",
+                              }}>✓ Offer Extended</button>
+                            <button
+                              onClick={() => onUpdateStatus(opp.id, "rejected")}
+                              aria-label="Mark as Rejected"
+                              style={{
+                                fontFamily: "var(--font-data)", fontSize: 11, letterSpacing: ".06em",
+                                background: "#F8ECEC", color: "#C05050", border: "1px solid #E8D0D0",
+                                borderRadius: 20, padding: "4px 12px", cursor: "pointer",
+                              }}>✕ Rejected</button>
                           </>
                         )}
                         {!isTerminal && (
-                          <button onClick={() => onUpdateStatus(opp.id, "withdrew")} style={{
-                            fontFamily: "var(--font-data)", fontSize: 11, letterSpacing: ".06em",
-                            background: "transparent", color: "#8A9A8A", border: "1px solid #D8E8D8",
-                            borderRadius: 20, padding: "4px 12px", cursor: "pointer",
-                          }}>Withdrew</button>
+                          <button
+                            onClick={() => onUpdateStatus(opp.id, "withdrew")}
+                            aria-label="Mark as Withdrew"
+                            style={{
+                              fontFamily: "var(--font-data)", fontSize: 11, letterSpacing: ".06em",
+                              background: "transparent", color: "#8A9A8A", border: "1px solid #D8E8D8",
+                              borderRadius: 20, padding: "4px 12px", cursor: "pointer",
+                            }}>Withdrew</button>
                         )}
                         {!isTerminal && !isFinalRound && stageIdx >= 1 && (
-                          <button onClick={() => onUpdateStatus(opp.id, "rejected")} style={{
-                            fontFamily: "var(--font-data)", fontSize: 11, letterSpacing: ".06em",
-                            background: "transparent", color: "#C05050", border: "1px solid #E8D0D0",
-                            borderRadius: 20, padding: "4px 12px", cursor: "pointer",
-                          }}>✕ Rejected</button>
+                          <button
+                            onClick={() => onUpdateStatus(opp.id, "rejected")}
+                            aria-label="Mark as Rejected"
+                            style={{
+                              fontFamily: "var(--font-data)", fontSize: 11, letterSpacing: ".06em",
+                              background: "transparent", color: "#C05050", border: "1px solid #E8D0D0",
+                              borderRadius: 20, padding: "4px 12px", cursor: "pointer",
+                            }}>✕ Rejected</button>
                         )}
                       </div>
                     )}
@@ -414,7 +431,7 @@ export default function Dashboard({ t, profile, filters, lang, opportunities, lo
       {opportunities.length > 0 && (
         <section aria-labelledby="prev-heading" style={{ marginTop: 32 }}>
           <div className="section-label" aria-hidden="true">{t.prevScored}</div>
-          <h2 style={{ display: "none" }} id="prev-heading">{t.prevScored}</h2>
+          <h2 className="sr-only" id="prev-heading">{t.prevScored}</h2>
           <p className="threshold-label">{t.threshold}: {profile.threshold}</p>
           <div role="list">
             {sorted.map((opp, idx) => {

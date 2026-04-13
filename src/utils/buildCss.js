@@ -19,6 +19,7 @@ body{font-family:${dir === "rtl" ? "'Noto Sans Arabic'" : "var(--font-prose)"};b
 *{box-sizing:border-box;min-width:0}
   .skip-link{position:absolute;top:-100px;left:0;padding:8px 16px;background:var(--ink);color:#fff;font-size:14px;border-radius:0 0 var(--r) 0;z-index:9999;transition:top .15s}
   .skip-link:focus{top:0;outline:3px solid #4a90e2}
+  .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
   .app{max-width:860px;margin:0 auto;padding:max(env(safe-area-inset-top,44px),44px) 16px 80px;background:var(--paper);min-height:100vh;overflow-x:hidden;box-sizing:border-box;width:100%}
   .header{text-align:center;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border)}
   .header-eyebrow{font-family:var(--font-data);font-size:10px;letter-spacing:.10em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
