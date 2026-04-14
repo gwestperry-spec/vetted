@@ -53,7 +53,6 @@ export default function MarketPulseCard({ t, profile, authUser, userTier, opport
     // ── Step 1: salary lookup (critical — abort on failure) ────────────────
     let salaryJson;
     try {
-      console.log("[MarketPulse] fetching salary for:", titleToLookup);
       const salaryRes = await fetch(ENDPOINTS.salaryLookup, {
         method: "POST",
         headers: { "Content-Type": "application/json", "X-Vetted-Token": secret },
@@ -65,23 +64,19 @@ export default function MarketPulseCard({ t, profile, authUser, userTier, opport
         }),
       });
       salaryJson = await salaryRes.json();
-      console.log("[MarketPulse] salary response:", JSON.stringify(salaryJson));
     } catch (salaryErr) {
       handleError(salaryErr, "market_pulse_salary");
-      console.error("[MarketPulse] salary fetch error:", salaryErr);
       setError(t.marketNoData);
       setLoading(false);
       return;
     }
 
     if (salaryJson.error || !salaryJson.median) {
-      console.log("[MarketPulse] no salary data — error:", salaryJson.error, "median:", salaryJson.median);
       setError(t.marketNoData);
       setLoading(false);
       return;
     }
 
-    console.log("[MarketPulse] salary OK — median:", salaryJson.median);
     setData(salaryJson);
 
     // ── Step 2: Claude market intelligence brief (non-critical — graceful skip) ──
@@ -129,9 +124,8 @@ Respond ONLY with valid JSON (no markdown):
         } catch { /* salary data already visible — insights parse fail is silent */ }
       }
     } catch (claudeErr) {
-      // Claude is supplementary — salary data already displayed. Log but don't error.
+      // Claude is supplementary — salary data already displayed.
       handleError(claudeErr, "market_pulse_claude");
-      console.warn("[MarketPulse] Claude step failed (non-fatal):", claudeErr?.message);
     } finally {
       setLoading(false);
     }

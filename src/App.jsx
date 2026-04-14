@@ -323,6 +323,7 @@ export default function App() {
         safeProfile.locations     && `Location Preferences: ${safeProfile.locations}`,
         safeProfile.constraints   && `Hard Constraints: ${safeProfile.constraints}`,
       ].filter(Boolean).join("\n");
+      const fn = (field) => resolveLang(field, lang);
       const filterDefs = filters.map(f => `- ${sanitizeText(fn(f.name))} (weight: ${f.weight}x): ${sanitizeText(fn(f.description), MAX_LONG)}`).join("\n");
       const safeJd = sanitizeText(jd, MAX_JD);
 
@@ -378,7 +379,7 @@ export default function App() {
 
         // Stream body is available — consume it
         if (streamResponse.body) {
-          console.log("[scoring] ✓ streaming path active");
+          // streaming path active
           text = await consumeStream(streamResponse, (filter) => {
             setStreamingFilters(prev => [...prev, filter]);
           });
@@ -387,13 +388,13 @@ export default function App() {
       } catch (streamErr) {
         // Streaming unavailable (Netlify CDN buffering, old runtime, network error)
         // Fall back silently to the buffered endpoint.
-        console.warn("[scoring] stream failed, falling back to buffered:", streamErr.message);
+        // stream unavailable — falling back to buffered endpoint
         trackStreamFallbackTriggered({ durationMs: Date.now() - scoreStartMs });
         usedStream = false;
       }
 
       if (usedStream) {
-        console.log("[scoring] stream complete — filters received:", streamingFilters.length || "0 (check filter_scores field order in prompt)");
+        // stream complete
       }
 
       // ── Buffered fallback ──────────────────────────────────────────────
