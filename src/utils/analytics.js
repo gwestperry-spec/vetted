@@ -10,7 +10,10 @@
 import posthog from "posthog-js";
 
 const KEY = import.meta.env.VITE_POSTHOG_KEY;
-const HOST = import.meta.env.VITE_POSTHOG_HOST || "https://us.i.posthog.com";
+// Route through Netlify reverse proxy (/ph/*) so requests are same-origin.
+// This satisfies the CSP connect-src 'self' rule and avoids CORS on internal-j.posthog.com.
+// VITE_POSTHOG_HOST can override (e.g. for EU region: https://eu.i.posthog.com).
+const HOST = import.meta.env.VITE_POSTHOG_HOST || "/ph";
 
 let initialized = false;
 

@@ -91,3 +91,20 @@
   from = "/privacy"
   to = "/privacy.html"
   status = 200
+
+# ── PostHog reverse proxy ─────────────────────────────────────────────────────
+# Routes PostHog capture requests through our own domain so they:
+#   1. Pass the Content-Security-Policy connect-src 'self' rule
+#   2. Avoid CORS issues with internal-j.posthog.com
+#   3. Survive most ad blockers (requests appear same-origin)
+[[redirects]]
+  from = "/ph/static/*"
+  to = "https://us-assets.i.posthog.com/static/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/ph/*"
+  to = "https://us.i.posthog.com/:splat"
+  status = 200
+  force = true
