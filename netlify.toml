@@ -1,5 +1,6 @@
 [build]
-  publish = "website"
+  command = "npm run build"
+  publish = "dist"
   functions = "netlify/functions"
 
 [[headers]]
@@ -78,7 +79,8 @@
 #   3. In Netlify dashboard: Deploys → Branch deploys → add `staging`.
 #   4. Set env vars for the staging context pointing to the staging Supabase project.
 [context.staging]
-  publish = "website"
+  command = "npm run build"
+  publish = "dist"
   functions = "netlify/functions"
 
 [context.staging.environment]
