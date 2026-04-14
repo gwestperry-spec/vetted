@@ -166,6 +166,8 @@ export default function App() {
   const [behavioralInsight, setBehavioralInsight] = useState(null);
   // { insight_text, pattern_type, id }
   const announcerRef = useRef(null);
+  // Sets the aria-live region text for screen readers. No-ops if the ref isn't mounted.
+  const announce = (msg) => { if (announcerRef.current) announcerRef.current.textContent = msg; };
 
   // ── Auth hook ─────────────────────────────────────────────────────────────
   const {
@@ -525,11 +527,8 @@ export default function App() {
   // ── Auth gate — show sign in screen if not authenticated ─────────────────
   if (!authUser) {
     return (
-      <>
-        <div ref={announcerRef} role="status" aria-live="polite" aria-atomic="true"
-          style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clip: "rect(0,0,0,0)", whiteSpace: "nowrap" }} />
-        <div className="app">
-          <SignInGate
+      <div className="app">
+        <SignInGate
             t={t}
             lang={lang}
             setLang={setLang}
@@ -539,8 +538,7 @@ export default function App() {
             authError={authError}
             onClearAuth={clearAuthState}
           />
-        </div>
-      </>
+      </div>
     );
   }
 
