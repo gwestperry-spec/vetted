@@ -438,12 +438,30 @@ Unit tests are lower priority than E2E at this stage — test the flows users ex
 - 65-minute turnaround on Apr 11 rejection suggests automated flagging or priority-flagged app status from repeat submissions
 - Founding Member tiers ($399.99 Signal / $799.99 Vantage) are non-consumable one-time IAP — not annual recurring — confirmed in Resolution Center response
 - If Apr 11 rejection reason matches Apr 9, Resolution Center reply alone will not clear it — a metadata or binary fix will be required in Build 23
-- Do not submit Build 23 while Build 22 is in review — resets queue position
+- Do not submit Build 23 while Build 22 is in review
+
+---
+
+## Infrastructure Error Log
+
+| Date | Severity | Component | Issue | Root Cause | Fix Applied |
+|---|---|---|---|---|---|
+| Apr 13, 2026 | 🔴 Critical | Netlify deploy | All sprint changes (P8, UI overhaul, PostHog, auth fixes) never deployed to production | `netlify.toml` `publish = "website"` pointed at a stale pre-built static snapshot. Vite outputs to `dist/` by default. No `build` command was set, so Netlify served the static snapshot as-is — no build step ran on any push | Added `command = "npm run build"` and changed `publish = "dist"` in both main and staging contexts. Verified with clean local build (581 kB bundle confirmed) |
+| Apr 13, 2026 | 🔴 Critical | App.jsx scoring | `fn()` called in `scoreOpportunity()` but undefined — ReferenceError on every score submit in new build | `fn = (field) => resolveLang(field, lang)` was defined inline in old App.jsx, removed during P5 decomposition, call sites not updated | Added `const fn = (field) => resolveLang(field, lang);` inside `scoreOpportunity()` immediately before first use |
+| Apr 13, 2026 | 🔴 Critical | App.jsx scoring | `announce()` called before try/catch — spinner never cleared on scoring failure | `announce()` was removed during P5 decomposition but 3 call sites remained. ReferenceError before try/catch meant loading state was never reset | Added `const announce = (msg) => { if (announcerRef.current) announcerRef.current.textContent = msg; };` after announcerRef declaration |
+| Apr 13, 2026 | 🟡 High | App.jsx / MarketPulse | 8 debug `console.log/warn/error` statements in production scoring and salary paths | Left over from development — not cleaned before commit | Removed all 8 from client-side code (App.jsx: 3, MarketPulse.jsx: 5). Server-side function logs (Netlify functions) intentionally kept for operational visibility |
+| Apr 13, 2026 | 🟡 High | Content Security Policy | PostHog events blocked — `connect-src` did not include PostHog domains; SDK routed to `internal-j.posthog.com` which fails CORS | CSP in `netlify.toml` only allowed `'self'` and known API origins | Added Netlify reverse proxy: `/ph/*` → `us.i.posthog.com` so all events go same-origin; updated `analytics.js` host to `/ph` |
+
+**Audit findings (Apr 13, 2026) — full codebase sweep:**
+- All CRITICAL and HIGH issues above were masked while `website/` served the old build. They would have caused immediate user-facing failures on first Netlify build from source.
+- Server-side console statements (Netlify functions) reviewed and intentionally retained — all are `error`/`warn`-level operational signals used in Netlify function logs, not user-visible.
+- `analytics.js` default export is redundant (named exports cover all use cases) — LOW priority, no functional impact.
+- No dead imports, orphaned components, or props mismatches found beyond those listed above. — resets queue position
 
 ---
 
 ## Summary Dashboard
-_Last updated: April 12, 2026_
+_Last updated: April 14, 2026_
 
 | # | Priority | Sprint | Progress | Status | Business Unlock |
 |---|---|---|---|---|---|
