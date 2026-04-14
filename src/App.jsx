@@ -172,7 +172,7 @@ export default function App() {
     authUser, authLoading, authError, setAuthError,
     userTier, setUserTier,
     devTierOverride, setDevTierOverride,
-    handleSignInWithApple, handleSignOut, clearAuthState, dbCall,
+    handleSignInWithApple, handleSignInWithGitHub, handleSignOut, clearAuthState, dbCall,
   } = useAuth({ setProfile, setLang, setFilters, setOpportunities, setStep, DEFAULT_FILTERS });
 
   const t = T[lang];
@@ -534,6 +534,7 @@ export default function App() {
             lang={lang}
             setLang={setLang}
             onSignIn={handleSignInWithApple}
+            onGitHubSignIn={handleSignInWithGitHub}
             authLoading={authLoading}
             authError={authError}
             onClearAuth={clearAuthState}

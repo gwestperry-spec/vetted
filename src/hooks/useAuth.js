@@ -117,6 +117,33 @@ export function useAuth({ setProfile, setLang, setFilters, setOpportunities, set
     }
   }
 
+  // ── GitHub OAuth callback handler ────────────────────────────────────────
+  // After GitHub redirects back, the URL fragment is: #gh_auth?gh_user_id=...
+  // Parse it on mount, sign the user in, then clean the fragment from the URL.
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (!hash.startsWith("#gh_auth?")) return;
+
+    const params = new URLSearchParams(hash.slice("#gh_auth?".length));
+    const userId  = params.get("gh_user_id");
+    const name    = params.get("gh_name") || "User";
+    const email   = params.get("gh_email") || "";
+    const token   = params.get("gh_token") || "";
+
+    if (!userId || !token) return;
+
+    // Clean the fragment immediately so it doesn't linger in browser history
+    window.history.replaceState(null, "", window.location.pathname + window.location.search);
+
+    const user = { id: userId, email, displayName: name, sessionToken: token };
+    const { sessionToken: _st, ...toStore } = user;
+    localStorage.setItem("vetted_user", JSON.stringify(toStore));
+    localStorage.setItem("vetted_session_token", token);
+    sessionStorage.setItem("vetted_session_token", token);
+    setAuthUser(user);
+    loadUserData(userId, token);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   // ── Restore auth from localStorage on mount ──────────────────────────────
   useEffect(() => {
     async function restoreSession() {
@@ -307,6 +334,12 @@ export function useAuth({ setProfile, setLang, setFilters, setOpportunities, set
     }
   }
 
+  // ── Sign in with GitHub (web only) ──────────────────────────────────────
+  // Redirects to the Netlify github-auth function which starts the OAuth flow.
+  function handleSignInWithGitHub() {
+    window.location.href = ENDPOINTS.githubAuth;
+  }
+
   // Clear all auth state — gives members a clean retry without reinstalling
   function clearAuthState() {
     localStorage.removeItem("vetted_user");
@@ -343,6 +376,7 @@ export function useAuth({ setProfile, setLang, setFilters, setOpportunities, set
     devTierOverride,
     setDevTierOverride,
     handleSignInWithApple,
+    handleSignInWithGitHub,
     handleSignOut,
     clearAuthState,
     dbCall,

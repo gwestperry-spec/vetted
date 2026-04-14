@@ -14,6 +14,7 @@ export const ENDPOINTS = {
   parseResume:  `${API_BASE}/.netlify/functions/parse-resume`,
   salaryLookup: `${API_BASE}/.netlify/functions/salary-lookup`,
   behavioralIntelligence: `${API_BASE}/.netlify/functions/behavioral-intelligence`,
+  githubAuth:   `${API_BASE}/.netlify/functions/github-auth`,
   privacy:      `${API_BASE}/privacy`,
   terms:        "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/",
 };
