@@ -66,8 +66,8 @@ body{font-family:${dir === "rtl" ? "'Noto Sans Arabic'" : "var(--font-prose)"};b
   .tab-btn:focus-visible{outline:none;box-shadow:inset 0 0 0 2px #4a90e2}
   .score-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 16px;border-radius:20px;font-family:var(--font-data);font-weight:500;font-size:14px}
   .score-high{background:#E0F0E0;color:#3A5A3A}.score-mid{background:#F8F4D8;color:#8A6A10}.score-low{background:#F8ECEC;color:#C05050}
-  .recommendation-badge{display:inline-flex;align-items:center;gap:6px;padding:10px 20px;border-radius:var(--r);font-family:var(--font-data);font-size:16px;font-weight:700;text-transform:uppercase;border:2px solid currentColor;letter-spacing:0.14em;white-space:normal;word-break:break-word;max-width:100%}
-  .rec-pursue{color:var(--success);background:#c8edda}.rec-pass{color:var(--pass);background:var(--pass-bg)}.rec-monitor{color:var(--warn);background:var(--warn-bg)}
+  .recommendation-badge{display:inline-flex;align-items:center;gap:6px;padding:10px 20px;border-radius:var(--r);font-family:var(--font-data);font-size:16px;font-weight:700;text-transform:uppercase;letter-spacing:0.14em;white-space:normal;word-break:break-word;max-width:100%}
+  .rec-pursue{background:#C8E8C0;color:#1A4A10}.rec-monitor{background:#F0E8C0;color:#5A4A0A}.rec-pass{background:#F0C8C8;color:#5A1A1A}
 .opp-card{background:#fff;border:1px solid #D8E8D8;border-radius:10px;padding:20px 24px;margin-bottom:12px;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:space-between;gap:16px;width:100%;max-width:100%;box-sizing:border-box;text-align:${dir === "rtl" ? "right" : "left"};font-family:inherit}
   .opp-card:hover{border-color:var(--ink)}
   .opp-card:focus-visible{outline:none;box-shadow:var(--focus)}

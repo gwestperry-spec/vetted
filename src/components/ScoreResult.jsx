@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { exportOpportunityPdf } from "../utils/exportPdf.js";
 import { ENDPOINTS } from "../config.js";
 import { handleError } from "../handleError.js";
@@ -53,7 +53,6 @@ const LANG_NAMES = {
   fr: "French",  ar: "Arabic",  vi: "Vietnamese",
 };
 
-// ─── Application Status Tracker ──────────────────────────────────────────────
 const FUNNEL_STAGES = [
   { key: "applied",      label: "Applied" },
   { key: "phone_screen", label: "Phone Screen" },
@@ -67,6 +66,68 @@ const OUTCOMES = [
   { key: "withdrew", label: "Withdrew", color: "var(--muted)" },
 ];
 
+// ─── B2 Side Panel Icons ───────────────────────────────────────────────────────
+function IconScore({ active }) {
+  const c = active ? "#3A7A3A" : "#8A9A8A";
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <circle cx="10" cy="10" r="7" stroke={c} strokeWidth="1.5"/>
+      <line x1="10" y1="10" x2="10" y2="5" stroke={c} strokeWidth="1.5" strokeLinecap="round"/>
+      <line x1="10" y1="10" x2="13" y2="12" stroke={c} strokeWidth="1.5" strokeLinecap="round"/>
+    </svg>
+  );
+}
+
+function IconInsights({ active }) {
+  const fill = active ? "#3A7A3A" : "#8A9A8A";
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <rect x="2" y="3" width="16" height="14" rx="2" fill={fill}/>
+      <line x1="5" y1="8" x2="15" y2="8" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
+      <line x1="5" y1="12" x2="12" y2="12" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
+    </svg>
+  );
+}
+
+function IconFilters({ active }) {
+  const c = active ? "#3A7A3A" : "#8A9A8A";
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <line x1="3" y1="6" x2="17" y2="6" stroke={c} strokeWidth="1.5" strokeLinecap="round"/>
+      <line x1="5" y1="10" x2="15" y2="10" stroke={c} strokeWidth="1.5" strokeLinecap="round"/>
+      <line x1="7" y1="14" x2="13" y2="14" stroke={c} strokeWidth="1.5" strokeLinecap="round"/>
+    </svg>
+  );
+}
+
+function IconCoach({ active }) {
+  const c = active ? "#3A7A3A" : "#8A9A8A";
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <path d="M3 4C3 3.45 3.45 3 4 3H16C16.55 3 17 3.45 17 4V12C17 12.55 16.55 13 16 13H8.5L4.5 17V13H4C3.45 13 3 12.55 3 12V4Z" stroke={c} strokeWidth="1.5" strokeLinejoin="round"/>
+    </svg>
+  );
+}
+
+function IconCompare({ active }) {
+  const c = active ? "#3A7A3A" : "#8A9A8A";
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <rect x="2" y="4" width="7" height="12" rx="1.5" stroke={c} strokeWidth="1.5"/>
+      <rect x="11" y="4" width="7" height="12" rx="1.5" stroke={c} strokeWidth="1.5"/>
+    </svg>
+  );
+}
+
+const NAV_ITEMS = [
+  { key: "score",    label: "SCORE",    Icon: IconScore },
+  { key: "insights", label: "INSIGHTS", Icon: IconInsights },
+  { key: "filters",  label: "FILTERS",  Icon: IconFilters },
+  { key: "coach",    label: "COACH",    Icon: IconCoach },
+  { key: "compare",  label: "COMPARE",  Icon: IconCompare },
+];
+
+// ─── Application Status Tracker ───────────────────────────────────────────────
 function ApplicationStatusTracker({ status, onUpdateStatus }) {
   const isTerminal = ["offer", "rejected", "withdrew"].includes(status);
   const activeFunnelIdx = FUNNEL_STAGES.findIndex(s => s.key === status);
@@ -80,7 +141,6 @@ function ApplicationStatusTracker({ status, onUpdateStatus }) {
         Application Status
       </p>
 
-      {/* Funnel stage pills */}
       <div style={{ display: "flex", gap: 4, marginBottom: 10 }}>
         {FUNNEL_STAGES.map((stage, i) => {
           const isPast    = !isTerminal && activeFunnelIdx > i;
@@ -89,6 +149,7 @@ function ApplicationStatusTracker({ status, onUpdateStatus }) {
             <button
               key={stage.key}
               onClick={() => onUpdateStatus?.(stage.key)}
+              aria-pressed={isCurrent}
               style={{
                 flex: 1, padding: "7px 4px", borderRadius: 6, border: "1.5px solid",
                 borderColor: (isCurrent || isPast) ? "var(--success)" : "var(--border)",
@@ -97,6 +158,7 @@ function ApplicationStatusTracker({ status, onUpdateStatus }) {
                 fontFamily: "var(--font-data)", fontSize: 10, fontWeight: 700,
                 letterSpacing: ".04em", textTransform: "uppercase",
                 cursor: "pointer", transition: "all .15s", textAlign: "center", lineHeight: 1.3,
+                minHeight: 44,
               }}
             >
               {stage.label}
@@ -105,7 +167,6 @@ function ApplicationStatusTracker({ status, onUpdateStatus }) {
         })}
       </div>
 
-      {/* Terminal outcome chips */}
       <div style={{ display: "flex", gap: 6 }}>
         {OUTCOMES.map(outcome => {
           const isActive = status === outcome.key;
@@ -113,6 +174,7 @@ function ApplicationStatusTracker({ status, onUpdateStatus }) {
             <button
               key={outcome.key}
               onClick={() => onUpdateStatus?.(outcome.key)}
+              aria-pressed={isActive}
               style={{
                 padding: "4px 12px", borderRadius: 20, border: "1.5px solid",
                 borderColor: isActive ? outcome.color : "var(--border)",
@@ -120,7 +182,8 @@ function ApplicationStatusTracker({ status, onUpdateStatus }) {
                 color: isActive ? "#fff" : "var(--muted)",
                 fontFamily: "var(--font-data)", fontSize: 10, fontWeight: 700,
                 letterSpacing: ".06em", textTransform: "uppercase",
-                cursor: "pointer", transition: "all .15s",
+                cursor: "pointer", transition: "all .15s", minHeight: 44,
+                display: "inline-flex", alignItems: "center",
               }}
             >
               {outcome.label}
@@ -132,292 +195,158 @@ function ApplicationStatusTracker({ status, onUpdateStatus }) {
   );
 }
 
-// ─── Section Carousel — VQ insight panels ────────────────────────────────────
-function SectionCarousel({ opp, t }) {
-  const sections = [
-    opp.recommendation_rationale && {
-      key: "summary",
-      label: t.recRationale || "Summary",
-      icon: "◎",
-      color: "var(--accent)",
-      content: <p style={{ fontSize: 14, lineHeight: 1.8, color: "var(--ink)" }}>{opp.recommendation_rationale}</p>,
+// ─── Insights Section — stacked narrative flow ────────────────────────────────
+function InsightsSection({ opp, t }) {
+  const SECTION_DEFS = [
+    {
+      key: "rec",
+      label: t.recRationale || "RECOMMENDATION RATIONALE",
+      text: opp.recommendation_rationale,
+      isList: false,
+      isGap: false,
     },
-    opp.honest_fit_summary && {
+    {
       key: "honest",
-      label: t.honestFit || "Honest Assessment",
-      icon: "⚖",
-      color: "var(--gold)",
-      content: <p style={{ fontSize: 14, lineHeight: 1.8, color: "var(--ink)" }}>{opp.honest_fit_summary}</p>,
+      label: t.honestFit || "HONEST FIT ASSESSMENT",
+      text: opp.honest_fit_summary,
+      isList: false,
+      isGap: false,
     },
-    (opp.strengths?.length > 0) && {
+    {
       key: "strengths",
-      label: t.strengths || "Where You're Strong",
-      icon: "↑",
-      color: "var(--success)",
-      content: (
-        <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
-          {opp.strengths.map((s, i) => (
-            <li key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start", paddingBottom: 10, fontSize: 13, lineHeight: 1.6, color: "var(--ink)" }}>
-              <span style={{ color: "var(--success)", fontWeight: 700, flexShrink: 0, marginTop: 1 }}>✓</span>
-              {s}
-            </li>
-          ))}
-        </ul>
-      ),
+      label: t.strengths || "WHERE YOU ARE STRONG",
+      list: opp.strengths,
+      isList: true,
+      isGap: false,
     },
-    (opp.gaps?.length > 0) && {
+    {
       key: "gaps",
-      label: t.gaps || "Real Gaps",
-      icon: "↓",
-      color: "var(--accent)",
-      content: (
-        <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
-          {opp.gaps.map((g, i) => (
-            <li key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start", paddingBottom: 10, fontSize: 13, lineHeight: 1.6, color: "var(--ink)" }}>
-              <span style={{ color: "var(--accent)", fontWeight: 700, flexShrink: 0, marginTop: 1 }}>△</span>
-              {g}
-            </li>
-          ))}
-        </ul>
-      ),
+      label: t.gaps || "REAL GAPS",
+      list: opp.gaps,
+      isList: true,
+      isGap: true,
     },
-    opp.narrative_bridge && {
+    {
       key: "bridge",
-      label: t.narrativeBridge || "Your Narrative",
-      icon: "→",
-      color: "var(--muted)",
-      content: <p style={{ fontSize: 14, lineHeight: 1.8, color: "var(--ink)" }}>{opp.narrative_bridge}</p>,
+      label: t.narrativeBridge || "NARRATIVE BRIDGE",
+      text: opp.narrative_bridge,
+      isList: false,
+      isGap: false,
     },
-  ].filter(Boolean);
+  ].filter(s => s.isList ? (s.list?.length > 0) : !!s.text);
 
-  const [idx, setIdx] = useState(0);
-  const touchStartX = useRef(null);
-  const total = sections.length;
-  if (!total) return null;
-
-  const sec = sections[idx];
-
-  function prev() { setIdx(i => Math.max(0, i - 1)); }
-  function next() { setIdx(i => Math.min(total - 1, i + 1)); }
-  function onTouchStart(e) { touchStartX.current = e.touches[0].clientX; }
-  function onTouchEnd(e) {
-    if (touchStartX.current === null) return;
-    const dx = e.changedTouches[0].clientX - touchStartX.current;
-    if (dx < -44) next();
-    else if (dx > 44) prev();
-    touchStartX.current = null;
-  }
+  if (!SECTION_DEFS.length) return (
+    <div style={{ padding: 16, color: "var(--muted)", fontSize: 12, textAlign: "center" }}>
+      No insights available.
+    </div>
+  );
 
   return (
-    <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-      {/* Tab strip — wraps to 2 rows on small screens, never scrolls horizontally */}
-      <div style={{ display: "flex", flexWrap: "wrap", borderBottom: "1px solid var(--border)" }}>
-        {sections.map((s, i) => (
-          <button
-            key={s.key}
-            onClick={() => setIdx(i)}
-            style={{
-              flex: "1 1 auto",
-              minWidth: 0,
-              padding: "10px 10px",
-              fontSize: 10, fontWeight: 600,
-              fontFamily: "var(--font-data)",
-              letterSpacing: ".06em",
-              textTransform: "uppercase",
-              border: "none",
-              borderBottom: i === idx ? `2px solid ${s.color}` : "2px solid transparent",
-              background: "transparent",
-              color: i === idx ? s.color : "var(--muted)",
-              cursor: "pointer",
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              transition: "all .15s",
-              textAlign: "center",
-            }}
-          >
-            {s.icon} {s.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Content panel */}
-      <div
-        onTouchStart={onTouchStart}
-        onTouchEnd={onTouchEnd}
-        style={{ padding: "22px 20px", minHeight: 160 }}
-        aria-live="polite"
-        aria-label={sec.label}
-      >
-        {sec.content}
-      </div>
-
-      {/* Swipe nav row */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px 14px" }}>
-        <button
-          onClick={prev} disabled={idx === 0}
-          aria-label="Previous section"
-          style={{ background: "none", border: "none", cursor: idx === 0 ? "default" : "pointer", opacity: idx === 0 ? 0.25 : 0.6, fontSize: 18, padding: "4px 8px", minHeight: 36 }}
-        >‹</button>
-        <span style={{ fontFamily: "var(--font-data)", fontSize: 11, color: "var(--muted)", letterSpacing: ".1em" }}>
-          {idx + 1} / {total}  ·  SWIPE OR TAP
-        </span>
-        <button
-          onClick={next} disabled={idx === total - 1}
-          aria-label="Next section"
-          style={{ background: "none", border: "none", cursor: idx === total - 1 ? "default" : "pointer", opacity: idx === total - 1 ? 0.25 : 0.6, fontSize: 18, padding: "4px 8px", minHeight: 36 }}
-        >›</button>
-      </div>
+    <div style={{ padding: "14px 14px 32px" }}>
+      {SECTION_DEFS.map((sec, i) => (
+        <div key={sec.key} style={{ marginBottom: i < SECTION_DEFS.length - 1 ? 14 : 0 }}>
+          {/* Label row */}
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+            <span style={{
+              fontFamily: "var(--font-data)", fontSize: 8, letterSpacing: "0.10em",
+              color: "#8A9A8A", textTransform: "uppercase", whiteSpace: "nowrap",
+            }}>
+              {sec.label}
+            </span>
+            <div style={{ flex: 1, height: "0.5px", background: "#D8E8D8" }} />
+          </div>
+          {/* Body */}
+          {sec.isList ? (
+            <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
+              {sec.list.map((item, idx) => (
+                <li key={idx} style={{
+                  display: "flex", gap: 8, alignItems: "flex-start", marginBottom: 6,
+                  fontFamily: "var(--font-prose)", fontSize: 12, lineHeight: 1.65,
+                  color: sec.isGap ? "#7A3A3A" : "#2A3A2A",
+                }}>
+                  <span style={{
+                    color: sec.isGap ? "#C05050" : "#3A7A3A",
+                    flexShrink: 0, marginTop: 1, fontWeight: 700,
+                  }}>
+                    {sec.isGap ? "△" : "✓"}
+                  </span>
+                  {item}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p style={{
+              fontFamily: "var(--font-prose)", fontSize: 12, fontWeight: 400,
+              lineHeight: 1.65, color: "#2A3A2A", margin: 0,
+            }}>
+              {sec.text}
+            </p>
+          )}
+        </div>
+      ))}
     </div>
   );
 }
 
-// ─── Filter Carousel ──────────────────────────────────────────────────────────
-function FilterCarousel({ filterScores, t }) {
-  const [idx, setIdx] = useState(0);
-  const touchStartX = useRef(null);
-  const total = filterScores.length;
-  if (!total) return null;
-
-  const fs = filterScores[idx];
-  const filled = Math.round(fs.score);
-  const col = fs.score >= 4 ? "var(--success)" : fs.score >= 3 ? "var(--gold)" : "var(--accent)";
-
-  function prev() { setIdx(i => Math.max(0, i - 1)); }
-  function next() { setIdx(i => Math.min(total - 1, i + 1)); }
-
-  function onTouchStart(e) { touchStartX.current = e.touches[0].clientX; }
-  function onTouchEnd(e) {
-    if (touchStartX.current === null) return;
-    const dx = e.changedTouches[0].clientX - touchStartX.current;
-    if (dx < -44) next();
-    else if (dx > 44) prev();
-    touchStartX.current = null;
-  }
+// ─── Filters Section — stacked visual bars ────────────────────────────────────
+function FiltersSection({ filterScores }) {
+  if (!filterScores?.length) return (
+    <div style={{ padding: 16, color: "var(--muted)", fontSize: 12, textAlign: "center" }}>
+      No filter scores available.
+    </div>
+  );
 
   return (
-    <section aria-labelledby="filter-bd-heading">
-      {/* Header row */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-        <h2 id="filter-bd-heading" className="section-label" style={{ marginBottom: 0 }}>{t.filterBreakdown}</h2>
-        <span style={{ fontFamily: "var(--font-data)", fontSize: 11, color: "var(--muted)", letterSpacing: ".08em" }}>
-          {idx + 1} / {total}
-        </span>
-      </div>
-
-      {/* Card */}
-      <div
-        onTouchStart={onTouchStart}
-        onTouchEnd={onTouchEnd}
-        style={{
-          background: "#fff",
-          border: "1.5px solid var(--border)",
-          borderRadius: "var(--r)",
-          padding: "24px 22px",
-          userSelect: "none",
-          minHeight: 200,
-          position: "relative",
-        }}
-      >
-        {/* Filter name + weight */}
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8, marginBottom: 18 }}>
-          <h3 style={{ fontFamily: "var(--font-prose)", fontSize: 18, fontWeight: 700, lineHeight: 1.3, flex: 1 }}>
-            {fs.filter_name}
-          </h3>
-          {fs.weight && fs.weight !== 1.0 && (
-            <span style={{
-              fontFamily: "var(--font-data)", fontSize: 11, fontWeight: 700,
-              letterSpacing: ".1em", textTransform: "uppercase",
-              background: "var(--cream)", color: "var(--muted)",
-              padding: "3px 8px", borderRadius: 20, flexShrink: 0, marginTop: 3,
-            }}>
-              {WEIGHT_OPTIONS.find(w => w.value === fs.weight)?.label || `${fs.weight}×`}
-            </span>
-          )}
-        </div>
-
-        {/* Score */}
-        <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 14 }}>
-          <span style={{ fontFamily: "var(--font-data)", fontSize: 38, fontWeight: 500, color: col, lineHeight: 1 }}>
-            {fs.score}
-          </span>
-          <div>
-            <div style={{ display: "flex", gap: 5, marginBottom: 6 }} aria-hidden="true">
-              {[1,2,3,4,5].map(n => (
-                <div key={n} style={{
-                  width: 10, height: 10, borderRadius: "50%",
-                  background: n <= filled
-                    ? (fs.score >= 4 ? "var(--gold)" : col)
-                    : "var(--border)",
-                  transition: "background .2s",
-                }} />
-              ))}
+    <div style={{ padding: "12px 12px 32px" }}>
+      {filterScores.map((fs, i) => {
+        const barColor = fs.score < 2.5 ? "#C05050" : fs.score <= 3.5 ? "#B8A030" : "#3A7A3A";
+        return (
+          <div key={i} style={{
+            background: "#F0F4F0", borderRadius: 10, padding: "10px 12px", marginBottom: 6,
+          }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+              <span style={{
+                fontFamily: "var(--font-data)", fontSize: 8, letterSpacing: "0.07em",
+                color: "#3A5A3A", textTransform: "uppercase", flex: 1, marginRight: 8,
+              }}>
+                {fs.filter_name}
+                {fs.weight && fs.weight !== 1.0 && (
+                  <span style={{ color: "#8A9A8A", marginLeft: 6 }}>
+                    · {WEIGHT_OPTIONS.find(w => w.value === fs.weight)?.label || `${fs.weight}×`}
+                  </span>
+                )}
+              </span>
+              <span style={{ fontFamily: "var(--font-data)", fontSize: 12, fontWeight: 500, color: barColor, flexShrink: 0 }}>
+                {fs.score}
+              </span>
             </div>
-            <span style={{ fontSize: 11, color: "var(--muted)", fontFamily: "var(--font-data)" }}>out of 5</span>
+            <div style={{ height: 4, background: "#D8E8D8", borderRadius: 2, overflow: "hidden", marginBottom: fs.rationale ? 6 : 0 }}>
+              <div style={{
+                height: "100%", width: `${(fs.score / 5) * 100}%`,
+                background: barColor, borderRadius: 2, transition: "width 0.3s",
+              }} />
+            </div>
+            {fs.rationale && (
+              <p style={{
+                fontFamily: "var(--font-prose)", fontSize: 11, lineHeight: 1.6,
+                color: "#5A6A5A", margin: 0,
+              }}>
+                {fs.rationale}
+              </p>
+            )}
           </div>
-        </div>
-
-        {/* Bar */}
-        <div style={{ height: 6, background: "var(--border)", borderRadius: 3, marginBottom: 18, overflow: "hidden" }}>
-          <div style={{ height: "100%", width: `${(fs.score / 5) * 100}%`, background: col, borderRadius: 3, transition: "width .3s" }} />
-        </div>
-
-        {/* Rationale */}
-        <p style={{ fontSize: 13, lineHeight: 1.75, color: "var(--ink)", margin: 0 }}>
-          {fs.rationale}
-        </p>
-      </div>
-
-      {/* Navigation */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 14 }}>
-        <button
-          onClick={prev} disabled={idx === 0}
-          aria-label="Previous filter"
-          style={{ background: "none", border: "1.5px solid var(--border)", borderRadius: "var(--r)", padding: "6px 14px", cursor: idx === 0 ? "default" : "pointer", opacity: idx === 0 ? 0.3 : 1, fontSize: 16, minWidth: 40, minHeight: 36 }}
-        >‹</button>
-
-        {/* Dots */}
-        <div style={{ display: "flex", gap: 6, alignItems: "center" }} role="tablist" aria-label="Filter navigation">
-          {filterScores.map((_, i) => (
-            <button
-              key={i}
-              role="tab"
-              aria-selected={i === idx}
-              aria-label={`Filter ${i + 1}`}
-              onClick={() => setIdx(i)}
-              style={{
-                width: i === idx ? 20 : 7, height: 7,
-                borderRadius: 4,
-                background: i === idx ? "var(--accent)" : "var(--border)",
-                border: "none", cursor: "pointer", padding: 0,
-                transition: "all .2s",
-              }}
-            />
-          ))}
-        </div>
-
-        <button
-          onClick={next} disabled={idx === total - 1}
-          aria-label="Next filter"
-          style={{ background: "none", border: "1.5px solid var(--border)", borderRadius: "var(--r)", padding: "6px 14px", cursor: idx === total - 1 ? "default" : "pointer", opacity: idx === total - 1 ? 0.3 : 1, fontSize: 16, minWidth: 40, minHeight: 36 }}
-        >›</button>
-      </div>
-    </section>
+        );
+      })}
+    </div>
   );
 }
 
+// ─── ScoreResult ───────────────────────────────────────────────────────────────
 export default function ScoreResult({ t, lang, opp, profile, onBack, onRemove, onUpdateStatus, userTier, authUser, onUpgrade }) {
   if (!opp) return null;
 
-  // Local status state — gives immediate UI feedback; parent persists async
+  const [activeSection, setActiveSection] = useState("score");
   const [localStatus, setLocalStatus] = useState(opp.application_status || "applied");
-
-  function handleStatusUpdate(newStatus) {
-    setLocalStatus(newStatus);
-    onUpdateStatus?.(opp.id, newStatus);
-  }
-
-  // Cache coaching per style so switching doesn't re-fetch unnecessarily
   const [coachingCache, setCoachingCache] = useState({});
   const [coachingStyle, setCoachingStyle] = useState("conservative");
   const [coachingLoading, setCoachingLoading] = useState(false);
@@ -428,18 +357,19 @@ export default function ScoreResult({ t, lang, opp, profile, onBack, onRemove, o
   const canVantage = isVantage(userTier);
   const coaching = coachingCache[coachingStyle] || null;
 
+  function handleStatusUpdate(newStatus) {
+    setLocalStatus(newStatus);
+    onUpdateStatus?.(opp.id, newStatus);
+  }
+
   function handleStyleChange(style) {
     setCoachingStyle(style);
     setCoachingError("");
-    // If we already have a cached result for this style, show it immediately
-    if (coachingCache[style]) {
-      setCoachingOpen(true);
-    }
+    if (coachingCache[style]) setCoachingOpen(true);
   }
 
   async function fetchCoaching() {
     if (!canVantage) { onUpgrade?.(); return; }
-    // Already cached for this style — just open
     if (coachingCache[coachingStyle]) { setCoachingOpen(true); return; }
     if (coachingLoading) return;
 
@@ -530,207 +460,340 @@ Respond ONLY with valid JSON (no markdown) in exactly this shape:
     }
   }
 
+  const insightCount = [
+    opp.recommendation_rationale,
+    opp.honest_fit_summary,
+    opp.strengths?.length > 0,
+    opp.gaps?.length > 0,
+    opp.narrative_bridge,
+  ].filter(Boolean).length;
+
+  const sectionDescriptor = {
+    score:    "Status",
+    insights: `${insightCount} section${insightCount !== 1 ? "s" : ""}`,
+    filters:  `${(opp.filter_scores || []).length} filters`,
+    coach:    canVantage ? "Advisor · Advocate" : "Vantage",
+    compare:  "Dashboard",
+  };
+
   return (
-    <main id="main-content" aria-label={opp.role_title}>
-      <button className="back-link" onClick={onBack}>{t.backDash}</button>
-      <article aria-labelledby="result-title">
-        <div className="card">
-          <p style={{ fontFamily: "var(--font-data)", fontSize: 11, letterSpacing: ".15em", textTransform: "uppercase", color: "var(--muted)", marginBottom: 6 }}>{opp.company}</p>
-          <h1 className="card-title" id="result-title" style={{ fontSize: 26, color: "#1A2E1A" }}>{opp.role_title}</h1>
-          <div className="overall-score-display">
-            <div className={`big-score ${sc}`} aria-label={`${t.weightedScore}: ${opp.overall_score.toFixed(1)}`}>{opp.overall_score.toFixed(1)}</div>
-            <div className="score-meta">
-              <p className="score-meta-label">{t.weightedScore}</p>
-              <span className={`recommendation-badge rec-${opp.recommendation}`}>{t[opp.recommendation] || opp.recommendation}</span>
-              <p className="threshold-note">{t.threshold}: {profile.threshold} — {opp.overall_score >= profile.threshold ? t.aboveThreshold : t.belowThreshold}</p>
-            </div>
-          </div>
-        </div>
+    <main
+      id="main-content"
+      aria-label={opp.role_title}
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        minHeight: "calc(100vh - max(env(safe-area-inset-top,44px),44px) - 80px)",
+        margin: "0 -16px",
+      }}
+    >
+      {/* Back link */}
+      <button
+        className="back-link"
+        onClick={onBack}
+        style={{ margin: "0 16px 6px", alignSelf: "flex-start" }}
+      >
+        {t.backDash}
+      </button>
 
-        <ApplicationStatusTracker status={localStatus} onUpdateStatus={handleStatusUpdate} />
-
-        <SectionCarousel opp={opp} t={t} />
-
-        <div className="card">
-          <FilterCarousel filterScores={opp.filter_scores || []} t={t} />
-        </div>
-
-
-        {/* ── Career Coaching (Vantage) ───────────────────────────────────── */}
-        <section className="card" aria-labelledby="coaching-heading">
-          {/* Header row */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, gap: 12, flexWrap: "wrap" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <h2 id="coaching-heading" className="card-title" style={{ fontSize: 16, marginBottom: 0, color: "#1A2E1A" }}>Career Coaching</h2>
-              {!canVantage && (
-                <span style={{ fontFamily: "var(--font-data)", fontSize: 11, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase", background: "var(--gold)", color: "#fff", padding: "2px 7px", borderRadius: 20 }}>Vantage</span>
-              )}
-            </div>
-
-            {/* Style toggle — only shown for Vantage users */}
-            {canVantage && (
-              <div role="group" aria-label="Coaching style" style={{ display: "flex", border: "1.5px solid var(--border)", borderRadius: "var(--r)", overflow: "hidden", flexShrink: 0 }}>
-                {Object.entries(COACHING_STYLES).map(([key, style]) => (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => handleStyleChange(key)}
-                    aria-pressed={coachingStyle === key}
-                    style={{
-                      padding: "6px 14px",
-                      minHeight: 34,
-                      fontSize: 12,
-                      fontWeight: 600,
-                      fontFamily: "inherit",
-                      border: "none",
-                      borderRight: key === "conservative" ? "1px solid var(--border)" : "none",
-                      cursor: "pointer",
-                      background: coachingStyle === key ? "var(--ink)" : "transparent",
-                      color: coachingStyle === key ? "#fff" : "var(--muted)",
-                      transition: "all .15s",
-                    }}
-                  >
-                    {style.label}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Style description — shows current mode when open */}
-          {canVantage && coachingOpen && coaching && (
-            <p style={{ fontSize: 11, color: "var(--muted)", fontFamily: "var(--font-data)", letterSpacing: ".05em", marginBottom: 16 }}>
-              {COACHING_STYLES[coachingStyle].description}
-            </p>
-          )}
-
-          {/* Upsell for non-Vantage */}
-          {!canVantage && (
-            <p style={{ fontSize: 12, color: "var(--muted)", lineHeight: 1.5, marginBottom: 14 }}>
-              Personalized interview prep, positioning strategy, and negotiation leverage.{" "}
-              <button onClick={() => onUpgrade?.()} style={{ background: "none", border: "none", color: "var(--gold)", cursor: "pointer", fontSize: 12, fontWeight: 600, padding: 0, textDecoration: "underline" }}>
-                Upgrade to Vantage
-              </button>
-            </p>
-          )}
-
-          {/* Get Coaching / Hide button */}
-          <button
-            className="btn btn-secondary btn-sm"
-            onClick={canVantage ? fetchCoaching : () => onUpgrade?.()}
-            disabled={coachingLoading}
-            style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: coachingOpen ? 20 : 0 }}
+      {/* ── Score block — pinned, does not scroll ─────────────────────────── */}
+      <div style={{ padding: "10px 16px 10px", flexShrink: 0, background: "var(--paper)" }}>
+        <p style={{
+          fontFamily: "var(--font-data)", fontSize: 11, letterSpacing: ".15em",
+          textTransform: "uppercase", color: "var(--muted)", marginBottom: 4,
+        }}>
+          {opp.company}
+        </p>
+        <h1 style={{
+          fontFamily: "var(--font-prose)", fontSize: 20, fontWeight: 700,
+          color: "#1A2E1A", marginBottom: 10, lineHeight: 1.2,
+        }}>
+          {opp.role_title}
+        </h1>
+        <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 12 }}>
+          <div
+            className={`big-score ${sc}`}
+            aria-label={`${t.weightedScore}: ${opp.overall_score.toFixed(1)}`}
+            style={{ fontSize: 52, lineHeight: 1 }}
           >
-            {coachingLoading ? (
-              <><span className="spinner" style={{ width: 13, height: 13, borderWidth: 2 }} aria-hidden="true" /> Analyzing…</>
-            ) : coaching && coachingOpen ? "Hide Coaching" : canVantage ? "Get Coaching" : "🔒 Get Coaching"}
-          </button>
+            {opp.overall_score.toFixed(1)}
+          </div>
+          <span className={`recommendation-badge rec-${opp.recommendation}`}>
+            {t[opp.recommendation] || opp.recommendation}
+          </span>
+        </div>
+        <p style={{
+          fontFamily: "var(--font-data)", fontSize: 9, color: "#8A9A8A",
+          letterSpacing: "0.06em", marginTop: 6,
+        }}>
+          {t.threshold}: {profile.threshold} — {opp.overall_score >= profile.threshold ? t.aboveThreshold : t.belowThreshold}
+        </p>
+      </div>
 
-          {coachingOpen && (
-            <>
-              {coachingError && (
-                <div role="alert" style={{ background: "var(--pass-bg)", color: "var(--pass)", padding: "10px 14px", borderRadius: 4, fontSize: 13, marginBottom: 16 }}>
-                  {coachingError}
+      {/* Divider */}
+      <div style={{ height: "0.5px", background: "#D8E8D8", flexShrink: 0 }} />
+
+      {/* ── B2 Side panel + content area ──────────────────────────────────── */}
+      <div style={{ flex: 1, display: "flex", overflow: "hidden", minHeight: "60vh" }}>
+
+        {/* Side panel */}
+        <nav
+          aria-label="Result sections"
+          style={{
+            width: 76, background: "#F0F4F0", borderRight: "0.5px solid #D8E8D8",
+            display: "flex", flexDirection: "column", gap: 2,
+            paddingTop: 8, paddingBottom: 8,
+            flexShrink: 0, overflowY: "auto",
+          }}
+        >
+          {NAV_ITEMS.map(({ key, label, Icon }) => {
+            const isActive = activeSection === key;
+            return (
+              <button
+                key={key}
+                onClick={() => setActiveSection(key)}
+                aria-pressed={isActive}
+                aria-label={label}
+                style={{
+                  display: "flex", flexDirection: "column", alignItems: "center",
+                  padding: "10px 6px", cursor: "pointer", width: "100%",
+                  border: "none",
+                  borderLeft: isActive ? "2px solid #3A7A3A" : "2px solid transparent",
+                  background: isActive ? "#FAFAF8" : "transparent",
+                  transition: "all 0.15s", minHeight: 44, justifyContent: "center",
+                }}
+              >
+                <Icon active={isActive} />
+                <span style={{
+                  fontFamily: "var(--font-data)", fontSize: 6, letterSpacing: "0.07em",
+                  color: isActive ? "#1A2E1A" : "#8A9A8A",
+                  fontWeight: isActive ? 500 : 400,
+                  marginTop: 4, textAlign: "center", lineHeight: 1.2,
+                }}>
+                  {label}
+                </span>
+              </button>
+            );
+          })}
+        </nav>
+
+        {/* Content area */}
+        <div style={{
+          flex: 1, overflowY: "auto", WebkitOverflowScrolling: "touch",
+          minWidth: 0, display: "flex", flexDirection: "column",
+        }}>
+
+          {/* Section header */}
+          <div style={{
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            padding: "10px 14px 8px", borderBottom: "0.5px solid #D8E8D8",
+            flexShrink: 0, background: "var(--paper)", position: "sticky", top: 0, zIndex: 1,
+          }}>
+            <span style={{
+              fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: "0.10em",
+              color: "#1A2E1A", fontWeight: 500, textTransform: "uppercase",
+            }}>
+              {NAV_ITEMS.find(i => i.key === activeSection)?.label}
+            </span>
+            <span style={{ fontFamily: "var(--font-data)", fontSize: 8, color: "#8A9A8A" }}>
+              {sectionDescriptor[activeSection]}
+            </span>
+          </div>
+
+          {/* ── SCORE section ─────────────────────────────────────────────── */}
+          {activeSection === "score" && (
+            <div style={{ padding: 14 }}>
+              <ApplicationStatusTracker status={localStatus} onUpdateStatus={handleStatusUpdate} />
+
+              {canVantage && (
+                <section style={{
+                  marginTop: 16, padding: "14px 16px", background: "#fff",
+                  border: "1px solid var(--border)", borderLeft: "3px solid var(--gold)",
+                  borderRadius: "var(--r)",
+                }}>
+                  <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+                    <div>
+                      <h2 style={{
+                        fontFamily: "var(--font-data)", fontSize: 11, fontWeight: 700,
+                        letterSpacing: ".1em", textTransform: "uppercase", marginBottom: 4,
+                        color: "#1A2E1A", display: "flex", alignItems: "center", gap: 6,
+                      }}>
+                        {t.prioritySupport || "Priority Support"}
+                        <span style={{ background: "var(--gold)", color: "#fff", padding: "1px 6px", borderRadius: 20, fontSize: 10 }}>Vantage</span>
+                      </h2>
+                      <p style={{ fontSize: 11, color: "var(--muted)", lineHeight: 1.5 }}>
+                        {t.prioritySupportDesc || "Direct line to the Vetted team. We respond within 4 business hours."}
+                      </p>
+                    </div>
+                    <a
+                      href={`mailto:support@tryvettedai.com?subject=${encodeURIComponent(`[Priority Support] ${authUser?.displayName || "Vantage User"} — ${opp.role_title} at ${opp.company}`)}&body=${encodeURIComponent(`Hi Vetted Team,\n\nI'm reviewing: ${opp.role_title} at ${opp.company} (VQ Score: ${opp.overall_score.toFixed(1)} / ${opp.recommendation})\n\nI need help with:\n\n`)}`}
+                      className="btn btn-secondary btn-sm"
+                      style={{ display: "inline-flex", alignItems: "center", gap: 6, textDecoration: "none", flexShrink: 0 }}
+                    >
+                      ✉ {t.contactSupport || "Contact Support"}
+                    </a>
+                  </div>
+                </section>
+              )}
+
+              <div className="btn-actions" style={{ justifyContent: "space-between", marginTop: 16 }}>
+                <button className="btn btn-secondary btn-sm" onClick={onBack}>{t.backDash}</button>
+                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  {canVantage ? (
+                    <button
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => exportOpportunityPdf(opp, profile)}
+                      style={{ display: "flex", alignItems: "center", gap: 6 }}
+                    >
+                      <span aria-hidden="true">↓</span> Export PDF
+                    </button>
+                  ) : (
+                    <button
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => onUpgrade?.()}
+                      style={{ display: "flex", alignItems: "center", gap: 6, opacity: 0.7 }}
+                      title="Vantage feature"
+                    >
+                      <span aria-hidden="true">🔒</span> Export PDF
+                    </button>
+                  )}
+                  <button className="btn btn-danger btn-sm" onClick={onRemove}>{t.removeOpp}</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── INSIGHTS section ──────────────────────────────────────────── */}
+          {activeSection === "insights" && <InsightsSection opp={opp} t={t} />}
+
+          {/* ── FILTERS section ───────────────────────────────────────────── */}
+          {activeSection === "filters" && <FiltersSection filterScores={opp.filter_scores || []} t={t} />}
+
+          {/* ── COACH section ─────────────────────────────────────────────── */}
+          {activeSection === "coach" && (
+            <div style={{ padding: 14 }}>
+              {/* Style toggle — Vantage only */}
+              {canVantage && (
+                <div role="group" aria-label="Coaching style" style={{ display: "flex", border: "1.5px solid var(--border)", borderRadius: "var(--r)", overflow: "hidden", marginBottom: 14 }}>
+                  {Object.entries(COACHING_STYLES).map(([key, style]) => (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => handleStyleChange(key)}
+                      aria-pressed={coachingStyle === key}
+                      style={{
+                        flex: 1, padding: "8px 14px", minHeight: 44,
+                        fontSize: 12, fontWeight: 600, fontFamily: "inherit",
+                        border: "none",
+                        borderRight: key === "conservative" ? "1px solid var(--border)" : "none",
+                        cursor: "pointer",
+                        background: coachingStyle === key ? "var(--ink)" : "transparent",
+                        color: coachingStyle === key ? "#fff" : "var(--muted)",
+                        transition: "all .15s",
+                      }}
+                    >
+                      {style.label}
+                    </button>
+                  ))}
                 </div>
               )}
 
-              {coachingLoading && !coaching && (
-                <div style={{ padding: "24px 0", textAlign: "center" }}>
-                  <div style={{ fontFamily: "var(--font-data)", fontSize: 11, color: "var(--muted)", letterSpacing: ".1em" }}>
-                    Generating {coachingStyle === "conservative" ? "advisor" : "advocate"} coaching…
-                  </div>
-                </div>
+              {canVantage && coachingOpen && coaching && (
+                <p style={{ fontSize: 11, color: "var(--muted)", fontFamily: "var(--font-data)", letterSpacing: ".05em", marginBottom: 16 }}>
+                  {COACHING_STYLES[coachingStyle].description}
+                </p>
               )}
 
-              {coaching && COACHING_SECTIONS.map((section, i) => {
-                const sectionLabels = {
-                  interview_prep:    t.coachingInterviewPrep || section.label,
-                  positioning_angle: t.coachingPositioning   || section.label,
-                  negotiation:       t.coachingNegotiation   || section.label,
-                  go_no_go:          t.coachingVerdict        || section.label,
-                };
-                return (
-                <div key={section.key} style={{ marginBottom: 20, paddingBottom: 20, borderBottom: i < COACHING_SECTIONS.length - 1 ? "1px solid var(--cream)" : "none" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-                    <span aria-hidden="true" style={{ fontSize: 16 }}>{section.icon}</span>
-                    <h3 style={{ fontFamily: "var(--font-data)", fontSize: 11, fontWeight: 700, letterSpacing: ".15em", textTransform: "uppercase", color: "var(--muted)" }}>
-                      {sectionLabels[section.key]}
-                    </h3>
-                  </div>
-                  <p style={{ fontSize: 13, lineHeight: 1.8, color: "var(--ink)", whiteSpace: "pre-line" }}>
-                    {coaching[section.key]}
-                  </p>
-                </div>
-              ); })}
-
-              {/* Re-generate with other style nudge */}
-              {coaching && !coachingLoading && (
-                <p style={{ fontSize: 11, color: "var(--muted)", marginTop: 8 }}>
-                  Want a different perspective?{" "}
+              {!canVantage && (
+                <p style={{ fontSize: 12, color: "var(--muted)", lineHeight: 1.5, marginBottom: 14 }}>
+                  Personalized interview prep, positioning strategy, and negotiation leverage.{" "}
                   <button
-                    onClick={() => {
-                      const other = coachingStyle === "conservative" ? "assertive" : "conservative";
-                      handleStyleChange(other);
-                    }}
-                    style={{ background: "none", border: "none", color: "var(--accent)", cursor: "pointer", fontSize: 11, fontWeight: 600, padding: 0, textDecoration: "underline" }}
+                    onClick={() => onUpgrade?.()}
+                    style={{ background: "none", border: "none", color: "var(--gold)", cursor: "pointer", fontSize: 12, fontWeight: 600, padding: 0, textDecoration: "underline" }}
                   >
-                    Switch to {coachingStyle === "conservative" ? "Advocate" : "Advisor"}
+                    Upgrade to Vantage
                   </button>
                 </p>
               )}
-            </>
-          )}
-        </section>
 
-        {/* ── Priority Support (Vantage #7) ──────────────────────────────────── */}
-        {canVantage && (
-          <section className="card" aria-labelledby="support-heading" style={{ borderLeft: "3px solid var(--gold)" }}>
-            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-              <div>
-                <h2 id="support-heading" className="card-title" style={{ fontSize: 15, marginBottom: 4, color: "#1A2E1A", display: "flex", alignItems: "center", gap: 8 }}>
-                  {t.prioritySupport || "Priority Support"}
-                  <span style={{ fontFamily: "var(--font-data)", fontSize: 11, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase", background: "var(--gold)", color: "#fff", padding: "2px 7px", borderRadius: 20 }}>Vantage</span>
-                </h2>
-                <p style={{ fontSize: 12, color: "var(--muted)", lineHeight: 1.5 }}>
-                  {t.prioritySupportDesc || "Direct line to the Vetted team. We respond within 4 business hours."}
-                </p>
-              </div>
-              <a
-                href={`mailto:support@tryvettedai.com?subject=${encodeURIComponent(`[Priority Support] ${authUser?.displayName || "Vantage User"} — ${opp.role_title} at ${opp.company}`)}&body=${encodeURIComponent(`Hi Vetted Team,\n\nI'm reviewing: ${opp.role_title} at ${opp.company} (VQ Score: ${opp.overall_score.toFixed(1)} / ${opp.recommendation})\n\nI need help with:\n\n`)}`}
+              <button
                 className="btn btn-secondary btn-sm"
-                style={{ display: "inline-flex", alignItems: "center", gap: 6, textDecoration: "none", flexShrink: 0 }}
+                onClick={canVantage ? fetchCoaching : () => onUpgrade?.()}
+                disabled={coachingLoading}
+                style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: coachingOpen ? 20 : 0 }}
               >
-                ✉ {t.contactSupport || "Contact Support"}
-              </a>
+                {coachingLoading ? (
+                  <><span className="spinner" style={{ width: 13, height: 13, borderWidth: 2 }} aria-hidden="true" /> Analyzing…</>
+                ) : coaching && coachingOpen ? "Hide Coaching" : canVantage ? "Get Coaching" : "🔒 Get Coaching"}
+              </button>
+
+              {coachingOpen && (
+                <>
+                  {coachingError && (
+                    <div role="alert" style={{ background: "var(--pass-bg)", color: "var(--pass)", padding: "10px 14px", borderRadius: 4, fontSize: 13, marginBottom: 16 }}>
+                      {coachingError}
+                    </div>
+                  )}
+                  {coachingLoading && !coaching && (
+                    <div style={{ padding: "24px 0", textAlign: "center" }}>
+                      <div style={{ fontFamily: "var(--font-data)", fontSize: 11, color: "var(--muted)", letterSpacing: ".1em" }}>
+                        Generating {coachingStyle === "conservative" ? "advisor" : "advocate"} coaching…
+                      </div>
+                    </div>
+                  )}
+                  {coaching && COACHING_SECTIONS.map((section, i) => {
+                    const sectionLabels = {
+                      interview_prep:    t.coachingInterviewPrep || section.label,
+                      positioning_angle: t.coachingPositioning   || section.label,
+                      negotiation:       t.coachingNegotiation   || section.label,
+                      go_no_go:          t.coachingVerdict        || section.label,
+                    };
+                    return (
+                      <div key={section.key} style={{ marginBottom: 20, paddingBottom: 20, borderBottom: i < COACHING_SECTIONS.length - 1 ? "1px solid var(--cream)" : "none" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                          <span aria-hidden="true" style={{ fontSize: 16 }}>{section.icon}</span>
+                          <h3 style={{ fontFamily: "var(--font-data)", fontSize: 11, fontWeight: 700, letterSpacing: ".15em", textTransform: "uppercase", color: "var(--muted)" }}>
+                            {sectionLabels[section.key]}
+                          </h3>
+                        </div>
+                        <p style={{ fontSize: 13, lineHeight: 1.8, color: "var(--ink)", whiteSpace: "pre-line" }}>
+                          {coaching[section.key]}
+                        </p>
+                      </div>
+                    );
+                  })}
+                  {coaching && !coachingLoading && (
+                    <p style={{ fontSize: 11, color: "var(--muted)", marginTop: 8 }}>
+                      Want a different perspective?{" "}
+                      <button
+                        onClick={() => {
+                          const other = coachingStyle === "conservative" ? "assertive" : "conservative";
+                          handleStyleChange(other);
+                        }}
+                        style={{ background: "none", border: "none", color: "var(--accent)", cursor: "pointer", fontSize: 11, fontWeight: 600, padding: 0, textDecoration: "underline" }}
+                      >
+                        Switch to {coachingStyle === "conservative" ? "Advocate" : "Advisor"}
+                      </button>
+                    </p>
+                  )}
+                </>
+              )}
             </div>
-          </section>
-        )}
+          )}
 
-        <div className="btn-actions" style={{ justifyContent: "space-between" }}>
-          <button className="btn btn-secondary" onClick={onBack}>{t.backDash}</button>
-          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            {canVantage ? (
-              <button
-                className="btn btn-secondary btn-sm"
-                onClick={() => exportOpportunityPdf(opp, profile)}
-                style={{ display: "flex", alignItems: "center", gap: 6 }}
-              >
-                <span aria-hidden="true">↓</span> Export PDF
-              </button>
-            ) : (
-              <button
-                className="btn btn-secondary btn-sm"
-                onClick={() => onUpgrade?.()}
-                style={{ display: "flex", alignItems: "center", gap: 6, opacity: 0.7 }}
-                title="Vantage feature"
-              >
-                <span aria-hidden="true">🔒</span> Export PDF
-              </button>
-            )}
-            <button className="btn btn-danger btn-sm" onClick={onRemove}>{t.removeOpp}</button>
-          </div>
+          {/* ── COMPARE section ───────────────────────────────────────────── */}
+          {activeSection === "compare" && (
+            <div style={{ padding: 32, textAlign: "center" }}>
+              <div style={{ fontSize: 36, marginBottom: 14, color: "var(--muted)" }} aria-hidden="true">⇄</div>
+              <p style={{ fontFamily: "var(--font-prose)", fontSize: 12, lineHeight: 1.65, color: "var(--muted)", maxWidth: 220, margin: "0 auto 20px" }}>
+                Return to the dashboard to select two roles for side-by-side comparison.
+              </p>
+              <button className="btn btn-secondary btn-sm" onClick={onBack}>{t.backDash}</button>
+            </div>
+          )}
+
         </div>
-      </article>
+      </div>
     </main>
   );
 }
