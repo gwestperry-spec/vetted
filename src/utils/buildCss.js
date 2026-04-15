@@ -14,7 +14,8 @@ export const buildCss = (dir) => `
     --font-prose:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
   }
   *,::before,::after{box-sizing:border-box;margin:0;padding:0}
-  html,body{scroll-behavior:smooth;overflow-x:hidden;max-width:100vw}
+  html,body{scroll-behavior:smooth;overflow-x:hidden;max-width:100vw;touch-action:manipulation;color-scheme:light}
+  input,textarea,select{touch-action:manipulation;-webkit-text-fill-color:var(--ink);color:var(--ink)}
 body{font-family:${dir === "rtl" ? "'Noto Sans Arabic'" : "var(--font-prose)"};background:var(--paper);color:var(--ink);min-height:100vh;direction:${dir};overflow-x:hidden}
 *{box-sizing:border-box;min-width:0}
   .skip-link{position:absolute;top:-100px;left:0;padding:8px 16px;background:var(--ink);color:#fff;font-size:14px;border-radius:0 0 var(--r) 0;z-index:9999;transition:top .15s}

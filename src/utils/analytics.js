@@ -36,6 +36,10 @@ export function initAnalytics() {
     respect_dnt: true,
     // Session recording off by default; enable in PostHog project settings if needed
     disable_session_recording: true,
+    // Force fetch/XHR instead of navigator.sendBeacon.
+    // sendBeacon bypasses the Netlify proxy and hits internal-j.posthog.com directly,
+    // which is blocked by CSP. All requests must go through /ph/* to stay same-origin.
+    disable_sendbeacon: true,
     loaded: (ph) => {
       if (import.meta.env.DEV) {
         ph.opt_out_capturing(); // never send to PostHog in local dev

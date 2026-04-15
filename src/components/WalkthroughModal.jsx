@@ -90,7 +90,7 @@ export default function WalkthroughModal({ t, userTier, onDismiss }) {
         </h1>
 
         <p style={{
-          fontSize: 14, color: "var(--muted)",
+          fontSize: 14, color: "#5A6A5A",
           lineHeight: 1.5, marginBottom: 28,
         }}>
           {t.walkthroughSubtitle}
@@ -142,7 +142,7 @@ export default function WalkthroughModal({ t, userTier, onDismiss }) {
                   )}
                 </div>
                 <p style={{
-                  fontSize: 12, color: "var(--muted)",
+                  fontSize: 12, color: "#5A6A5A",
                   lineHeight: 1.6, margin: 0,
                 }}>
                   {f.desc}
@@ -155,7 +155,7 @@ export default function WalkthroughModal({ t, userTier, onDismiss }) {
         {/* ── Tier note for non-Vantage ── */}
         {!isVantage && (
           <p style={{
-            fontSize: 11, color: "var(--muted)",
+            fontSize: 11, color: "#5A6A5A",
             lineHeight: 1.5, marginBottom: 20,
             padding: "10px 14px",
             background: "var(--gold-light)",

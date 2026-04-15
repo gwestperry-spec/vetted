@@ -50,12 +50,12 @@ function OppHeader({ t, opp, profile, isWinner, onViewFull }) {
       <p style={{
         fontFamily: "var(--font-data)", fontSize: 10,
         letterSpacing: ".12em", textTransform: "uppercase",
-        color: "var(--muted)", marginBottom: 4, wordBreak: "break-word",
+        color: "#5A6A5A", marginBottom: 4, wordBreak: "break-word",
       }}>{opp.company}</p>
       <h2 style={{
         fontFamily: "var(--font-prose)", fontSize: 17,
         fontWeight: 600, lineHeight: 1.25, marginBottom: 12,
-        wordBreak: "break-word",
+        color: "#1A2E1A", wordBreak: "break-word",
       }}>{opp.role_title}</h2>
 
       {/* Big score */}
@@ -83,7 +83,7 @@ function OppHeader({ t, opp, profile, isWinner, onViewFull }) {
         {t[opp.recommendation] || opp.recommendation}
       </div>
 
-      <p style={{ fontSize: 11, color: "var(--muted)", marginBottom: 14 }}>
+      <p style={{ fontSize: 11, color: "#5A6A5A", marginBottom: 14 }}>
         {t.threshold}: {profile.threshold} — {opp.overall_score >= profile.threshold ? t.aboveThreshold : t.belowThreshold}
       </p>
 
@@ -129,6 +129,7 @@ export default function CompareView({ t, profile, oppA, oppB, onBack, onViewOpp 
       <h1 style={{
         fontFamily: "var(--font-prose)", fontSize: 24,
         fontWeight: 600, marginBottom: 24, lineHeight: 1.2,
+        color: "#1A2E1A",
       }}>{t.compareTitle}</h1>
 
       {/* ── Dual-column header card ── */}
@@ -180,8 +181,8 @@ export default function CompareView({ t, profile, oppA, oppB, onBack, onViewOpp 
           </span>
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6 }}>
-          <span style={{ fontSize: 10, color: "var(--muted)", maxWidth: "45%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{oppA.role_title}</span>
-          <span style={{ fontSize: 10, color: "var(--muted)", maxWidth: "45%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textAlign: "right" }}>{oppB.role_title}</span>
+          <span style={{ fontSize: 10, color: "#5A6A5A", maxWidth: "45%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{oppA.role_title}</span>
+          <span style={{ fontSize: 10, color: "#5A6A5A", maxWidth: "45%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textAlign: "right" }}>{oppB.role_title}</span>
         </div>
       </div>
 
@@ -231,7 +232,7 @@ export default function CompareView({ t, profile, oppA, oppB, onBack, onViewOpp 
           <p style={{
             fontFamily: "var(--font-data)", fontSize: 11,
             letterSpacing: ".18em", textTransform: "uppercase",
-            color: "var(--muted)", marginBottom: 20, fontWeight: 700,
+            color: "#1A2E1A", marginBottom: 20, fontWeight: 700,
           }}>{t.filterBreakdown}</p>
 
           {allFilterIds.map(fid => {
@@ -300,8 +301,8 @@ export default function CompareView({ t, profile, oppA, oppB, onBack, onViewOpp 
                 {/* Rationale rows */}
                 {(fa?.rationale || fb?.rationale) && (
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                    <p style={{ fontSize: 11, color: "var(--muted)", lineHeight: 1.6 }}>{fa?.rationale || ""}</p>
-                    <p style={{ fontSize: 11, color: "var(--muted)", lineHeight: 1.6 }}>{fb?.rationale || ""}</p>
+                    <p style={{ fontSize: 11, color: "#5A6A5A", lineHeight: 1.6 }}>{fa?.rationale || ""}</p>
+                    <p style={{ fontSize: 11, color: "#5A6A5A", lineHeight: 1.6 }}>{fb?.rationale || ""}</p>
                   </div>
                 )}
               </div>

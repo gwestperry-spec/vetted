@@ -136,7 +136,7 @@ function ApplicationStatusTracker({ status, onUpdateStatus }) {
     <div className="card" style={{ padding: "16px 20px" }}>
       <p style={{
         fontFamily: "var(--font-data)", fontSize: 11, letterSpacing: ".15em",
-        textTransform: "uppercase", color: "var(--muted)", marginBottom: 12, fontWeight: 700,
+        textTransform: "uppercase", color: "#1A2E1A", marginBottom: 12, fontWeight: 700,
       }}>
         Application Status
       </p>
@@ -500,7 +500,7 @@ Respond ONLY with valid JSON (no markdown) in exactly this shape:
       <div style={{ padding: "10px 16px 10px", flexShrink: 0, background: "var(--paper)" }}>
         <p style={{
           fontFamily: "var(--font-data)", fontSize: 11, letterSpacing: ".15em",
-          textTransform: "uppercase", color: "var(--muted)", marginBottom: 4,
+          textTransform: "uppercase", color: "#5A6A5A", marginBottom: 4,
         }}>
           {opp.company}
         </p>
@@ -621,7 +621,7 @@ Respond ONLY with valid JSON (no markdown) in exactly this shape:
                         {t.prioritySupport || "Priority Support"}
                         <span style={{ background: "var(--gold)", color: "#fff", padding: "1px 6px", borderRadius: 20, fontSize: 10 }}>Vantage</span>
                       </h2>
-                      <p style={{ fontSize: 11, color: "var(--muted)", lineHeight: 1.5 }}>
+                      <p style={{ fontSize: 11, color: "#5A6A5A", lineHeight: 1.5 }}>
                         {t.prioritySupportDesc || "Direct line to the Vetted team. We respond within 4 business hours."}
                       </p>
                     </div>
@@ -699,13 +699,13 @@ Respond ONLY with valid JSON (no markdown) in exactly this shape:
               )}
 
               {canVantage && coachingOpen && coaching && (
-                <p style={{ fontSize: 11, color: "var(--muted)", fontFamily: "var(--font-data)", letterSpacing: ".05em", marginBottom: 16 }}>
+                <p style={{ fontSize: 11, color: "#5A6A5A", fontFamily: "var(--font-data)", letterSpacing: ".05em", marginBottom: 16 }}>
                   {COACHING_STYLES[coachingStyle].description}
                 </p>
               )}
 
               {!canVantage && (
-                <p style={{ fontSize: 12, color: "var(--muted)", lineHeight: 1.5, marginBottom: 14 }}>
+                <p style={{ fontSize: 12, color: "#5A6A5A", lineHeight: 1.5, marginBottom: 14 }}>
                   Personalized interview prep, positioning strategy, and negotiation leverage.{" "}
                   <button
                     onClick={() => onUpgrade?.()}
@@ -752,7 +752,7 @@ Respond ONLY with valid JSON (no markdown) in exactly this shape:
                       <div key={section.key} style={{ marginBottom: 20, paddingBottom: 20, borderBottom: i < COACHING_SECTIONS.length - 1 ? "1px solid var(--cream)" : "none" }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
                           <span aria-hidden="true" style={{ fontSize: 16 }}>{section.icon}</span>
-                          <h3 style={{ fontFamily: "var(--font-data)", fontSize: 11, fontWeight: 700, letterSpacing: ".15em", textTransform: "uppercase", color: "var(--muted)" }}>
+                          <h3 style={{ fontFamily: "var(--font-data)", fontSize: 11, fontWeight: 700, letterSpacing: ".15em", textTransform: "uppercase", color: "#1A2E1A" }}>
                             {sectionLabels[section.key]}
                           </h3>
                         </div>
@@ -763,7 +763,7 @@ Respond ONLY with valid JSON (no markdown) in exactly this shape:
                     );
                   })}
                   {coaching && !coachingLoading && (
-                    <p style={{ fontSize: 11, color: "var(--muted)", marginTop: 8 }}>
+                    <p style={{ fontSize: 11, color: "#5A6A5A", marginTop: 8 }}>
                       Want a different perspective?{" "}
                       <button
                         onClick={() => {
