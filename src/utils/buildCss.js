@@ -6,7 +6,7 @@ export const buildCss = (dir) => `
   :root {
     --ink:#1A2E1A;--paper:#FAFAF8;--cream:#F0F4F0;--accent:#3A7A3A;
     --accent-bg:rgba(58,122,58,0.08);--accent-border:rgba(58,122,58,0.3);
-    --gold:#B8A030;--gold-light:#F8F4D8;--muted:#8A9A8A;--border:#D8E8D8;
+    --gold:#B8A030;--gold-light:#F8F4D8;--muted:#4A5A4A;--border:#D8E8D8;
     --success:#3A7A3A;--warn:#B8A030;--pass:#C05050;--pass-bg:#F8ECEC;
     --warn-bg:#FDF8E8;--shadow:none;--r:10px;
     --focus:0 0 0 3px rgba(58,122,58,0.25);
