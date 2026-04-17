@@ -94,6 +94,24 @@
   to = "/privacy.html"
   status = 200
 
+# ── favicon.ico → favicon.svg ──────────────────────────────────────────────────
+# Browsers auto-request /favicon.ico; we only ship favicon.svg.
+# Redirect instead of 404.
+[[redirects]]
+  from = "/favicon.ico"
+  to = "/favicon.svg"
+  status = 301
+
+# ── /api/seats — stub 200 to silence browser extension probes ─────────────────
+# Deal-finder extensions (Honey, Capital One Shopping, etc.) call
+# /api/seats?tier=... on any subscription-priced site. Nothing in the app
+# calls this endpoint — returning 200 prevents spurious 404 console noise.
+[[redirects]]
+  from = "/api/seats"
+  to = "/.netlify/functions/seats"
+  status = 200
+  force = true
+
 # ── PostHog reverse proxy ─────────────────────────────────────────────────────
 # Routes PostHog capture requests through our own domain so they:
 #   1. Pass the Content-Security-Policy connect-src 'self' rule
