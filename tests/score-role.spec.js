@@ -53,19 +53,23 @@ test.describe("Score a role", () => {
       });
     });
 
-    // Streaming endpoint — return a plain buffered response (no SSE)
-    await page.route("**/.netlify/functions/anthropic-stream**", (route) => {
-      route.fulfill({ status: 500, body: "stream unavailable" });
-    });
+    // Streaming endpoint — force 500 so the app falls back to buffered path.
+    // Must use a function matcher to avoid the trailing glob on "anthropic**"
+    // accidentally matching "anthropic-stream" as well.
+    await page.route(
+      (url) => url.pathname.endsWith("/anthropic-stream") || url.pathname.includes("/anthropic-stream."),
+      (route) => route.fulfill({ status: 500, body: "stream unavailable" })
+    );
 
-    // Buffered endpoint — return the mock score
-    await page.route("**/.netlify/functions/anthropic**", (route) => {
-      route.fulfill({
+    // Buffered endpoint — exact path match so it never captures the stream URL.
+    await page.route(
+      (url) => url.pathname.endsWith("/anthropic"),
+      (route) => route.fulfill({
         status: 200,
         contentType: "application/json",
         body: JSON.stringify({ content: [{ text: JSON.stringify(MOCK_SCORE_RESPONSE) }] }),
-      });
-    });
+      })
+    );
 
     // Behavioral intelligence — fire and forget, mock as no-op
     await page.route("**/.netlify/functions/behavioral-intelligence**", (route) => {
