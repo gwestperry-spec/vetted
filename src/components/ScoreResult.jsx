@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { exportOpportunityPdf } from "../utils/exportPdf.js";
 import { ENDPOINTS } from "../config.js";
-import { handleError } from "../handleError.js";
+import { handleError } from "../utils/handleError.js";
 
 const WEIGHT_OPTIONS = [
   { value: 0.5, label: "Minor" },

@@ -13,7 +13,7 @@ import {
 } from "./utils/analytics.js";
 import { Component, useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "./hooks/useAuth.js";
-import { handleError } from "./handleError.js";
+import { handleError } from "./utils/handleError.js";
 import LangSwitcher from "./components/LangSwitcher.jsx";
 import SignInGate from "./components/SignInGate.jsx";
 import ScoreResult from "./components/ScoreResult.jsx";

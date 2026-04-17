@@ -1,4 +1,4 @@
-import { Sentry } from "./sentry.js";
+import { Sentry } from "../sentry.js";
 
 /**
  * Centralized error handler — logs to console and reports to Sentry.

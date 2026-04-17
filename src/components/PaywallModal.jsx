@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ENDPOINTS } from "../config.js";
-import { handleError } from "../handleError.js";
+import { handleError } from "../utils/handleError.js";
 
 const LINK = { color: "var(--muted)", textDecoration: "underline" };
 

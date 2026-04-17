@@ -17,10 +17,12 @@ const crypto = require("crypto");
 
 const CLIENT_ID     = process.env.GITHUB_CLIENT_ID;
 const CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET;
-const VETTED_SECRET = process.env.VETTED_SECRET;
+const VETTED_SECRET = (process.env.VETTED_SECRET || "").trim();
 
-// Where to redirect after successful auth (the main app URL)
-const APP_BASE = "https://celebrated-gelato-56d525.netlify.app";
+// APP_BASE: Netlify automatically sets process.env.URL to the primary site URL.
+// Set APP_BASE as a Netlify env var to override (e.g. for staging vs production).
+// Never hardcode this — it breaks sign-in when deploying to a custom domain.
+const APP_BASE = process.env.APP_BASE || process.env.URL || "https://tryvettedai.com";
 
 // ── HMAC session token (same algorithm as apple-auth.js) ─────────────────
 function makeSessionToken(userId) {
@@ -147,7 +149,7 @@ exports.handler = async (event) => {
   if (oauthError) {
     return {
       statusCode: 302,
-      headers: { Location: `${APP_BASE}/?auth_error=github_denied` },
+      headers: { Location: `${APP_BASE}/#gh_auth_error?reason=github_denied` },
       body: "",
     };
   }
@@ -164,7 +166,7 @@ exports.handler = async (event) => {
       console.error("[github-auth] token exchange failed:", tokenRes.body);
       return {
         statusCode: 302,
-        headers: { Location: `${APP_BASE}/?auth_error=token_exchange` },
+        headers: { Location: `${APP_BASE}/#gh_auth_error?reason=token_exchange` },
         body: "",
       };
     }
@@ -178,7 +180,7 @@ exports.handler = async (event) => {
     if (!ghUser?.id) {
       return {
         statusCode: 302,
-        headers: { Location: `${APP_BASE}/?auth_error=user_fetch` },
+        headers: { Location: `${APP_BASE}/#gh_auth_error?reason=user_fetch` },
         body: "",
       };
     }
@@ -236,7 +238,7 @@ exports.handler = async (event) => {
     console.error("[github-auth] unexpected error:", err.message);
     return {
       statusCode: 302,
-      headers: { Location: `${APP_BASE}/?auth_error=server` },
+      headers: { Location: `${APP_BASE}/#gh_auth_error?reason=server` },
       body: "",
     };
   }

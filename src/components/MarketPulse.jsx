@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ENDPOINTS } from "../config.js";
-import { handleError } from "../handleError.js";
+import { handleError } from "../utils/handleError.js";
 
 // ─── MarketPulseCard (Vantage #8) ─────────────────────────────────────────
 // Shows BLS salary benchmark + Claude market intelligence brief for the

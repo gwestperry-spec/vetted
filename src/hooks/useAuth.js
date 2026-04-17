@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { ENDPOINTS } from "../config.js";
-import { handleError } from "../handleError.js";
+import { handleError } from "../utils/handleError.js";
 
 // ── useAuth ────────────────────────────────────────────────────────────────
 // Owns all authentication state, session management, and Supabase access.
@@ -118,10 +118,26 @@ export function useAuth({ setProfile, setLang, setFilters, setOpportunities, set
   }
 
   // ── GitHub OAuth callback handler ────────────────────────────────────────
-  // After GitHub redirects back, the URL fragment is: #gh_auth?gh_user_id=...
-  // Parse it on mount, sign the user in, then clean the fragment from the URL.
+  // After GitHub redirects back, the URL fragment is either:
+  //   #gh_auth?gh_user_id=...   (success)
+  //   #gh_auth_error?reason=... (failure — GitHub denied, token exchange error, etc.)
+  // Parse on mount, sign the user in (or show error), then clean the fragment.
   useEffect(() => {
     const hash = window.location.hash;
+
+    // Error path
+    if (hash.startsWith("#gh_auth_error?")) {
+      const params = new URLSearchParams(hash.slice("#gh_auth_error?".length));
+      const reason = params.get("reason") || "unknown";
+      window.history.replaceState(null, "", window.location.pathname + window.location.search);
+      setAuthError(
+        reason === "github_denied"
+          ? "GitHub sign-in was cancelled."
+          : "GitHub sign-in failed. Please try again."
+      );
+      return;
+    }
+
     if (!hash.startsWith("#gh_auth?")) return;
 
     const params = new URLSearchParams(hash.slice("#gh_auth?".length));

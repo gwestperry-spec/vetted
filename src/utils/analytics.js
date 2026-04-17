@@ -20,9 +20,15 @@ let initialized = false;
 /** Call once at app boot (main.jsx). */
 export function initAnalytics() {
   if (!KEY) {
-    if (import.meta.env.DEV) {
-      console.info("[analytics] No VITE_POSTHOG_KEY — analytics disabled.");
-    }
+    // Visible in all environments — if this appears in the production console,
+    // the env var is missing from Netlify dashboard.
+    // Fix: Netlify Dashboard → Site configuration → Environment variables
+    //      → Add VITE_POSTHOG_KEY = phc_... (your project API key)
+    //      → Trigger a new deploy so Vite embeds it into the bundle.
+    console.warn(
+      "[analytics] VITE_POSTHOG_KEY is not set — analytics disabled.\n" +
+      "To fix: add VITE_POSTHOG_KEY to Netlify env vars and redeploy."
+    );
     return;
   }
 
@@ -42,7 +48,10 @@ export function initAnalytics() {
     disable_sendbeacon: true,
     loaded: (ph) => {
       if (import.meta.env.DEV) {
-        ph.opt_out_capturing(); // never send to PostHog in local dev
+        ph.opt_out_capturing(); // never send events in local dev
+        console.info("[analytics] DEV mode — PostHog capturing disabled.");
+      } else {
+        console.info("[analytics] PostHog initialized. Host:", HOST, "Key prefix:", KEY.slice(0, 8) + "…");
       }
     },
   });
