@@ -203,34 +203,44 @@ export default function Dashboard({
   // ── IN PROGRESS status editing ────────────────────────────────────────────
   const [editingStatusId, setEditingStatusId] = useState(null);
 
-  // ── Input strip ───────────────────────────────────────────────────────────
-  const [inputMode,  setInputMode]  = useState(null); // null | "paste" | "url"
-  const [jd,         setJd]         = useState("");
-  const [urlVal,     setUrlVal]     = useState("");
+  // ── Unified input strip ───────────────────────────────────────────────────
+  // Single textarea handles both JD text and URLs — auto-detected on submit.
+  const [inputVal,   setInputVal]   = useState("");
   const [fetching,   setFetching]   = useState(false);
   const [fetchError, setFetchError] = useState("");
 
-  async function handleUrlFetch() {
-    const safeUrl = sanitizeUrl(urlVal);
-    if (!safeUrl) { setFetchError(t.urlFetchError); return; }
-    setFetching(true);
-    setFetchError("");
-    try {
-      const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(safeUrl)}`);
-      if (!res.ok) throw new Error();
-      const data = await res.json();
-      if (!data.contents) throw new Error();
-      const stripped = data.contents
-        .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
-        .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
-        .replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 8000);
-      if (stripped.length < 100) throw new Error();
-      setJd(stripped);
-      setInputMode("paste");
-    } catch {
-      setFetchError(t.urlFetchError);
-    } finally {
-      setFetching(false);
+  const isUrl = (val) => /^https?:\/\//i.test(val.trim());
+
+  async function handleAnalyze() {
+    const val = inputVal.trim();
+    if (!val) return;
+    if (isUrl(val)) {
+      // Fetch URL content then score
+      const safeUrl = sanitizeUrl(val);
+      if (!safeUrl) { setFetchError(t.urlFetchError); return; }
+      setFetching(true);
+      setFetchError("");
+      try {
+        const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(safeUrl)}`);
+        if (!res.ok) throw new Error();
+        const data = await res.json();
+        if (!data.contents) throw new Error();
+        const stripped = data.contents
+          .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
+          .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
+          .replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 8000);
+        if (stripped.length < 100) throw new Error();
+        onScore(stripped);
+        setInputVal("");
+      } catch {
+        setFetchError(t.urlFetchError);
+      } finally {
+        setFetching(false);
+      }
+    } else {
+      // Plain JD text — score directly
+      onScore(val);
+      setInputVal("");
     }
   }
 
@@ -899,120 +909,49 @@ export default function Dashboard({
           </div>
         )}
 
-        {/* ── Input strip ──────────────────────────────────────────────────── */}
+        {/* ── Input strip — unified JD + URL ───────────────────────────────── */}
         {!loading && (
           <div style={{
             background: "#F0F4F0", border: "0.5px solid #D8E8D8", borderRadius: 12, padding: "14px 16px",
           }}>
-            {inputMode === null && (
-              <>
-                <p style={{
-                  fontFamily: "var(--font-prose)", fontSize: 13, color: "#8A9A8A",
-                  lineHeight: 1.5, marginBottom: 10,
-                }}>Paste a job description or URL to score against your framework.</p>
-                <div style={{ display: "flex", gap: 8 }}>
-                  <button
-                    onClick={() => setInputMode("paste")}
-                    style={{
-                      flex: 1, background: "#1A2E1A", color: "#E8F0E8",
-                      fontFamily: "var(--font-data)", fontSize: 11, fontWeight: 500,
-                      letterSpacing: ".08em", border: "none", borderRadius: 8,
-                      padding: "11px 14px", cursor: "pointer", textAlign: "center",
-                    }}
-                  >PASTE JD</button>
-                  <button
-                    onClick={() => setInputMode("url")}
-                    style={{
-                      background: "#fff", color: "#8A9A8A",
-                      fontFamily: "var(--font-data)", fontSize: 11, fontWeight: 500,
-                      letterSpacing: ".08em", border: "0.5px solid #D8E8D8",
-                      borderRadius: 8, padding: "11px 16px", cursor: "pointer",
-                    }}
-                  >URL</button>
-                </div>
-              </>
+            <textarea
+              value={inputVal}
+              onChange={e => { setInputVal(e.target.value); setFetchError(""); }}
+              placeholder="Paste a job description or drop a URL — Vetted handles both."
+              maxLength={MAX_JD}
+              rows={4}
+              style={{
+                width: "100%", padding: "10px 12px",
+                borderRadius: 8, border: "0.5px solid #D8E8D8",
+                background: "#fff", color: "#1A2E1A",
+                WebkitTextFillColor: "#1A2E1A",
+                fontSize: 16, fontFamily: "var(--font-prose)",
+                lineHeight: 1.5,
+                resize: "none", outline: "none",
+                boxSizing: "border-box", display: "block",
+              }}
+            />
+            {fetchError && (
+              <div role="alert" style={{
+                background: "#FEF2F2", color: "#C05050",
+                fontSize: 13, borderRadius: 6, padding: "8px 12px", marginTop: 8,
+              }}>{fetchError}</div>
             )}
-
-            {inputMode === "paste" && (
-              <>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-                  <span style={{
-                    fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: ".12em",
-                    color: "#8A9A8A", textTransform: "uppercase",
-                  }}>PASTE JOB DESCRIPTION</span>
-                  <button
-                    onClick={() => { setInputMode(null); setJd(""); }}
-                    style={{ background: "none", border: "none", cursor: "pointer", color: "#8A9A8A", fontSize: 16, lineHeight: 1, padding: 4 }}
-                  >✕</button>
-                </div>
-                <textarea
-                  value={jd}
-                  onChange={e => setJd(e.target.value)}
-                  placeholder={t.placeholderJD}
-                  maxLength={MAX_JD}
-                  style={{
-                    width: "100%", minHeight: 160, padding: "10px 12px",
-                    borderRadius: 8, border: "0.5px solid #D8E8D8",
-                    background: "#fff", color: "#1A2E1A", WebkitTextFillColor: "#1A2E1A", fontSize: 16, fontFamily: "var(--font-prose)",
-                    resize: "vertical", outline: "none", boxSizing: "border-box",
-                  }}
-                />
-                {error && (
-                  <div role="alert" style={{
-                    background: "#FEF2F2", color: "#C05050",
-                    fontSize: 13, borderRadius: 6, padding: "8px 12px", marginTop: 8,
-                  }}>{error}</div>
-                )}
-                <button
-                  className="btn btn-primary"
-                  onClick={() => onScore(jd)}
-                  disabled={!jd.trim()}
-                  style={{ marginTop: 10, width: "100%", fontFamily: "var(--font-data)", letterSpacing: ".08em" }}
-                >{t.btnScore}</button>
-              </>
+            {error && (
+              <div role="alert" style={{
+                background: "#FEF2F2", color: "#C05050",
+                fontSize: 13, borderRadius: 6, padding: "8px 12px", marginTop: 8,
+              }}>{error}</div>
             )}
-
-            {inputMode === "url" && (
-              <>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-                  <span style={{
-                    fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: ".12em",
-                    color: "#8A9A8A", textTransform: "uppercase",
-                  }}>FETCH FROM URL</span>
-                  <button
-                    onClick={() => { setInputMode(null); setUrlVal(""); setFetchError(""); }}
-                    style={{ background: "none", border: "none", cursor: "pointer", color: "#8A9A8A", fontSize: 16, lineHeight: 1, padding: 4 }}
-                  >✕</button>
-                </div>
-                <div style={{ display: "flex", gap: 8 }}>
-                  <input
-                    type="url"
-                    value={urlVal}
-                    onChange={e => setUrlVal(e.target.value)}
-                    placeholder="https://"
-                    maxLength={MAX_URL}
-                    style={{
-                      flex: 1, padding: "10px 12px", borderRadius: 8,
-                      border: "0.5px solid #D8E8D8", background: "#fff",
-                      fontSize: 16, fontFamily: "var(--font-prose)", outline: "none",
-                    }}
-                  />
-                  <button
-                    className="btn btn-secondary btn-sm"
-                    onClick={handleUrlFetch}
-                    disabled={!urlVal.trim() || fetching}
-                    aria-busy={fetching}
-                  >{fetching ? t.btnFetching : t.btnFetch}</button>
-                </div>
-                {fetchError && (
-                  <div role="alert" style={{
-                    background: "#FEF2F2", color: "#C05050",
-                    fontSize: 13, borderRadius: 6, padding: "8px 12px", marginTop: 8,
-                  }}>{fetchError}</div>
-                )}
-                <p style={{ fontSize: 11, color: "#8A9A8A", marginTop: 6 }}>{t.urlNote}</p>
-              </>
-            )}
+            <button
+              className="btn btn-primary"
+              onClick={handleAnalyze}
+              disabled={!inputVal.trim() || fetching}
+              aria-busy={fetching}
+              style={{ marginTop: 10, width: "100%", fontFamily: "var(--font-data)", letterSpacing: ".08em" }}
+            >
+              {fetching ? "Fetching…" : isUrl(inputVal) ? "FETCH & ANALYZE" : t.btnScore}
+            </button>
           </div>
         )}
       </div>
