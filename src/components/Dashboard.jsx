@@ -953,7 +953,7 @@ export default function Dashboard({
                   style={{
                     width: "100%", minHeight: 160, padding: "10px 12px",
                     borderRadius: 8, border: "0.5px solid #D8E8D8",
-                    background: "#fff", color: "#1A2E1A", WebkitTextFillColor: "#1A2E1A", fontSize: 13, fontFamily: "var(--font-prose)",
+                    background: "#fff", color: "#1A2E1A", WebkitTextFillColor: "#1A2E1A", fontSize: 16, fontFamily: "var(--font-prose)",
                     resize: "vertical", outline: "none", boxSizing: "border-box",
                   }}
                 />
@@ -994,7 +994,7 @@ export default function Dashboard({
                     style={{
                       flex: 1, padding: "10px 12px", borderRadius: 8,
                       border: "0.5px solid #D8E8D8", background: "#fff",
-                      fontSize: 13, fontFamily: "var(--font-prose)", outline: "none",
+                      fontSize: 16, fontFamily: "var(--font-prose)", outline: "none",
                     }}
                   />
                   <button
