@@ -84,9 +84,20 @@ test.describe("Score a role", () => {
     await page.goto("/");
   });
 
-  test("pastes a JD and receives a VQ score", async ({ page }) => {
-    // Wait for the dashboard to render (user is authenticated via storage state)
+  // Helper — navigates from workspace to the scoring form.
+  // The workspace is now the default home screen; the textarea lives in the
+  // scoring form (dashboard step) reached via "Score a Role".
+  async function goToScoringForm(page) {
     await expect(page.locator("text=VETTED").first()).toBeVisible({ timeout: 15_000 });
+    // If we're on workspace, click "+ Score a Role" to navigate to the form
+    const scoreRoleBtn = page.getByRole("button", { name: /score a role/i }).first();
+    if (await scoreRoleBtn.isVisible({ timeout: 3_000 }).catch(() => false)) {
+      await scoreRoleBtn.click();
+    }
+  }
+
+  test("pastes a JD and receives a VQ score", async ({ page }) => {
+    await goToScoringForm(page);
 
     // Find the unified JD / URL input textarea
     const textarea = page.locator("textarea").first();
@@ -115,7 +126,7 @@ test.describe("Score a role", () => {
       route.fulfill({ status: 503, body: "Service unavailable" });
     });
 
-    await expect(page.locator("text=VETTED").first()).toBeVisible({ timeout: 15_000 });
+    await goToScoringForm(page);
 
     const textarea = page.locator("textarea").first();
     await textarea.fill("Senior Product Manager — Stealth Startup");

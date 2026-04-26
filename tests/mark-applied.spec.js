@@ -65,8 +65,14 @@ test.describe("Mark a role as applied", () => {
 
     await page.goto("/");
 
-    // Wait for dashboard to load
+    // Wait for workspace (new home screen) to load
     await expect(page.locator("text=VETTED").first()).toBeVisible({ timeout: 15_000 });
+
+    // Navigate to the scoring form / dashboard where score history cards live
+    const scoreRoleBtn = page.getByRole("button", { name: /score a role/i }).first();
+    if (await scoreRoleBtn.isVisible({ timeout: 3_000 }).catch(() => false)) {
+      await scoreRoleBtn.click();
+    }
   });
 
   test("marks a role as applied and shows the applied status", async ({ page }) => {

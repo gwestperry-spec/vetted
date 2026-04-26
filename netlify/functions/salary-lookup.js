@@ -1,5 +1,6 @@
 const https = require("https");
 const crypto = require("crypto");
+const { sanitizeTitle } = require("./sanitizeTitle");
 
 // ─── salary-lookup ────────────────────────────────────────────────────────────
 // Returns compensation range for a given job title.
@@ -48,6 +49,7 @@ const RH_TABLE = [
   // ── Technology ──
   { keywords: ["chief technology officer", "cto"],                          title: "Chief Technology Officer (CTO)",        min: 210000, median: 290000, max: 385000 },
   { keywords: ["chief information officer", "cio"],                         title: "Chief Information Officer (CIO)",       min: 200000, median: 278000, max: 370000 },
+  { keywords: ["vp it", "vp of it", "vice president it", "vp information technology", "vp of information technology", "vice president information technology", "vp of technology", "vp technology", "vice president technology"], title: "VP of IT / Technology",                min: 165000, median: 222000, max: 292000 },
   { keywords: ["chief product officer", "cpo"],                             title: "Chief Product Officer (CPO)",           min: 195000, median: 270000, max: 355000 },
   { keywords: ["vp engineering", "vp of engineering", "vice president engineering"], title: "VP of Engineering",            min: 185000, median: 250000, max: 330000 },
   { keywords: ["vp product", "vp of product", "vice president product"],   title: "VP of Product",                         min: 180000, median: 240000, max: 315000 },
@@ -101,6 +103,19 @@ const RH_TABLE = [
   { keywords: ["chief compliance officer", "cco", "vp compliance"],        title: "Chief Compliance Officer (CCO)",        min: 175000, median: 240000, max: 315000 },
   { keywords: ["director of compliance", "compliance director"],            title: "Director of Compliance",                min: 115000, median: 158000, max: 210000 },
   { keywords: ["corporate counsel", "in-house counsel"],                    title: "Corporate Counsel",                     min: 120000, median: 165000, max: 220000 },
+
+  // ── Investment Banking / Private Equity / Asset Management ──
+  { keywords: ["managing director investment banking", "managing director ib", "md investment banking", "md ib"], title: "Managing Director, Investment Banking", min: 300000, median: 420000, max: 650000 },
+  { keywords: ["principal private equity", "principal pe", "pe principal", "principal growth equity", "principal venture"], title: "Principal, Private Equity / Growth Equity", min: 225000, median: 335000, max: 480000 },
+  { keywords: ["principal investment banking", "principal ib", "principal advisory", "principal m&a"], title: "Principal, Investment Banking",            min: 200000, median: 300000, max: 425000 },
+  { keywords: ["principal consulting", "principal management consulting", "principal strategy consulting"], title: "Principal, Management Consulting",       min: 175000, median: 260000, max: 365000 },
+  { keywords: ["principal", "senior principal"],                                                title: "Principal (Finance / Consulting)",            min: 175000, median: 270000, max: 390000 },
+  { keywords: ["senior portfolio manager", "sr portfolio manager"],                            title: "Senior Portfolio Manager",                   min: 155000, median: 245000, max: 420000 },
+  { keywords: ["portfolio manager"],                                                            title: "Portfolio Manager",                          min: 120000, median: 190000, max: 310000 },
+  { keywords: ["investment manager", "fund manager", "senior investment manager"],             title: "Investment Manager",                         min: 120000, median: 190000, max: 295000 },
+  { keywords: ["vice president investment banking", "vp investment banking", "vp ib", "vice president ib"], title: "VP, Investment Banking",             min: 175000, median: 260000, max: 380000 },
+  { keywords: ["director investment banking", "director ib", "director of investment banking"], title: "Director, Investment Banking",               min: 200000, median: 295000, max: 420000 },
+  { keywords: ["investment analyst", "senior investment analyst"],                             title: "Senior Investment Analyst",                  min: 100000, median: 145000, max: 210000 },
 
   // ── Strategy & Corporate Development ──
   { keywords: ["chief strategy officer", "cso strategy"],                   title: "Chief Strategy Officer",                min: 195000, median: 268000, max: 358000 },
@@ -171,7 +186,7 @@ const KINSA_TABLE = [
 
   // ── Supply Chain / Procurement (Food Industry) ──
   { keywords: ["chief supply chain officer", "csco"],                                       title: "Chief Supply Chain Officer",                min: 180000, median: 280000, max: 400000 },
-  { keywords: ["vp supply chain", "vice president supply chain", "vp of supply chain", "vp supply chain and purchasing", "vp of purchasing"], title: "VP Supply Chain & Purchasing", min: 150000, median: 230000, max: 350000 },
+  { keywords: ["vp supply chain", "vice president supply chain", "vp of supply chain", "vp supply chain and purchasing", "vp of purchasing", "vp sourcing", "vp of sourcing", "vice president sourcing", "vp of indirect sourcing", "vp indirect sourcing", "vp of direct sourcing", "vp direct sourcing"], title: "VP Supply Chain & Purchasing", min: 150000, median: 230000, max: 350000 },
   { keywords: ["procurement director", "director of procurement", "director of purchasing", "dairy procurement", "director of dairy procurement", "director of commodity procurement", "commodity procurement"], title: "Procurement Director", min: 110000, median: 180000, max: 225000 },
   { keywords: ["supply chain director", "director of supply chain", "director supply chain"], title: "Supply Chain Director",                   min: 120000, median: 175000, max: 265000 },
   { keywords: ["logistics director", "transportation director", "director of logistics", "director of transportation", "director of distribution", "distribution director", "director distribution", "director of field service", "field service director", "director field service"], title: "Logistics / Transportation Director", min: 120000, median: 170000, max: 225000 },
@@ -500,6 +515,14 @@ exports.handler = async function (event) {
     return { statusCode: 400, headers: corsHeaders(origin), body: JSON.stringify({ error: "Missing required fields" }) };
   }
 
+  // ── Sanitize title ──────────────────────────────────────────────────────────
+  const sanitized = sanitizeTitle(title);
+  if (!sanitized.ok) {
+    console.warn("[salary-lookup] sanitizeTitle rejected:", sanitized.reason, String(title).slice(0, 80));
+    return { statusCode: 400, headers: corsHeaders(origin), body: JSON.stringify({ error: "Invalid title", reason: sanitized.reason }) };
+  }
+  const safeTitle = sanitized.title;
+
   // ── Session token verification ───────────────────────────────────────────────
   if (serverSecret) {
     const expected = crypto.createHmac("sha256", serverSecret).update(appleId).digest("hex");
@@ -512,8 +535,8 @@ exports.handler = async function (event) {
   }
 
   // ── Tier 1: Robert Half (executive / professional roles) ─────────────────────
-  console.log(`[salary-lookup] title="${title}" location="${location || ""}"`);
-  const rhMatch = matchRobertHalf(title);
+  console.log(`[salary-lookup] title="${safeTitle}" location="${location || ""}"`);
+  const rhMatch = matchRobertHalf(safeTitle);
   console.log(`[salary-lookup] RH match: ${rhMatch ? rhMatch.title : "none"}`);
   if (rhMatch) {
     return {
@@ -530,7 +553,7 @@ exports.handler = async function (event) {
   }
 
   // ── Tier 2: Kinsa (food & beverage industry roles) ───────────────────────────
-  const kinsaMatch = matchKinsa(title);
+  const kinsaMatch = matchKinsa(safeTitle);
   console.log(`[salary-lookup] Kinsa match: ${kinsaMatch ? kinsaMatch.title : "none"}`);
   if (kinsaMatch) {
     return {
@@ -558,7 +581,24 @@ exports.handler = async function (event) {
     // Strip geographic qualifiers before O*NET lookup — they confuse keyword matching
     // e.g. "VP, Supply Chain North America" → "VP Supply Chain"
     const GEO_QUALIFIERS = /\b(north america|south america|latin america|emea|apac|amer|asia pacific|americas|pacific rim|global|international|worldwide|enterprise|north|south|east|west|midwest|northeast|southeast|northwest|southwest|regional|national|domestic|canada|mexico)\b/gi;
-    const onetTitle = title.replace(/[,;|]/g, " ").replace(GEO_QUALIFIERS, "").replace(/\s+/g, " ").trim() || title;
+    const cleaned = safeTitle.replace(/[,;|]/g, " ").replace(GEO_QUALIFIERS, "").replace(/\s+/g, " ").trim() || safeTitle;
+
+    // Synonym expansion — normalize common title variants to O*NET-friendly equivalents
+    // Applied after geo stripping so "Global Sourcing" → "Global Procurement" → "Procurement"
+    const SYNONYMS = [
+      [/\bsourcing\b/gi, "procurement"],        // VP of Sourcing → VP of Procurement
+      [/\bhead of\b/gi,  "director of"],         // Head of X → Director of X (O*NET has no "head of")
+      [/\b\bit\b/gi,     "information technology"], // VP of IT → VP of Information Technology
+      [/\bprepared foods?\b/gi, "food production"],  // Head of Prepared Foods → Director of Food Production
+      [/\bculinary innovation\b/gi, "food science"],  // maps to O*NET food science bucket
+    ];
+    let onetTitle = cleaned;
+    for (const [pattern, replacement] of SYNONYMS) {
+      onetTitle = onetTitle.replace(pattern, replacement);
+    }
+    if (onetTitle !== cleaned) {
+      console.log(`[salary-lookup] synonym expansion: "${cleaned}" → "${onetTitle}"`);
+    }
 
     // Run O*NET first — this is the primary data source
     let onetResult = await lookupOnet(onetTitle, onetUsername, onetPassword);
@@ -589,19 +629,22 @@ exports.handler = async function (event) {
     // ── Seniority-based fallback ───────────────────────────────────────────────
     // If O*NET still returns nothing, return a reasonable range based on seniority
     // level so the user always gets a useful data point rather than an error.
+    // "Head of [Function]" is a common food-industry title equivalent to VP/Director.
     if (!onetResult) {
       const t = onetTitle.toLowerCase();
       const seniorityFallback =
         /\b(chief|ceo|president|coo|cto|cfo|ciso|cmo|cro|chro)\b/.test(t)          ? { min: 215000, median: 300000, max: 420000, title: "C-Suite Executive" } :
         /\b(executive vice president|evp|senior vice president|svp)\b/.test(t)       ? { min: 200000, median: 290000, max: 420000, title: "SVP / EVP" } :
         /\b(vice president|vp)\b/.test(t)                                            ? { min: 155000, median: 215000, max: 300000, title: "Vice President" } :
+        /\bhead of\b/.test(t)                                                        ? { min: 140000, median: 200000, max: 285000, title: "Head of Function (VP–Director equivalent)" } :
+        /\bprincipal\b/.test(t)                                                      ? { min: 155000, median: 230000, max: 350000, title: "Principal" } :
         /\b(senior director)\b/.test(t)                                              ? { min: 140000, median: 195000, max: 270000, title: "Senior Director" } :
         /\b(director)\b/.test(t)                                                     ? { min: 115000, median: 160000, max: 220000, title: "Director" } :
         /\b(senior manager|sr\.? manager)\b/.test(t)                                 ? { min:  95000, median: 130000, max: 175000, title: "Senior Manager" } :
         /\b(manager)\b/.test(t)                                                      ? { min:  75000, median: 105000, max: 145000, title: "Manager" } :
         null;
       if (seniorityFallback) {
-        console.log(`[salary-lookup] using seniority fallback for: "${title}" → ${seniorityFallback.title}`);
+        console.log(`[salary-lookup] using seniority fallback for: "${safeTitle}" → ${seniorityFallback.title}`);
         return {
           statusCode: 200,
           headers: corsHeaders(origin),

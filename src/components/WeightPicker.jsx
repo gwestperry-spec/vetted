@@ -10,7 +10,12 @@ export const WEIGHT_OPTIONS = [
   { value: 2.0, label: "Critical +" },
 ];
 
-export default function WeightPicker({ value, onChange, ariaLabel }) {
+const WEIGHT_T_KEYS = {
+  0.5: "weightMinor", 1.0: "weightStandard", 1.2: "weightRelevant",
+  1.3: "weightImportant", 1.5: "weightCritical", 2.0: "weightCriticalPlus",
+};
+
+export default function WeightPicker({ value, onChange, ariaLabel, t }) {
   const idx = WEIGHT_OPTIONS.findIndex(w => w.value === value);
   const safeIdx = idx < 0 ? 1 : idx;
   function step(dir) {
@@ -22,7 +27,7 @@ export default function WeightPicker({ value, onChange, ariaLabel }) {
       role="group"
       aria-label={ariaLabel}
       style={{
-        display: "flex", alignItems: "center", width: 132, height: 44,
+        display: "flex", alignItems: "center", width: 164, height: 44,
         border: "1.5px solid var(--border)", borderRadius: "var(--r)",
         background: "var(--paper)", overflow: "hidden", flexShrink: 0,
       }}
@@ -45,7 +50,7 @@ export default function WeightPicker({ value, onChange, ariaLabel }) {
           letterSpacing: ".01em", lineHeight: 1.2, padding: "0 2px",
         }}
       >
-        {WEIGHT_OPTIONS[safeIdx].label}
+        {(t && t[WEIGHT_T_KEYS[WEIGHT_OPTIONS[safeIdx].value]]) || WEIGHT_OPTIONS[safeIdx].label}
       </span>
       <button
         type="button"

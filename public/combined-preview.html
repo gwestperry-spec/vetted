@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Vetted — Combined Typography Preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── Type tokens ─────────────────────────────────────────────────────── */
+/* --serif  : Libre Baskerville — editorial body, titles, prose           */
+/* --mono   : IBM Plex Mono     — all data, labels, scores, timestamps    */
+
+:root {
+  --serif: 'Libre Baskerville', Georgia, serif;
+  --mono:  'IBM Plex Mono', 'Courier New', monospace;
+
+  /* Warmer paper palette (Perplexity-influenced) */
+  --paper:  #F7F5EF;
+  --cream:  #F0EDE4;
+  --border: #DED9CE;
+  --muted:  #7B776C;
+  --ink:    #1A1A18;
+
+  /* Verdict greens */
+  --pursue-dark:  #1A3A1A;
+  --pursue-mid:   #2E5A2E;
+  --pursue-light: #7AB87A;
+  --pursue-bg:    #EAF3DE;
+
+  /* Verdict amber */
+  --monitor-dark: #4A3000;
+  --monitor-mid:  #8A5A00;
+  --monitor-light:#C8A030;
+
+  /* Verdict red */
+  --pass-dark:    #4A0000;
+  --pass-mid:     #8A2020;
+  --pass-light:   #C05050;
+}
+
+body {
+  background: #E8E4DA;
+  padding: 32px 16px 64px;
+  min-height: 100vh;
+  font-family: var(--mono);
+  color: var(--ink);
+}
+
+/* ── Layout ──────────────────────────────────────────────────────────── */
+.page-label {
+  text-align: center;
+  margin-bottom: 28px;
+}
+.page-label h1 {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: #1A1A18;
+  margin-bottom: 4px;
+}
+.page-label p {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: .06em;
+}
+
+.phone {
+  width: 390px;
+  max-width: 100%;
+  margin: 0 auto 40px;
+  background: var(--paper);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.10);
+}
+
+.section-gap { height: 1px; background: var(--border); }
+
+/* ── App header ──────────────────────────────────────────────────────── */
+.app-header {
+  padding: 14px 18px 10px;
+  background: var(--paper);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+}
+.app-wordmark {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.app-date {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--muted);
+  letter-spacing: .08em;
+}
+
+/* ── Workspace header ────────────────────────────────────────────────── */
+.ws-header {
+  padding: 16px 18px 14px;
+  background: var(--paper);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.ws-title {
+  font-family: var(--serif);
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.1;
+  margin-bottom: 3px;
+}
+.ws-meta {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--muted);
+  letter-spacing: .08em;
+}
+.score-btn {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: #fff;
+  background: var(--pursue-dark);
+  border: none;
+  border-radius: 8px;
+  padding: 10px 14px;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ── Section label ───────────────────────────────────────────────────── */
+.section-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 18px 10px;
+}
+.section-label span {
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.section-label-line {
+  flex: 1;
+  height: 0.5px;
+  background: var(--border);
+}
+
+/* ── Role card ───────────────────────────────────────────────────────── */
+.role-card {
+  margin: 0 14px 12px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+/* Hero block — verdict-colored dark bg */
+.card-hero {
+  padding: 14px 18px 13px;
+  text-align: center;
+  position: relative;
+}
+.card-hero.pursue  { background: var(--pursue-dark);  border-left: 4px solid #3A7A3A; }
+.card-hero.monitor { background: var(--monitor-dark); border-left: 4px solid var(--monitor-light); }
+.card-hero.pass    { background: var(--pass-dark);    border-left: 4px solid var(--pass-light); }
+
+.card-verdict {
+  font-family: var(--mono);
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.55);
+  margin-bottom: 3px;
+}
+.card-score {
+  font-family: var(--serif);
+  font-size: 46px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1;
+  margin-bottom: 3px;
+}
+.card-score-label {
+  font-family: var(--mono);
+  font-size: 8px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.35);
+}
+.card-timestamp {
+  position: absolute;
+  top: 10px; right: 14px;
+  font-family: var(--mono);
+  font-size: 8px;
+  color: rgba(255,255,255,0.35);
+  letter-spacing: .04em;
+}
+
+/* Title block */
+.card-titles {
+  padding: 11px 16px 10px;
+  border-bottom: 1px solid #F0EDE4;
+  text-align: center;
+}
+.card-role {
+  font-family: var(--serif);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.2;
+  margin-bottom: 3px;
+}
+.card-company {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: .04em;
+}
+
+/* 4-button grid */
+.card-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+}
+.card-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 10px 4px;
+  border: none;
+  border-right: 1px solid #F0EDE4;
+  background: #FAFAF7;
+  cursor: pointer;
+  min-height: 46px;
+}
+.card-btn:last-child { border-right: none; }
+.card-btn.primary { background: var(--pursue-bg); }
+.card-btn-icon { font-size: 13px; line-height: 1; }
+.card-btn-label {
+  font-family: var(--mono);
+  font-size: 7.5px;
+  font-weight: 600;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.card-btn.primary .card-btn-label { color: var(--pursue-dark); }
+
+/* ── Score result view ───────────────────────────────────────────────── */
+.result-wrap {
+  margin: 0 14px 14px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+.result-hero {
+  background: var(--pursue-dark);
+  border-left: 4px solid #3A7A3A;
+  padding: 14px 18px 18px;
+}
+.result-back {
+  font-family: var(--mono);
+  font-size: 8px;
+  font-weight: 500;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.4);
+  margin-bottom: 10px;
+}
+.result-company {
+  font-family: var(--mono);
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--pursue-light);
+  margin-bottom: 4px;
+}
+.result-role {
+  font-family: var(--serif);
+  font-style: normal;
+  font-size: 22px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.15;
+  margin-bottom: 14px;
+}
+.result-score-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.result-score-group {}
+.result-score-lbl {
+  font-family: var(--mono);
+  font-size: 8px;
+  font-weight: 500;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.4);
+  margin-bottom: 2px;
+}
+.result-score-num {
+  font-family: var(--serif);
+  font-size: 58px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1;
+}
+.result-verdict-group { text-align: right; }
+.result-pill {
+  font-family: var(--serif);
+  font-style: normal;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  color: #fff;
+  display: block;
+  margin-bottom: 8px;
+  line-height: 1;
+}
+.result-threshold-val {
+  font-family: var(--serif);
+  font-style: normal;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  display: block;
+  margin-bottom: 3px;
+  line-height: 1;
+}
+.result-threshold-lbl {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: rgba(255,255,255,0.45);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  display: block;
+}
+
+/* Tab bar */
+.tab-bar {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  border-bottom: 1px solid var(--border);
+  background: #fff;
+}
+.tab {
+  padding: 12px 4px;
+  font-family: var(--mono);
+  font-size: 8px;
+  font-weight: 500;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  border: none;
+  background: none;
+  border-bottom: 2px solid transparent;
+  text-align: center;
+  cursor: pointer;
+}
+.tab.active {
+  font-weight: 700;
+  color: var(--ink);
+  border-bottom-color: #3A7A3A;
+}
+
+/* Insight content */
+.insight-body { padding: 14px 16px; }
+.insight-section-lbl {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.insight-section-lbl span {
+  font-family: var(--mono);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: #27500A;
+  white-space: nowrap;
+}
+.insight-section-line {
+  flex: 1; height: 0.5px; background: #C8DDB8;
+}
+.insight-section-lbl.gap span { color: #7A3A3A; }
+.insight-section-lbl.gap .insight-section-line { background: #E0C8C8; }
+.insight-text {
+  font-family: var(--serif);
+  font-size: 13px;
+  line-height: 1.75;
+  color: #1A2E1A;
+  background: #F8FAF5;
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+}
+.insight-item {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  background: #F5FAF0;
+  border-left: 2px solid #3A7A3A;
+  border-radius: 6px;
+  padding: 9px 11px;
+  margin-bottom: 7px;
+}
+.insight-item .check {
+  font-family: var(--mono);
+  color: #3A7A3A;
+  font-weight: 700;
+  font-size: 11px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.insight-item p {
+  font-family: var(--serif);
+  font-size: 13px;
+  line-height: 1.65;
+  color: #1A3A1A;
+}
+.insight-item.gap {
+  background: #FDF5F5;
+  border-left-color: #C05050;
+}
+.insight-item.gap .check { color: #C05050; }
+.insight-item.gap p { color: #5A2A2A; }
+
+/* Filter cards */
+.filter-body { padding: 12px 14px 16px; }
+.filter-card {
+  background: #F5FAF0;
+  border: 1px solid #C8DDB8;
+  border-left: 3px solid #3A7A3A;
+  border-radius: 8px;
+  padding: 11px 13px;
+  margin-bottom: 8px;
+}
+.filter-card.amber {
+  background: #FAF8F0;
+  border-color: #D8C870;
+  border-left-color: #B8A030;
+}
+.filter-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 7px;
+}
+.filter-name {
+  font-family: var(--mono);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.filter-weight {
+  font-family: var(--mono);
+  font-size: 8px;
+  color: var(--muted);
+  margin-left: 5px;
+  font-weight: 400;
+}
+.filter-score {
+  font-family: var(--serif);
+  font-size: 22px;
+  font-weight: 700;
+  color: #3A7A3A;
+  line-height: 1;
+}
+.filter-score.amber { color: #B8A030; }
+.filter-bar {
+  height: 3px;
+  background: rgba(0,0,0,0.08);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+.filter-bar-fill {
+  height: 100%;
+  background: #3A7A3A;
+  border-radius: 2px;
+}
+.filter-bar-fill.amber { background: #B8A030; }
+.filter-rationale {
+  font-family: var(--serif);
+  font-size: 12px;
+  line-height: 1.65;
+  color: #1A2E1A;
+}
+
+/* Score input */
+.score-panel {
+  margin: 0 14px 14px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.score-input-area {
+  padding: 14px 16px;
+  border-bottom: 1px solid #F0EDE4;
+}
+.score-placeholder {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 15px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.score-submit {
+  width: 100%;
+  padding: 14px 16px;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.5);
+  background: #A0A89A;
+  border: none;
+  cursor: not-allowed;
+}
+
+/* ── Onboarding card ─────────────────────────────────────────────────── */
+.onboard-card {
+  margin: 0 14px 14px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px 18px;
+}
+.onboard-eyebrow {
+  font-family: var(--mono);
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+.onboard-title {
+  font-family: var(--serif);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.2;
+  margin-bottom: 16px;
+}
+.onboard-field {
+  margin-bottom: 12px;
+}
+.onboard-label {
+  font-family: var(--mono);
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 5px;
+}
+.onboard-input {
+  width: 100%;
+  padding: 10px 12px;
+  font-family: var(--serif);
+  font-size: 14px;
+  color: var(--ink);
+  background: var(--cream);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  outline: none;
+}
+.onboard-input::placeholder {
+  color: var(--muted);
+  font-style: italic;
+}
+.onboard-textarea {
+  width: 100%;
+  padding: 10px 12px;
+  font-family: var(--serif);
+  font-size: 13px;
+  color: var(--ink);
+  background: var(--cream);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  resize: none;
+  min-height: 72px;
+  outline: none;
+  line-height: 1.6;
+}
+.onboard-textarea::placeholder {
+  color: var(--muted);
+  font-style: italic;
+}
+.onboard-cta {
+  width: 100%;
+  padding: 14px;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: #fff;
+  background: var(--pursue-dark);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-top: 4px;
+}
+</style>
+</head>
+<body>
+
+<div class="page-label">
+  <h1>Combined Direction — Libre Baskerville + IBM Plex Mono</h1>
+  <p>Serif for editorial body · Mono for all data, labels, scores</p>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     PHONE 1 — WORKSPACE
+════════════════════════════════════════════════════════════════════ -->
+<div class="phone">
+
+  <div class="app-header">
+    <span class="app-wordmark">Vetted</span>
+    <span class="app-date">SAT · APR 25 · 2026</span>
+  </div>
+
+  <div class="ws-header">
+    <div>
+      <p class="ws-title">Your Workspace</p>
+      <p class="ws-meta">3 active · 0 archived</p>
+    </div>
+    <button class="score-btn">+ Score a Role</button>
+  </div>
+
+  <div class="section-gap"></div>
+
+  <!-- Role cards -->
+  <div class="section-label">
+    <span>Active</span>
+    <div class="section-label-line"></div>
+    <span>3</span>
+  </div>
+
+  <!-- PURSUE card -->
+  <div class="role-card">
+    <div class="card-hero pursue">
+      <span class="card-timestamp">33m ago</span>
+      <p class="card-verdict">Pursue</p>
+      <p class="card-score">4.2</p>
+      <p class="card-score-label">VQ Score</p>
+    </div>
+    <div class="card-titles">
+      <p class="card-role">VP of Product</p>
+      <p class="card-company">Acme Corp</p>
+    </div>
+    <div class="card-actions">
+      <button class="card-btn primary">
+        <span class="card-btn-icon">▶</span>
+        <span class="card-btn-label">Scorecard</span>
+      </button>
+      <button class="card-btn">
+        <span class="card-btn-icon">🔔</span>
+        <span class="card-btn-label">Remind</span>
+      </button>
+      <button class="card-btn">
+        <span class="card-btn-icon">📁</span>
+        <span class="card-btn-label">Archive</span>
+      </button>
+      <button class="card-btn">
+        <span class="card-btn-icon">◎</span>
+        <span class="card-btn-label">I Applied</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- MONITOR card -->
+  <div class="role-card">
+    <div class="card-hero monitor">
+      <span class="card-timestamp">1d ago</span>
+      <p class="card-verdict">Monitor</p>
+      <p class="card-score">3.4</p>
+      <p class="card-score-label">VQ Score</p>
+    </div>
+    <div class="card-titles">
+      <p class="card-role">Chief of Staff</p>
+      <p class="card-company">Beta Inc</p>
+    </div>
+    <div class="card-actions">
+      <button class="card-btn" style="background:#FDF8EE;">
+        <span class="card-btn-icon">▶</span>
+        <span class="card-btn-label">Scorecard</span>
+      </button>
+      <button class="card-btn">
+        <span class="card-btn-icon">🔔</span>
+        <span class="card-btn-label">Remind</span>
+      </button>
+      <button class="card-btn">
+        <span class="card-btn-icon">📁</span>
+        <span class="card-btn-label">Archive</span>
+      </button>
+      <button class="card-btn">
+        <span class="card-btn-icon">◎</span>
+        <span class="card-btn-label">I Applied</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- PASS card -->
+  <div class="role-card">
+    <div class="card-hero pass">
+      <span class="card-timestamp">2d ago</span>
+      <p class="card-verdict">Pass</p>
+      <p class="card-score">2.1</p>
+      <p class="card-score-label">VQ Score</p>
+    </div>
+    <div class="card-titles">
+      <p class="card-role">SVP Operations</p>
+      <p class="card-company">Gamma Ltd</p>
+    </div>
+    <div class="card-actions">
+      <button class="card-btn" style="background:#FDF5F5;">
+        <span class="card-btn-icon">▶</span>
+        <span class="card-btn-label">Scorecard</span>
+      </button>
+      <button class="card-btn">
+        <span class="card-btn-icon">🔔</span>
+        <span class="card-btn-label">Remind</span>
+      </button>
+      <button class="card-btn">
+        <span class="card-btn-icon">📁</span>
+        <span class="card-btn-label">Archive</span>
+      </button>
+      <button class="card-btn">
+        <span class="card-btn-icon">◎</span>
+        <span class="card-btn-label">I Applied</span>
+      </button>
+    </div>
+  </div>
+
+  <div style="height:20px"></div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════════
+     PHONE 2 — SCORE RESULT (INSIGHTS + FILTERS)
+════════════════════════════════════════════════════════════════════ -->
+<div class="phone">
+
+  <div class="app-header">
+    <span class="app-wordmark">Vetted</span>
+    <span class="app-date">SAT · APR 25 · 2026</span>
+  </div>
+
+  <div style="height:8px; background: var(--paper)"></div>
+
+  <div class="result-wrap">
+    <!-- Verdict hero -->
+    <div class="result-hero">
+      <p class="result-back">← Workspace</p>
+      <p class="result-company">Acme Corp</p>
+      <p class="result-role">VP of Product</p>
+      <div class="result-score-row">
+        <div class="result-score-group">
+          <p class="result-score-lbl">VQ Score</p>
+          <p class="result-score-num">4.2</p>
+        </div>
+        <div class="result-verdict-group">
+          <span class="result-pill">Pursue</span>
+          <span class="result-threshold-val">3.5</span>
+          <span class="result-threshold-lbl">Threshold · Above</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab bar -->
+    <div class="tab-bar">
+      <div class="tab active">Insights</div>
+      <div class="tab">Filters</div>
+      <div class="tab">Coach</div>
+      <div class="tab">Status</div>
+    </div>
+
+    <!-- Insights -->
+    <div class="insight-body">
+
+      <div class="insight-section-lbl">
+        <span>Recommendation Rationale</span>
+        <div class="insight-section-line"></div>
+      </div>
+      <p class="insight-text">Strong scope with direct P&amp;L ownership and CEO reporting line. Equity terms are unspecified but the leadership access alone warrants serious consideration.</p>
+
+      <div class="insight-section-lbl">
+        <span>Where You Are Strong</span>
+        <div class="insight-section-line"></div>
+      </div>
+      <div class="insight-item">
+        <span class="check">✓</span>
+        <p>CEO reporting line positions you for executive-level influence from day one</p>
+      </div>
+      <div class="insight-item">
+        <span class="check">✓</span>
+        <p>Clear P&amp;L ownership matches your stated career goal</p>
+      </div>
+
+      <div class="insight-section-lbl gap" style="margin-top:10px">
+        <span>Real Gaps</span>
+        <div class="insight-section-line"></div>
+      </div>
+      <div class="insight-item gap">
+        <span class="check">△</span>
+        <p>Equity not specified — a meaningful omission at this level</p>
+      </div>
+
+      <div class="insight-section-lbl" style="margin-top:10px">
+        <span>Narrative Bridge</span>
+        <div class="insight-section-line"></div>
+      </div>
+      <p class="insight-text">Lead with your cross-functional track record and P&amp;L history. This is the frame that maps most directly to what they are hiring for.</p>
+
+    </div>
+  </div>
+
+  <!-- FILTERS tab view -->
+  <div class="result-wrap">
+    <div class="result-hero">
+      <p class="result-back">← Workspace</p>
+      <p class="result-company">Acme Corp</p>
+      <p class="result-role">VP of Product</p>
+      <div class="result-score-row">
+        <div class="result-score-group">
+          <p class="result-score-lbl">VQ Score</p>
+          <p class="result-score-num">4.2</p>
+        </div>
+        <div class="result-verdict-group">
+          <span class="result-pill">Pursue</span>
+          <span class="result-threshold-val">3.5</span>
+          <span class="result-threshold-lbl">Threshold · Above</span>
+        </div>
+      </div>
+    </div>
+    <div class="tab-bar">
+      <div class="tab">Insights</div>
+      <div class="tab active">Filters</div>
+      <div class="tab">Coach</div>
+      <div class="tab">Status</div>
+    </div>
+    <div class="filter-body">
+      <div class="filter-card">
+        <div class="filter-header">
+          <span class="filter-name">Financial Accountability <span class="filter-weight">· Critical</span></span>
+          <span class="filter-score">4</span>
+        </div>
+        <div class="filter-bar"><div class="filter-bar-fill" style="width:80%"></div></div>
+        <p class="filter-rationale">Budget owner with full P&amp;L responsibility stated explicitly in the job description.</p>
+      </div>
+      <div class="filter-card">
+        <div class="filter-header">
+          <span class="filter-name">Access to Leadership <span class="filter-weight">· Important</span></span>
+          <span class="filter-score">5</span>
+        </div>
+        <div class="filter-bar"><div class="filter-bar-fill" style="width:100%"></div></div>
+        <p class="filter-rationale">Reports directly to CEO — highest possible leadership access for this role type.</p>
+      </div>
+      <div class="filter-card amber">
+        <div class="filter-header">
+          <span class="filter-name">Clear Success Measures <span class="filter-weight">· Important</span></span>
+          <span class="filter-score amber">3</span>
+        </div>
+        <div class="filter-bar"><div class="filter-bar-fill amber" style="width:60%"></div></div>
+        <p class="filter-rationale">Metrics referenced but not quantified — growth targets and KPIs absent from posting.</p>
+      </div>
+    </div>
+  </div>
+
+  <div style="height:20px"></div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════════
+     PHONE 3 — SCORE INPUT + ONBOARDING
+════════════════════════════════════════════════════════════════════ -->
+<div class="phone">
+
+  <div class="app-header">
+    <span class="app-wordmark">Vetted</span>
+    <span class="app-date">SAT · APR 25 · 2026</span>
+  </div>
+
+  <!-- Score a role panel -->
+  <div style="padding: 14px 0 0">
+    <div class="section-label">
+      <span>Score a Role</span>
+      <div class="section-label-line"></div>
+    </div>
+    <div class="score-panel">
+      <div class="score-input-area">
+        <p class="score-placeholder">Paste a job description or drop a URL — Vetted handles both.</p>
+      </div>
+      <button class="score-submit">Score This Opportunity</button>
+    </div>
+  </div>
+
+  <div class="section-gap" style="margin: 4px 0 14px"></div>
+
+  <!-- Onboarding card -->
+  <div class="section-label">
+    <span>Your Profile</span>
+    <div class="section-label-line"></div>
+  </div>
+
+  <div class="onboard-card">
+    <p class="onboard-eyebrow">Build Your Framework</p>
+    <p class="onboard-title">Tell us what actually matters to you.</p>
+
+    <div class="onboard-field">
+      <p class="onboard-label">Your Name</p>
+      <input class="onboard-input" type="text" placeholder="Alex Chen" />
+    </div>
+    <div class="onboard-field">
+      <p class="onboard-label">Current Title</p>
+      <input class="onboard-input" type="text" placeholder="VP of Product" />
+    </div>
+    <div class="onboard-field">
+      <p class="onboard-label">Background</p>
+      <textarea class="onboard-textarea" placeholder="12 years in B2B SaaS, most recently building 0→1 products at Series B companies…"></textarea>
+    </div>
+    <div class="onboard-field">
+      <p class="onboard-label">Career Goal</p>
+      <input class="onboard-input" type="text" placeholder="CPO or GM role with P&L ownership at a growth-stage company" />
+    </div>
+
+    <button class="onboard-cta">Build My Framework →</button>
+  </div>
+
+  <div style="height:20px"></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     LOADING SCREEN
+═══════════════════════════════════════════════════════════════════════ -->
+<div class="page-label" style="margin-top: 40px">
+  <h1>Loading Screen</h1>
+  <p>Scoring in progress — filters + weights + coaching pair</p>
+</div>
+
+<div class="phone" style="overflow: visible; background: #F7F5EF;">
+
+  <!-- Dark hero -->
+  <div style="background: #1A3A1A; border-bottom: 4px solid #3A7A3A; padding: 20px 24px 22px;">
+    <!-- Wordmark row -->
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:18px;">
+      <span style="font-family:var(--mono); font-size:11px; font-weight:700; letter-spacing:.2em; text-transform:uppercase; color:rgba(255,255,255,0.9);">Vetted</span>
+      <span style="font-family:var(--mono); font-size:9px; letter-spacing:.12em; text-transform:uppercase; color:rgba(255,255,255,0.4);">Scoring…</span>
+    </div>
+    <!-- Progress row -->
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+      <span style="font-family:var(--mono); font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:rgba(255,255,255,0.45);">Analyzing role</span>
+      <span style="font-family:var(--mono); font-size:14px; font-weight:600; color:#7AB87A; letter-spacing:.04em;">62%</span>
+    </div>
+    <div style="width:100%; height:3px; background:rgba(255,255,255,0.12); border-radius:2px; overflow:hidden;">
+      <div style="height:100%; width:62%; background:#7AB87A; border-radius:2px;"></div>
+    </div>
+  </div>
+
+  <!-- Filter completion card -->
+  <div style="margin:20px 20px 0; background:#fff; border-radius:14px; border:1px solid #DED9CE; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+    <!-- Card header -->
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 16px; border-bottom:1px solid #F0EDE4;">
+      <span style="font-family:var(--mono); font-size:9px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; color:#7B776C;">Your Filters</span>
+      <span style="font-family:var(--mono); font-size:9px; color:#7B776C; letter-spacing:.06em;">3 / 6</span>
+    </div>
+
+    <!-- Row 1: done — Critical -->
+    <div style="display:flex; align-items:center; gap:12px; padding:11px 16px; border-bottom:1px solid #F0EDE4;">
+      <div style="width:7px; height:7px; border-radius:50%; background:#3A7A3A; flex-shrink:0;"></div>
+      <span style="font-family:var(--mono); font-size:10px; font-weight:500; color:#1A1A18; flex:1; letter-spacing:.02em;">Financial Accountability</span>
+      <span style="font-family:var(--mono); font-size:8px; color:#9B9690; letter-spacing:.06em; text-transform:uppercase; flex-shrink:0; margin-right:2px;">Critical</span>
+      <span style="font-family:var(--serif); font-size:18px; font-weight:700; color:#3A7A3A; line-height:1; flex-shrink:0;">4.2</span>
+    </div>
+
+    <!-- Row 2: done — Relevant -->
+    <div style="display:flex; align-items:center; gap:12px; padding:11px 16px; border-bottom:1px solid #F0EDE4;">
+      <div style="width:7px; height:7px; border-radius:50%; background:#3A7A3A; flex-shrink:0;"></div>
+      <span style="font-family:var(--mono); font-size:10px; font-weight:500; color:#1A1A18; flex:1; letter-spacing:.02em;">Access to Leadership</span>
+      <span style="font-family:var(--mono); font-size:8px; color:#9B9690; letter-spacing:.06em; text-transform:uppercase; flex-shrink:0; margin-right:2px;">Relevant</span>
+      <span style="font-family:var(--serif); font-size:18px; font-weight:700; color:#B8A030; line-height:1; flex-shrink:0;">3.1</span>
+    </div>
+
+    <!-- Row 3: done — Important -->
+    <div style="display:flex; align-items:center; gap:12px; padding:11px 16px; border-bottom:1px solid #F0EDE4;">
+      <div style="width:7px; height:7px; border-radius:50%; background:#3A7A3A; flex-shrink:0;"></div>
+      <span style="font-family:var(--mono); font-size:10px; font-weight:500; color:#1A1A18; flex:1; letter-spacing:.02em;">Clear Success Measures</span>
+      <span style="font-family:var(--mono); font-size:8px; color:#9B9690; letter-spacing:.06em; text-transform:uppercase; flex-shrink:0; margin-right:2px;">Important</span>
+      <span style="font-family:var(--serif); font-size:18px; font-weight:700; color:#3A7A3A; line-height:1; flex-shrink:0;">4.5</span>
+    </div>
+
+    <!-- Row 4: active — Relevant (pulsing amber dot) -->
+    <div style="display:flex; align-items:center; gap:12px; padding:11px 16px; border-bottom:1px solid #F0EDE4; background:#FAFAF7;">
+      <div style="width:7px; height:7px; border-radius:50%; background:#B8A030; flex-shrink:0; animation: vq-pulse-dot 1.2s ease-in-out infinite;"></div>
+      <span style="font-family:var(--mono); font-size:10px; font-weight:600; color:#1A1A18; flex:1; letter-spacing:.02em;">Organizational Impact</span>
+      <span style="font-family:var(--mono); font-size:8px; color:#9B9690; letter-spacing:.06em; text-transform:uppercase; flex-shrink:0; margin-right:2px;">Relevant</span>
+      <span style="font-family:var(--mono); font-size:9px; color:#B8A030; letter-spacing:.1em; text-transform:uppercase;">scoring</span>
+    </div>
+
+    <!-- Row 5: waiting — no weight badge (Standard = baseline) -->
+    <div style="display:flex; align-items:center; gap:12px; padding:11px 16px; border-bottom:1px solid #F0EDE4;">
+      <div style="width:7px; height:7px; border-radius:50%; background:#DED9CE; flex-shrink:0;"></div>
+      <span style="font-family:var(--mono); font-size:10px; font-weight:400; color:#7B776C; flex:1; letter-spacing:.02em;">Role Integrity</span>
+      <!-- Standard weight omitted intentionally -->
+    </div>
+
+    <!-- Row 6: custom filter — waiting — Minor -->
+    <div style="display:flex; align-items:center; gap:12px; padding:11px 16px;">
+      <div style="width:7px; height:7px; border-radius:50%; background:#DED9CE; flex-shrink:0;"></div>
+      <span style="font-family:var(--mono); font-size:10px; font-weight:400; color:#7B776C; flex:1; letter-spacing:.02em;">Equity Structure <span style="font-size:8px; color:#C0BBB4; letter-spacing:.04em;">custom</span></span>
+      <span style="font-family:var(--mono); font-size:8px; color:#C0BBB4; letter-spacing:.06em; text-transform:uppercase; flex-shrink:0;">Minor</span>
+    </div>
+  </div>
+
+  <!-- Coaching pair -->
+  <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:28px 28px 48px; text-align:center;">
+    <p style="font-family:var(--serif); font-size:18px; font-weight:700; font-style:italic; color:#1A1A18; line-height:1.55; margin:0 auto 14px; max-width:300px;">
+      Which filter matters most to you on this one — and why?
+    </p>
+    <div style="width:32px; height:1px; background:#C8DDB8; margin:0 auto 14px;"></div>
+    <p style="font-family:var(--mono); font-size:11px; color:#7B776C; letter-spacing:.04em; line-height:1.75; margin:0;">
+      Clarity before the room is always better than clarity after.
+    </p>
+  </div>
+
+</div>
+
+<style>
+@keyframes vq-pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.5; transform: scale(1.3); }
+}
+</style>
+
+</body>
+</html>

@@ -2,9 +2,14 @@
 // Fires once on first dashboard entry. Stored in localStorage so it never
 // re-appears. Explains the three core moves: Score → Coach → Compare.
 
+import { useRef } from "react";
+import { useFocusTrap } from "../hooks/useFocusTrap.js";
+
 export default function WalkthroughModal({ t, userTier, onDismiss }) {
   const isVantage = userTier === "vantage" || userTier === "vantage_lifetime";
   const isPaid    = userTier && userTier !== "free";
+  const dialogRef = useRef(null);
+  useFocusTrap(dialogRef, { onClose: onDismiss });
 
   const features = [
     {
@@ -16,12 +21,12 @@ export default function WalkthroughModal({ t, userTier, onDismiss }) {
       badge: null,
     },
     {
-      icon: "💬",
-      color: "var(--gold)",
-      bg: "var(--gold-light)",
+      icon: "◫",
+      color: "var(--accent)",
+      bg: "#D8E8D8",
       title: t.walkthroughCoachTitle,
       desc:  t.walkthroughCoachDesc,
-      badge: "Vantage",
+      badge: null,
     },
     {
       icon: "⇄",
@@ -49,6 +54,7 @@ export default function WalkthroughModal({ t, userTier, onDismiss }) {
 
       {/* ── Modal ── */}
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="wt-title"
@@ -90,7 +96,7 @@ export default function WalkthroughModal({ t, userTier, onDismiss }) {
         </h1>
 
         <p style={{
-          fontSize: 14, color: "#5A6A5A",
+          fontSize: 14, color: "#1A2E1A",
           lineHeight: 1.5, marginBottom: 28,
         }}>
           {t.walkthroughSubtitle}
@@ -142,7 +148,7 @@ export default function WalkthroughModal({ t, userTier, onDismiss }) {
                   )}
                 </div>
                 <p style={{
-                  fontSize: 12, color: "#5A6A5A",
+                  fontSize: 12, color: "#1A2E1A",
                   lineHeight: 1.6, margin: 0,
                 }}>
                   {f.desc}
@@ -155,14 +161,14 @@ export default function WalkthroughModal({ t, userTier, onDismiss }) {
         {/* ── Tier note for non-Vantage ── */}
         {!isVantage && (
           <p style={{
-            fontSize: 11, color: "#5A6A5A",
+            fontSize: 11, color: "#1A2E1A",
             lineHeight: 1.5, marginBottom: 20,
             padding: "10px 14px",
             background: "var(--gold-light)",
             borderRadius: "var(--r)",
             borderLeft: "3px solid var(--gold)",
           }}>
-            Coaching and Compare are Vantage features. You can score unlimited roles and unlock them at any time.
+            Compare is a Vantage feature. Reminders and full analysis review require Signal. You can score roles and build your workspace for free.
           </p>
         )}
 
@@ -171,7 +177,6 @@ export default function WalkthroughModal({ t, userTier, onDismiss }) {
           className="btn btn-primary"
           onClick={onDismiss}
           style={{ width: "100%", justifyContent: "center", fontSize: 15, marginBottom: 12 }}
-          autoFocus
         >
           {t.walkthroughCta}
         </button>

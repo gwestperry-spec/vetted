@@ -1,5 +1,6 @@
 const https = require("https");
 const crypto = require("crypto");
+const { sanitizePromptField, MAX_LENGTHS } = require("./sanitizePromptField");
 
 // ─── Allowed origins ───────────────────────────────────────────────────────
 const ALLOWED_ORIGINS = [
@@ -337,9 +338,23 @@ exports.handler = async (event) => {
   // ── Build top 3 filters string ────────────────────────────────────────────
   const sortedFilters = [...filterFramework].sort((a, b) => (b.weight || 1) - (a.weight || 1));
   const topFilters = sortedFilters.slice(0, 3).map(f => {
-    const name = typeof f.name === "string" ? f.name : (f.name?.en || f.id || "filter");
-    return `${name} (${f.weight || 1}x)`;
+    const rawName = typeof f.name === "string" ? f.name : (f.name?.en || f.id || "filter");
+    const safeName = sanitizePromptField(rawName, MAX_LENGTHS.short);
+    const weight   = typeof f.weight === "number" ? f.weight : 1;
+    return `${safeName} (${weight}x)`;
   }).join(", ");
+
+  // Sanitize all user-controlled strings before embedding in Claude prompt
+  const safeTitle       = sanitizePromptField(userProfile.currentTitle || "unknown title", MAX_LENGTHS.short);
+  const threshold       = typeof userProfile.threshold === "number" ? userProfile.threshold : 3.5;
+  const safeFilterName  = topFilterName ? sanitizePromptField(topFilterName, MAX_LENGTHS.short) : null;
+
+  // Sanitize role titles and company names in relevantRoles (user-originated strings)
+  const safeRelevantRoles = (relevantRoles || []).map(r => ({
+    ...r,
+    role_title: sanitizePromptField(r.role_title || "", MAX_LENGTHS.short),
+    company:    sanitizePromptField(r.company    || "", MAX_LENGTHS.short),
+  }));
 
   // ── Call Claude ───────────────────────────────────────────────────────────
   const systemPrompt = `You are a career intelligence advisor embedded in the Vetted app. You have access to a user's recent job evaluation history. Your role is to observe patterns in their behavior — scoring patterns, application behavior, and alignment between their stated priorities and their actual choices — and surface one honest, specific observation. You are not a cheerleader. You are not harsh. You are the advisor who notices what the user might not want to see and says it anyway, with care. Speak directly. Use first person. Reference specific roles or scores by name where possible. Keep your observation to two to three sentences. End with one question or one specific action the user can take.
@@ -347,9 +362,9 @@ exports.handler = async (event) => {
 Tone: You are invested in this person's success. You are not neutral. You notice things. You say them clearly and without softening them into meaninglessness. You do not lecture. You do not congratulate unnecessarily. You speak like a trusted advisor who has been watching this search and has one thing they need to say today.`;
 
   const userMessage = `Pattern detected: ${pattern_type}
-User profile: ${userProfile.currentTitle || "unknown title"}, threshold: ${userProfile.threshold || 3.5}
-Relevant data: ${JSON.stringify(relevantRoles)}
-Filter framework (top 3 weighted): ${topFilters}${topFilterName ? `\nTop-weighted filter: ${topFilterName}` : ""}
+User profile: ${safeTitle}, threshold: ${threshold}
+Relevant data: ${JSON.stringify(safeRelevantRoles)}
+Filter framework (top 3 weighted): ${topFilters}${safeFilterName ? `\nTop-weighted filter: ${safeFilterName}` : ""}
 
 Generate one behavioral insight (2-3 sentences + one question or action).`;
 

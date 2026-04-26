@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import { resolveLang } from "../utils/langUtils.js";
 import MarketPulseCard from "./MarketPulse.jsx";
 import { ScoringProgress as ScoringProgressComponent } from "./VQLoadingScreen.jsx";
+import { ENDPOINTS } from "../config.js";
 
 // ─── URL sanitization (matches OpportunityForm) ────────────────────────────
 const MAX_JD = 12000;
@@ -22,6 +23,24 @@ function sanitizeUrl(value) {
   } catch { return ""; }
 }
 
+// ─── Strip tracking params from external URLs ──────────────────────────────
+// Removes UTM, LinkedIn referral, and other tracking-only query params so
+// Vetted fetches the canonical job page, not a tracked redirect.
+const TRACKING_PARAMS = [
+  "utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term",
+  "utm_id", "refId", "trackingId", "domain", "src", "ref",
+  "mcid", "cid", "gclid", "fbclid", "li_fat_id",
+];
+function stripTrackingParams(urlStr) {
+  try {
+    const u = new URL(urlStr);
+    TRACKING_PARAMS.forEach(p => u.searchParams.delete(p));
+    return u.searchParams.size === 0
+      ? u.origin + u.pathname
+      : u.toString();
+  } catch { return urlStr; }
+}
+
 // ─── Application status config ─────────────────────────────────────────────
 export const STAGE_ORDER = ["applied", "phone_screen", "interview", "final_round"];
 export const STAGE_LABELS = {
@@ -40,38 +59,12 @@ const STAGE_STYLE = {
   final_round:  { bg: "#E8EEF8", color: "#3A4A8A" },
   offer:        { bg: "#D0EED0", color: "#1A4A1A" },
   rejected:     { bg: "#F8ECEC", color: "#C05050" },
-  withdrew:     { bg: "#F0F4F0", color: "#8A9A8A" },
+  withdrew:     { bg: "#F0F4F0", color: "#1A2E1A" },
 };
 
-// ─── Guide slides ──────────────────────────────────────────────────────────
-const GUIDE_SLIDES = [
-  {
-    icon: "◎",
-    title: "Score Any Role",
-    body: "Paste a job description — or a URL — into the box below. Vetted reads it against your personal filter framework and returns a Vetted Quotient (VQ) score in seconds.",
-  },
-  {
-    icon: "⊟",
-    title: "Your Filters Are the Engine",
-    body: "Every score is driven by the criteria you built: things like compensation, scope, culture, or access to leadership. Each filter is weighted by what matters most to you — not what a job board thinks matters.",
-  },
-  {
-    icon: "3.8",
-    title: "Reading Your Score",
-    body: "Scores run 1–5. Pursue means the role clears your threshold. Monitor means it's close — worth watching. Pass means it doesn't meet your standard. Your threshold is yours to set.",
-    mono: true,
-  },
-  {
-    icon: "→",
-    title: "In Progress",
-    body: "When you apply to a role, tap Mark Applied on its card. It moves into In Progress, where you can track it through Phone Screen, Interview, Final Round, and beyond.",
-  },
-  {
-    icon: "↑",
-    title: "Previously Scored",
-    body: "Every role you've ever scored lives here, sorted by VQ. Tap any card to revisit the full breakdown — strengths, gaps, narrative bridge, and coaching notes.",
-  },
-];
+// ─── Guide slides (built inside component using t) ─────────────────────────
+// GUIDE_SLIDES is now a function that returns slides based on the current t.
+// See buildGuideSlides(t) inside Dashboard component.
 
 // ─── Date formatter → "MON · APR 14 · 2026" ───────────────────────────────
 function formatDashDate() {
@@ -112,12 +105,12 @@ function SectionLabel({ children, count }) {
     <div style={{
       display: "flex", alignItems: "center", gap: 8,
       fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: ".12em",
-      color: "#8A9A8A", textTransform: "uppercase", marginBottom: 10,
+      color: "#1A2E1A", textTransform: "uppercase", marginBottom: 10,
     }}>
       {children}
       <div style={{ flex: 1, height: 0.5, background: "#D8E8D8" }} />
       {count != null && (
-        <span style={{ fontFamily: "var(--font-data)", fontSize: 9, color: "#8A9A8A" }}>{count}</span>
+        <span style={{ fontFamily: "var(--font-data)", fontSize: 9, color: "#1A2E1A" }}>{count}</span>
       )}
     </div>
   );
@@ -129,9 +122,19 @@ export default function Dashboard({
   onScore, onViewOpp, onEditFilters, userTier, authUser, onCompare,
   devTierOverride, onDevUnlock, behavioralInsight, setBehavioralInsight,
   onMarkApplied, onUpdateStatus, onDismissInsight, onActedOnInsight,
+  onBackToWorkspace,
 }) {
   const fn = (field) => resolveLang(field, lang);
   const isVantage = userTier === "vantage" || userTier === "vantage_lifetime";
+
+  // ── Guide slides (language-aware) ─────────────────────────────────────────
+  const GUIDE_SLIDES = [
+    { icon: "◎",   title: t.guide1Title, body: t.guide1Body },
+    { icon: "⊟",   title: t.guide2Title, body: t.guide2Body },
+    { icon: "3.8", title: t.guide3Title, body: t.guide3Body, mono: true },
+    { icon: "→",   title: t.guide4Title, body: t.guide4Body },
+    { icon: "◫",   title: t.guide5Title, body: t.guide5Body },
+  ];
 
   // ── Dev unlock: 7-tap on VETTED wordmark ──────────────────────────────────
   const devTapRef      = useRef(0);
@@ -205,41 +208,69 @@ export default function Dashboard({
 
   // ── Unified input strip ───────────────────────────────────────────────────
   // Single textarea handles both JD text and URLs — auto-detected on submit.
-  const [inputVal,   setInputVal]   = useState("");
-  const [fetching,   setFetching]   = useState(false);
-  const [fetchError, setFetchError] = useState("");
+  const [inputVal,        setInputVal]        = useState("");
+  const [fetching,        setFetching]        = useState(false);
+  const [fetchError,      setFetchError]      = useState("");
+  const [linkedInGuide,   setLinkedInGuide]   = useState(false);
+  const [urlCleaned,      setUrlCleaned]      = useState(false);
 
-  const isUrl = (val) => /^https?:\/\//i.test(val.trim());
+  const isUrl       = (val) => /^https?:\/\//i.test(val.trim());
+  const isLinkedIn  = (val) => /linkedin\.com\/jobs/i.test(val.trim());
+  // ATS platforms that render via JavaScript and block automated fetching
+  const isJsGatedAts = (val) => /oraclecloud\.com|taleo\.net|icims\.com|greenhouse\.io\/gdpr|myworkday\.com\/wday\/authgwy/i.test(val.trim());
 
   async function handleAnalyze() {
     const val = inputVal.trim();
     if (!val) return;
+
+    // LinkedIn blocks all automated access — show inline guide instead of failing
+    if (isLinkedIn(val)) {
+      setLinkedInGuide(true);
+      setUrlCleaned(false);
+      return;
+    }
+
     if (isUrl(val)) {
-      // Fetch URL content then score
-      const safeUrl = sanitizeUrl(val);
+      // Strip tracking params (utm_source=linkedin, refId, domain, etc.) automatically
+      const cleaned = stripTrackingParams(val);
+      if (cleaned !== val) {
+        setInputVal(cleaned);
+        setUrlCleaned(true);
+      } else {
+        setUrlCleaned(false);
+      }
+
+      // Fetch via Perplexity Sonar (server-side) — works for most job boards
+      const safeUrl = sanitizeUrl(cleaned);
       if (!safeUrl) { setFetchError(t.urlFetchError); return; }
       setFetching(true);
       setFetchError("");
+      setLinkedInGuide(false);
       try {
-        const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(safeUrl)}`);
-        if (!res.ok) throw new Error();
-        const data = await res.json();
-        if (!data.contents) throw new Error();
-        const stripped = data.contents
-          .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
-          .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
-          .replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 8000);
-        if (stripped.length < 100) throw new Error();
-        onScore(stripped);
+        const res = await fetch(ENDPOINTS.fetchJd, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            url: safeUrl,
+            appleId: authUser?.id || "",
+            sessionToken: authUser?.sessionToken || "",
+          }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || "fetch_failed");
+        if (!data.jd) throw new Error("empty_response");
+        // Pass the original URL as second arg so App.jsx can pre-queue workspace role
+        onScore(data.jd, safeUrl);
         setInputVal("");
-      } catch {
-        setFetchError(t.urlFetchError);
+      } catch (err) {
+        setFetchError(err?.message || t.urlFetchError);
       } finally {
         setFetching(false);
       }
     } else {
-      // Plain JD text — score directly
-      onScore(val);
+      // Plain JD text — score directly (no source URL)
+      setLinkedInGuide(false);
+      onScore(val, "");
       setInputVal("");
     }
   }
@@ -281,9 +312,23 @@ export default function Dashboard({
             )}
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            {onBackToWorkspace && (
+              <button
+                onClick={onBackToWorkspace}
+                aria-label="Back to workspace"
+                style={{
+                  fontFamily: "var(--font-data)", fontSize: 10, fontWeight: 600,
+                  letterSpacing: ".08em", textTransform: "uppercase",
+                  color: "#E8F0E8", background: "#1A2E1A",
+                  border: "none", borderRadius: 6,
+                  padding: "6px 14px", cursor: "pointer",
+                  minHeight: 32,
+                }}
+              >← Workspace</button>
+            )}
             <span style={{
               fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: ".08em",
-              color: "#8A9A8A", textTransform: "uppercase",
+              color: "#1A2E1A", textTransform: "uppercase",
             }}>{formatDashDate()}</span>
             <button
               onClick={openGuide}
@@ -291,7 +336,7 @@ export default function Dashboard({
               style={{
                 width: 28, height: 28, borderRadius: "50%",
                 background: "#F0F4F0", border: "1px solid #D8E8D8",
-                color: "#8A9A8A", fontSize: 12, fontWeight: 600,
+                color: "#1A2E1A", fontSize: 12, fontWeight: 600,
                 cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
               }}
             >?</button>
@@ -304,7 +349,7 @@ export default function Dashboard({
             <>
               <p style={{
                 fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: ".12em",
-                color: "#8A9A8A", textTransform: "uppercase", marginBottom: 4,
+                color: "#1A2E1A", textTransform: "uppercase", marginBottom: 4,
               }}>
                 {profile.name ? `YOUR SEARCH · ${profile.name.split(" ")[0].toUpperCase()}` : "YOUR SEARCH"}
               </p>
@@ -321,7 +366,7 @@ export default function Dashboard({
             <>
               <p style={{
                 fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: ".12em",
-                color: "#8A9A8A", textTransform: "uppercase", marginBottom: 4,
+                color: "#1A2E1A", textTransform: "uppercase", marginBottom: 4,
               }}>
                 {profile.name ? `WELCOME · ${profile.name.split(" ")[0].toUpperCase()}` : "WELCOME"}
               </p>
@@ -343,7 +388,7 @@ export default function Dashboard({
               }}>{inProgress.length}</div>
               <div style={{
                 fontFamily: "var(--font-data)", fontSize: 8, letterSpacing: ".08em",
-                color: "#8A9A8A", marginTop: 3, textTransform: "uppercase",
+                color: "#1A2E1A", marginTop: 3, textTransform: "uppercase",
               }}>IN PROGRESS</div>
             </div>
             <div style={{ flex: 1, background: "#F0F4F0", borderRadius: 8, padding: "8px 10px" }}>
@@ -353,7 +398,7 @@ export default function Dashboard({
               }}>{opportunities.length}</div>
               <div style={{
                 fontFamily: "var(--font-data)", fontSize: 8, letterSpacing: ".08em",
-                color: "#8A9A8A", marginTop: 3, textTransform: "uppercase",
+                color: "#1A2E1A", marginTop: 3, textTransform: "uppercase",
               }}>SCORED</div>
             </div>
             <div style={{ flex: 1, background: "#F0F4F0", borderRadius: 8, padding: "8px 10px" }}>
@@ -363,7 +408,7 @@ export default function Dashboard({
               }}>{profile.threshold ?? "—"}</div>
               <div style={{
                 fontFamily: "var(--font-data)", fontSize: 8, letterSpacing: ".08em",
-                color: "#8A9A8A", marginTop: 3, textTransform: "uppercase",
+                color: "#1A2E1A", marginTop: 3, textTransform: "uppercase",
               }}>THRESHOLD</div>
             </div>
           </div>
@@ -382,7 +427,7 @@ export default function Dashboard({
               onClick={exitCompareMode}
               style={{
                 fontFamily: "var(--font-data)", fontSize: 10, letterSpacing: ".06em",
-                background: "transparent", color: "#8A9A8A",
+                background: "transparent", color: "#1A2E1A",
                 border: "1px solid #D8E8D8", borderRadius: 20, padding: "5px 12px",
               }}
             >{t.compareCancel}</button>
@@ -392,7 +437,7 @@ export default function Dashboard({
               onClick={() => setCompareMode(true)}
               style={{
                 fontFamily: "var(--font-data)", fontSize: 10, letterSpacing: ".06em",
-                background: "transparent", color: "#3A5A3A",
+                background: "transparent", color: "#1A2E1A",
                 border: "1px solid #D8E8D8", borderRadius: 20, padding: "5px 12px",
               }}
             >⇄ {t.compareMode}</button>
@@ -403,7 +448,7 @@ export default function Dashboard({
           onClick={onEditFilters}
           style={{
             fontFamily: "var(--font-data)", fontSize: 10, letterSpacing: ".06em",
-            background: "transparent", color: "#3A5A3A",
+            background: "transparent", color: "#1A2E1A",
             border: "1px solid #D8E8D8", borderRadius: 20, padding: "5px 12px",
           }}
         >{t.editFilters}</button>
@@ -418,7 +463,7 @@ export default function Dashboard({
         }}>
           <p style={{ fontSize: 13, fontWeight: 500, color: "#1A2E1A" }}>
             {selectedForCompare.size === 2 ? "Ready to compare." : t.compareSelect}
-            {" "}<span style={{ color: "#8A9A8A", fontSize: 12 }}>({selectedForCompare.size}/2)</span>
+            {" "}<span style={{ color: "#1A2E1A", fontSize: 12 }}>({selectedForCompare.size}/2)</span>
           </p>
           <button
             className="btn btn-primary btn-sm"
@@ -446,7 +491,7 @@ export default function Dashboard({
         }}>
           <div style={{
             fontFamily: "var(--font-data)", fontSize: 9, fontWeight: 700,
-            color: "#8A9A8A", letterSpacing: ".15em", textTransform: "uppercase", marginBottom: 8,
+            color: "#1A2E1A", letterSpacing: ".15em", textTransform: "uppercase", marginBottom: 8,
           }}>INTELLIGENCE</div>
           <p style={{
             fontFamily: "var(--font-prose)", fontSize: 13, color: "#1A2E1A",
@@ -456,7 +501,7 @@ export default function Dashboard({
             <button
               onClick={() => onDismissInsight?.(behavioralInsight.id)}
               style={{
-                fontFamily: "var(--font-data)", fontSize: 11, color: "#8A9A8A",
+                fontFamily: "var(--font-data)", fontSize: 11, color: "#1A2E1A",
                 background: "transparent", border: "1px solid #D8E8D8",
                 borderRadius: 20, padding: "5px 14px", cursor: "pointer",
               }}
@@ -464,7 +509,7 @@ export default function Dashboard({
             <button
               onClick={() => onActedOnInsight?.(behavioralInsight.id)}
               style={{
-                fontFamily: "var(--font-data)", fontSize: 11, color: "#3A5A3A",
+                fontFamily: "var(--font-data)", fontSize: 11, color: "#1A2E1A",
                 background: "#E0F0E0", border: "1px solid #C8E0C8",
                 borderRadius: 20, padding: "5px 14px", cursor: "pointer",
               }}
@@ -522,7 +567,7 @@ export default function Dashboard({
                         >
                           <div style={{
                             fontFamily: "var(--font-data)", fontSize: 9,
-                            letterSpacing: ".12em", color: "#4A7A4A", marginBottom: 5, textTransform: "uppercase",
+                            letterSpacing: ".12em", color: "#1A2E1A", marginBottom: 5, textTransform: "uppercase",
                           }}>
                             {opp.recommendation?.toUpperCase()} · {opp.company?.toUpperCase()}
                           </div>
@@ -531,7 +576,7 @@ export default function Dashboard({
                             fontWeight: 500, color: "#E8F0E8", lineHeight: 1.2, marginBottom: 3,
                           }}>{opp.role_title}</div>
                           <div style={{
-                            fontFamily: "var(--font-data)", fontSize: 11, color: "#5A8A5A", marginBottom: 14,
+                            fontFamily: "var(--font-data)", fontSize: 11, color: "#1A2E1A", marginBottom: 14,
                           }}>{opp.company}</div>
                           <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
                             <span style={{
@@ -548,14 +593,14 @@ export default function Dashboard({
                               {isApplied && (
                                 <span style={{
                                   fontFamily: "var(--font-data)", fontSize: 9,
-                                  background: "#253C25", color: "#5A8A5A",
+                                  background: "#253C25", color: "#1A2E1A",
                                   padding: "2px 10px", borderRadius: 20,
                                 }}>{STAGE_LABELS[status]}</span>
                               )}
                               {compareMode && (
                                 <div style={{
                                   width: 18, height: 18, borderRadius: 4,
-                                  border: `2px solid ${isSelected ? "#E8F0E8" : "#4A7A4A"}`,
+                                  border: `2px solid ${isSelected ? "#E8F0E8" : "#1A2E1A"}`,
                                   background: isSelected ? "#E8F0E8" : "transparent",
                                   display: "flex", alignItems: "center", justifyContent: "center",
                                 }}>
@@ -584,7 +629,7 @@ export default function Dashboard({
                       >
                         <div style={{
                           fontFamily: "var(--font-data)", fontSize: 9,
-                          letterSpacing: ".12em", color: "#8A9A8A", marginBottom: 5, textTransform: "uppercase",
+                          letterSpacing: ".12em", color: "#1A2E1A", marginBottom: 5, textTransform: "uppercase",
                         }}>
                           {opp.recommendation?.toUpperCase()} · {opp.company?.toUpperCase()}
                         </div>
@@ -593,7 +638,7 @@ export default function Dashboard({
                           fontWeight: 500, color: "#1A2E1A", lineHeight: 1.2, marginBottom: 3,
                         }}>{opp.role_title}</div>
                         <div style={{
-                          fontFamily: "var(--font-data)", fontSize: 11, color: "#8A9A8A", marginBottom: 14,
+                          fontFamily: "var(--font-data)", fontSize: 11, color: "#1A2E1A", marginBottom: 14,
                         }}>{opp.company}</div>
                         <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
                           <span style={{
@@ -690,7 +735,7 @@ export default function Dashboard({
                             color: "#1A2E1A", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
                           }}>{opp.role_title}</div>
                           <div style={{
-                            fontFamily: "var(--font-data)", fontSize: 10, color: "#8A9A8A", marginTop: 1,
+                            fontFamily: "var(--font-data)", fontSize: 10, color: "#1A2E1A", marginTop: 1,
                             whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
                           }}>{opp.company}</div>
                         </button>
@@ -710,7 +755,7 @@ export default function Dashboard({
                         aria-label={isEditing ? "Close status editor" : "Edit status"}
                         style={{
                           background: "none", border: "none", cursor: "pointer",
-                          color: "#8A9A8A", fontSize: 14, lineHeight: 1,
+                          color: "#1A2E1A", fontSize: 14, lineHeight: 1,
                           minWidth: 36, minHeight: 36,
                           display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
                         }}
@@ -736,7 +781,7 @@ export default function Dashboard({
                           border: "0.5px solid #D8E8D8",
                         }}>
                           <div style={{
-                            fontFamily: "var(--font-data)", fontSize: 9, color: "#8A9A8A",
+                            fontFamily: "var(--font-data)", fontSize: 9, color: "#1A2E1A",
                             letterSpacing: ".12em", textTransform: "uppercase", marginBottom: 8,
                           }}>Set status</div>
                           <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
@@ -748,7 +793,7 @@ export default function Dashboard({
                                 style={{
                                   fontFamily: "var(--font-data)", fontSize: 11, letterSpacing: ".06em",
                                   background: status === key ? (STAGE_STYLE[key]?.bg || "#E0F0E0") : "#F0F4F0",
-                                  color: status === key ? (STAGE_STYLE[key]?.color || "#2A5A2A") : "#5A6A5A",
+                                  color: status === key ? (STAGE_STYLE[key]?.color || "#2A5A2A") : "#1A2E1A",
                                   border: `0.5px solid ${status === key ? "transparent" : "#D8E8D8"}`,
                                   borderRadius: 20, padding: "4px 12px", cursor: "pointer",
                                   fontWeight: status === key ? 600 : 400,
@@ -795,7 +840,7 @@ export default function Dashboard({
                               onClick={() => { onUpdateStatus(opp.id, "withdrew"); setEditingStatusId(null); }}
                               style={{
                                 fontFamily: "var(--font-data)", fontSize: 11, letterSpacing: ".06em",
-                                background: "transparent", color: "#8A9A8A",
+                                background: "transparent", color: "#1A2E1A",
                                 border: "0.5px solid #D8E8D8",
                                 borderRadius: 20, padding: "4px 14px", cursor: "pointer",
                                 minHeight: 36, display: "inline-flex", alignItems: "center",
@@ -884,7 +929,7 @@ export default function Dashboard({
                         aria-label={`Mark ${opp.role_title} as applied`}
                         style={{
                           fontFamily: "var(--font-data)", fontSize: 11,
-                          color: "#8A9A8A", background: "transparent",
+                          color: "#1A2E1A", background: "transparent",
                           border: "1px solid #D8E8D8", borderRadius: 20,
                           padding: "3px 10px", cursor: "pointer",
                           display: "inline-flex", alignItems: "center",
@@ -916,7 +961,7 @@ export default function Dashboard({
           }}>
             <textarea
               value={inputVal}
-              onChange={e => { setInputVal(e.target.value); setFetchError(""); }}
+              onChange={e => { setInputVal(e.target.value); setFetchError(""); setUrlCleaned(false); }}
               placeholder="Paste a job description or drop a URL — Vetted handles both."
               maxLength={MAX_JD}
               rows={4}
@@ -931,11 +976,94 @@ export default function Dashboard({
                 boxSizing: "border-box", display: "block",
               }}
             />
+            {/* ── LinkedIn inline guide ── */}
+            {/* ── Auto-cleaned URL notice ── */}
+            {urlCleaned && !fetching && (
+              <div role="status" style={{
+                background: "#F0FDF4", border: "1px solid #BBF7D0",
+                borderRadius: 6, padding: "8px 12px", marginTop: 8,
+                display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8,
+              }}>
+                <span style={{ fontSize: 12, color: "#166534", lineHeight: 1.4 }}>
+                  ✓ Tracking params removed — fetching the clean URL
+                </span>
+                <button
+                  onClick={() => setUrlCleaned(false)}
+                  aria-label="Dismiss"
+                  style={{ background: "none", border: "none", cursor: "pointer", color: "#86EFAC", fontSize: 16, lineHeight: 1, padding: 0, flexShrink: 0 }}
+                >×</button>
+              </div>
+            )}
+
+            {linkedInGuide && (
+              <div role="alert" style={{
+                background: "#EFF6FF", border: "1px solid #BFDBFE",
+                borderRadius: 8, padding: "14px 16px", marginTop: 10,
+              }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
+                  <p style={{ fontSize: 13, fontWeight: 700, color: "#1E40AF", margin: 0 }}>
+                    LinkedIn blocks automated access — here's how to paste in 30 seconds:
+                  </p>
+                  <button
+                    onClick={() => setLinkedInGuide(false)}
+                    aria-label="Dismiss"
+                    style={{ background: "none", border: "none", cursor: "pointer", color: "#93C5FD", fontSize: 18, lineHeight: 1, padding: "0 0 0 8px", flexShrink: 0 }}
+                  >×</button>
+                </div>
+                <ol style={{ margin: 0, padding: "0 0 0 18px", display: "flex", flexDirection: "column", gap: 6 }}>
+                  <li style={{ fontSize: 13, color: "#1E3A8A", lineHeight: 1.5 }}>
+                    Open the LinkedIn job posting in your browser or app
+                  </li>
+                  <li style={{ fontSize: 13, color: "#1E3A8A", lineHeight: 1.5 }}>
+                    Scroll to <strong>"About the job"</strong> and tap <strong>"...more"</strong> to expand the full description
+                  </li>
+                  <li style={{ fontSize: 13, color: "#1E3A8A", lineHeight: 1.5 }}>
+                    <strong>iPhone/iPad:</strong> Long-press anywhere in the description until <strong>Copy | Share…</strong> appears — tap <strong>Copy</strong><br/>
+                    <strong>Mac/Windows:</strong> Highlight the description text, then <strong>Cmd+C</strong> (Mac) or <strong>Ctrl+C</strong> (Windows)
+                  </li>
+                  <li style={{ fontSize: 13, color: "#1E3A8A", lineHeight: 1.5 }}>
+                    Paste it here and hit Score
+                  </li>
+                </ol>
+                <p style={{ fontSize: 12, color: "#1E3A8A", margin: "10px 0 0", lineHeight: 1.5 }}>
+                  <strong>External apply role?</strong> Copy the company's career page URL (remove <code style={{ fontSize: 11, background: "#DBEAFE", borderRadius: 3, padding: "1px 4px" }}>?utm_source=linkedin</code> and any tracking params) and paste that URL instead — Vetted can fetch it directly.
+                </p>
+                <a
+                  href={`https://tryvettedai.com/blog/how-to-score-a-linkedin-job-posting${lang && lang !== "en" ? `?hl=${lang}` : ""}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ display: "inline-block", marginTop: 8, fontSize: 12, color: "#2563EB", textDecoration: "underline" }}
+                >
+                  Full step-by-step guide →
+                </a>
+              </div>
+            )}
+
             {fetchError && (
               <div role="alert" style={{
-                background: "#FEF2F2", color: "#C05050",
-                fontSize: 13, borderRadius: 6, padding: "8px 12px", marginTop: 8,
-              }}>{fetchError}</div>
+                background: "#FEF2F2", border: "1px solid #FECACA",
+                borderRadius: 6, padding: "10px 14px", marginTop: 8,
+              }}>
+                {isJsGatedAts(inputVal) ? (
+                  <>
+                    <p style={{ fontSize: 13, color: "#C05050", margin: "0 0 6px", fontWeight: 600 }}>
+                      This portal uses JavaScript and can't be fetched automatically.
+                    </p>
+                    <p style={{ fontSize: 12, color: "#9B2C2C", margin: 0, lineHeight: 1.5 }}>
+                      Open the role in your browser, copy the job description text, and paste it here instead.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p style={{ fontSize: 13, color: "#C05050", margin: "0 0 6px", fontWeight: 600 }}>
+                      Couldn't fetch this page automatically.
+                    </p>
+                    <p style={{ fontSize: 12, color: "#9B2C2C", margin: 0, lineHeight: 1.5 }}>
+                      Open the role in your browser, copy the job description text, and paste it here instead.
+                    </p>
+                  </>
+                )}
+              </div>
             )}
             {error && (
               <div role="alert" style={{
@@ -950,7 +1078,7 @@ export default function Dashboard({
               aria-busy={fetching}
               style={{ marginTop: 10, width: "100%", fontFamily: "var(--font-data)", letterSpacing: ".08em" }}
             >
-              {fetching ? "Fetching…" : isUrl(inputVal) ? "FETCH & ANALYZE" : t.btnScore}
+              {fetching ? "Fetching…" : isUrl(inputVal) && !isLinkedIn(inputVal) ? "FETCH & ANALYZE" : t.btnScore}
             </button>
           </div>
         )}
@@ -982,9 +1110,9 @@ export default function Dashboard({
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
                 <span style={{
                   fontFamily: "var(--font-data)", fontSize: 11,
-                  letterSpacing: ".18em", textTransform: "uppercase", color: "#8A9A8A",
+                  letterSpacing: ".18em", textTransform: "uppercase", color: "#1A2E1A",
                 }}>{guideStep + 1} of {GUIDE_SLIDES.length}</span>
-                <button onClick={closeGuide} aria-label="Close guide" style={{ background: "none", border: "none", cursor: "pointer", color: "#8A9A8A", fontSize: 20, lineHeight: 1, padding: 4 }}>✕</button>
+                <button onClick={closeGuide} aria-label="Close guide" style={{ background: "none", border: "none", cursor: "pointer", color: "#1A2E1A", fontSize: 20, lineHeight: 1, padding: 4 }}>✕</button>
               </div>
               <div style={{ textAlign: "center", marginBottom: 32 }}>
                 <div style={{
@@ -997,7 +1125,7 @@ export default function Dashboard({
                   color: "#1A2E1A", marginBottom: 12,
                 }}>{slide.title}</h3>
                 <p style={{
-                  fontFamily: "var(--font-prose)", fontSize: 15, color: "#5A6A5A",
+                  fontFamily: "var(--font-prose)", fontSize: 15, color: "#1A2E1A",
                   lineHeight: 1.7, maxWidth: 320, margin: "0 auto",
                 }}>{slide.body}</p>
               </div>

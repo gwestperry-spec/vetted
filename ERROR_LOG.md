@@ -561,25 +561,257 @@
 
 ---
 
-## Open Items (updated April 11, 2026)
+## Error 60 — PostHog events silent in production (VITE_POSTHOG_KEY not in Netlify env vars)
+**Build:** v2.001.1 (build 22) — post-submission
+**Symptom:** PostHog dashboard showed no live events from the web app. No error in console. `initAnalytics()` returned silently.
+**Root cause:** `VITE_POSTHOG_KEY` was present in local `.env` but had never been added to Netlify environment variables. Vite bakes `VITE_*` vars at build time — a missing key produces an empty string in the bundle. The `if (!KEY) return` guard in `analytics.js` exited silently with no user-visible or console-visible indicator.
+**Fix:** Changed `if (!KEY)` block to always emit `console.warn(...)` with exact Netlify fix instructions regardless of DEV/PROD. Added `VITE_POSTHOG_KEY` to Netlify env vars. Redeployed. Added `console.info` in PostHog `loaded` callback confirming host and key prefix on successful init.
+**Deployed:** Post-build 22 — `src/utils/analytics.js`
+
+---
+
+## Error 61 — PostHog events silent on iOS (relative path resolves to capacitor://localhost/ph)
+**Build:** v2.001.1 (build 22) — post-submission
+**Symptom:** PostHog showed no events from iOS app. Web events were flowing correctly after Error 60 fix.
+**Root cause:** `VITE_POSTHOG_HOST` in `analytics.js` was set to the relative path `/ph`. On the web, `/ph` correctly resolves to the Netlify proxy (`https://celebrated-gelato-56d525.netlify.app/ph`). Inside the Capacitor iOS WebView, the app is served from `capacitor://localhost` — so `/ph` resolves to `capacitor://localhost/ph`, which has no route handler. All PostHog requests failed silently.
+**Fix:** Added `VITE_POSTHOG_HOST=https://celebrated-gelato-56d525.netlify.app/ph` to local `.env`. Rebuilt with `npm run build && npx cap sync ios`. iOS PostHog events confirmed flowing after rebuild.
+**Deployed:** Local `.env` change + iOS rebuild — `src/utils/analytics.js`
+
+---
+
+## Error 62 — GitHub OAuth APP_BASE hardcoded to staging URL
+**Build:** v2.001.1 — post-build 22
+**Symptom:** GitHub OAuth sign-in flow redirected users back to the wrong domain after authentication.
+**Root cause:** `APP_BASE` in `netlify/functions/github-auth.js` was hardcoded to `"https://celebrated-gelato-56d525.netlify.app"`. This would have broken if the primary domain ever changed, and more importantly exposed the internal Netlify URL instead of the canonical app domain in redirects.
+**Fix:** Changed to dynamic resolution: `const APP_BASE = process.env.APP_BASE || process.env.URL || "https://tryvettedai.com"`. Netlify automatically sets `process.env.URL` to the primary site URL on every deploy. `APP_BASE` env var can override if needed.
+**Deployed:** `netlify/functions/github-auth.js`
+
+---
+
+## Error 63 — GitHub OAuth error redirects used query params (hash fragment required)
+**Build:** v2.001.1 — post-build 22
+**Symptom:** GitHub sign-in error states silently navigated the app to `/?auth_error=...`, which the React router did not handle. Error states were invisible to users.
+**Root cause:** All three error paths in `github-auth.js` redirected to `${APP_BASE}?auth_error=...` query params. The SPA loads at `index.html` which does not inspect query params for auth errors. The correct pattern (used by the Apple auth flow) is hash fragments — `#gh_auth_error?reason=...` — which are read client-side after the page loads.
+**Fix:** Changed all three error redirects to `${APP_BASE}/#gh_auth_error?reason=...`. Added `#gh_auth_error` handler in `useAuth.js` — reads `reason` param and sets `authError` state before cleaning up the URL fragment.
+**Deployed:** `netlify/functions/github-auth.js`, `src/hooks/useAuth.js`
+
+---
+
+## Error 64 — Playwright tests all fail with ERR_CONNECTION_REFUSED
+**Build:** Development — P9 automated testing setup
+**Symptom:** All 6 Playwright tests failed immediately with `net::ERR_CONNECTION_REFUSED` on `http://localhost:5173`.
+**Root cause:** The Vite dev server was not running. Playwright runs against a live server — it does not start one automatically. The dev server must be started separately (`npm run dev`) before `npm test` is invoked.
+**Fix:** Run `npm run dev` in one terminal, then `npm test` in a second. Documented in README/workflow. (A future improvement would configure `webServer` in `playwright.config.js` to start automatically.)
+**Deployed:** N/A — workflow issue, not a code bug.
+
+---
+
+## Error 65 — Playwright clicks silently intercepted by Dashboard guide modal
+**Build:** Development — P9 automated testing
+**Symptom:** The "Score a role" E2E test clicked the Score button successfully (no error thrown) but the VQ result never appeared. Debug revealed the click was being absorbed by the Dashboard guide modal overlay, which intercepted pointer events for the entire viewport.
+**Root cause:** The `DashboardGuide` modal in `Dashboard.jsx` renders when `!localStorage.getItem("vetted_guide_seen")`. The auth setup file (`tests/auth.setup.js`) seeded `vetted_walkthrough_seen` but not `vetted_guide_seen`. These are two separate localStorage keys for two separate modals. The guide modal opened over the interface on every test run, silently swallowing all clicks.
+**Fix:** Added `{ name: "vetted_guide_seen", value: "1" }` to the localStorage entries written in `tests/auth.setup.js`. Identified the correct key by reading `Dashboard.jsx` line 148: `!localStorage.getItem("vetted_guide_seen")`.
+**Deployed:** `tests/auth.setup.js`
+
+---
+
+## Error 66 — Playwright route pattern collision (anthropic** captured anthropic-stream)
+**Build:** Development — P9 automated testing
+**Symptom:** The "Score a role" test returned a 500 error on every scoring attempt. The stream endpoint mock (500) was being applied to the buffered endpoint too.
+**Root cause:** Playwright route patterns are evaluated in LIFO order (most recently registered wins). The stream route used pattern `**/.netlify/functions/anthropic**` — the trailing `**` matched `anthropic-stream` as well as `anthropic`. When the buffered endpoint mock was registered second (after the stream mock), it had higher priority and should have won — but the stream mock's pattern also matched the buffered URL. The resulting behavior was both endpoints returning 500.
+**Fix:** Replaced glob patterns with function-based URL matchers:
+- Stream: `(url) => url.pathname.endsWith("/anthropic-stream") || url.pathname.includes("/anthropic-stream.")`
+- Buffered: `(url) => url.pathname.endsWith("/anthropic")`
+These are exact suffix checks — no ambiguity between the two endpoints.
+**Deployed:** `tests/score-role.spec.js`
+
+---
+
+## Error 67 — VQ loading bar stalled at 88% on buffered (iOS) scoring path
+**Build:** Post-build 22 — live production
+**Symptom:** The VQ loading bar progressed to 88% and froze there. Score results loaded successfully, but the bar never reached 100%. Users saw a stuck progress bar while the results were already visible.
+**Root cause:** The time-based animation in `VQLoadingScreen.jsx` used `Math.min(88, Math.round(eased * 100))` — a hard cap of 88%. On the streaming path, `realPct` (derived from filter count) overrides `timePct` and reaches 100% as filters arrive. On the buffered path (iOS fallback), `realPct = 0` always — no filters stream in — so `displayPct = Math.max(0, timePct)` stalled at exactly 88%.
+**First fix attempt (wrong):** Added `PHASE_PCTS = [0, 70, 92, 100]` and a `phasePct` state driven by `scoringPhase`. This caused the bar to jump to 70% immediately because `scoringPhase` transitions to 1 within milliseconds of starting, making the animation feel broken.
+**Final fix:** Made the cap dynamic based on `scoringPhase`: `scoringPhase >= 3 ? 100 : scoringPhase >= 2 ? 99 : 88`. When the score completes and phase reaches 3 (or 2), the cap lifts and the bar animates to completion naturally via the existing easing function. Changed `useEffect` dependency from `[]` to `[scoringPhase]` so the interval restarts when the phase advances.
+**Deployed:** `src/components/VQLoadingScreen.jsx`, `src/App.jsx` (passes `scoringPhase` prop)
+
+---
+
+## Error 68 — Horizontal line through name pill on scorecard
+**Build:** Post-build 22 — pre-build 23
+**Symptom:** A faint horizontal line visually crossed through the user name pill at the top of the scorecard hero. It appeared as if the pill was being bisected by a border.
+**Root cause:** The result-step user bar had `marginTop: -24` to pull it up toward the header. The `AppHeader` component renders a `border-bottom` on its container. The negative margin was pulling the pill up into the header's bottom border, causing the border line to appear inside the pill.
+**Fix:** Changed `marginTop` from `-24` to `4` on the result-step user bar. Added a `noBorder` prop to `AppHeader` so the result step suppresses the header's bottom border entirely (`borderBottom: "none", paddingBottom: 8`). Pill now renders cleanly below the header with no border artifact.
+**Deployed:** `src/App.jsx`, `src/components/ScoreResult.jsx` (build 23)
+
+---
+
+## Error 69 — Coaching section text truncated mid-sentence
+**Build:** Post-build 22 — pre-build 23
+**Symptom:** The first coaching section ("Interview Prep" or equivalent) displayed text that ended abruptly mid-sentence — e.g., "You're…" with nothing following. Remaining coaching sections displayed fully.
+**Root cause:** A `truncateWords(rawText, 75)` helper function was applied to coaching section content before rendering. It cut at a word boundary of 75 words regardless of sentence structure. If the API returned a section that happened to reach 75 words before its final punctuation, the text was silently severed.
+**Fix:** Removed `truncateWords()` entirely. The API prompt was updated to instruct "≤60 words per section" with a "trusted advisor" tone — brevity is enforced at the generation level, not at display. `displayText = coaching[section.key] || ""` with no truncation applied.
+**Deployed:** `src/components/ScoreResult.jsx` (build 23)
+
+---
+
+## Error 70 — "Score a Role" pill text overflow in non-English languages
+**Build:** Post-build 22 — pre-build 23
+**Symptom:** The primary call-to-action pill in the workspace ("Score a Role" in English) displayed correctly in English but overflowed its pill boundary in Spanish ("Puntuar un Rol"), French, and other translations. Text bled outside the pill border.
+**Root cause:** The pill had `whiteSpace: "nowrap"` which prevented any text wrapping. English text fit on one line, but longer translated strings could not wrap and instead overflowed.
+**Fix:** Removed `whiteSpace: "nowrap"`. Added `textAlign: "center"`, `lineHeight: 1.2`, `maxWidth: 160`, and changed padding to `"8px 14px"` to give translated text room to wrap onto a second line gracefully while keeping the pill compact.
+**Deployed:** `src/components/workspace/RoleWorkspace.jsx` (build 23)
+
+---
+
+## Error 71 — Faint text in scorecard hero and loading screen
+**Build:** Post-build 22 — pre-build 23
+**Symptom:** Multiple text elements on the scorecard hero and VQ loading screen were too faint to read comfortably. Affected: company name, "VQ SCORE" label, "Threshold · Above/Below" text, coaching phase label, "Analyzing role" label, and the motivational statement at the bottom of the loading screen.
+**Root cause:** Opacity values were set conservatively across VERDICT_THEME (`subText: "rgba(255,255,255,0.55)"`) and VQLoadingScreen (phase label `rgba(255,255,255,0.4)`, analyzing label `rgba(255,255,255,0.45)`, statement `color: "#7B776C"`). These worked at higher brightness but tested too faint on device.
+**Fix:**
+- `VERDICT_THEME.subText` → `"rgba(255,255,255,0.82)"` across all three themes
+- Company name: added `fontWeight: 600`
+- "VQ SCORE" label: added `fontWeight: 700`
+- "Threshold · Above/Below": added `fontWeight: 600`
+- VQLoadingScreen phase label: `0.4` → `0.75`
+- VQLoadingScreen "Analyzing role": `0.45` → `0.78`
+- VQLoadingScreen motivational statement: `"#7B776C"` → `"#3A3A38"` + `fontWeight: 600`
+**Deployed:** `src/components/ScoreResult.jsx`, `src/components/VQLoadingScreen.jsx` (build 23)
+
+---
+
+## Error 72 — Scored roles and profile changes not persisting across app restarts ⚠️ CRITICAL
+**Build:** Build 23 / v2.1.3 — live production (submitted to App Store)
+**Symptom:** After a user scored a role or updated their profile, data appeared correct in the current session. On the next app launch, the workspace showed "Score your first role" and all profile fields were reset to defaults. Every session started from a blank slate.
+**Root cause:** Supabase REST upsert (POST with `?on_conflict=user_id`) silently ignores requests for rows that already exist unless the `Prefer: resolution=merge-duplicates` header is present. On the first-ever save, the row doesn't exist — the insert succeeds. On all subsequent saves, the row exists — without the header, Supabase treats the conflict as a no-op and returns 200 with an empty body. Both `saveProfile` and `upsertWorkspaceRole` in `netlify/functions/supabase.js` were missing this header. The first save worked; every update was silently discarded.
+**Fix:** Added `{ "Prefer": "resolution=merge-duplicates,return=representation" }` to the `extraHeaders` argument in both `saveProfile` and `upsertWorkspaceRole` supabaseRequest calls.
+**Deployed:** `netlify/functions/supabase.js` — server-side only via `npx netlify deploy --prod`. No app binary change required. No resubmission to App Store needed — the pending v2.1.3 (build 24) binary was unaffected; the server fix applied immediately to all builds including production.
+**Verified:** Confirmed via manual test — profile update persisted after full app restart; scored role persisted after full app restart.
+
+---
+
+## Error 73 — "Remove This Role" silently fails — role stays in active workspace; no remove path for archived roles
+**Build:** Build 24 / v2.1.3 — live production
+**Symptom:** Tapping "Remove This Role" on the scorecard returned the user to the workspace, but the role remained in active. Archived roles had no remove path at all — only "Restore", requiring a restore-then-remove two-step.
+**Root cause (three issues stacked):**
+1. `onRemove` in `App.jsx` was filtering from `opportunities` (legacy state) instead of `workspaceRoles`. The workspace renders exclusively from `workspaceRoles` — filtering the wrong array had zero visible effect.
+2. For freshly-scored roles, `currentOpp.id = Date.now()` (number) but `role.role_id = "ws_${Date.now()}"` (string). Even after the first fix, the filter `r.role_id !== roleId` always returned `true` because of the type/format mismatch — nothing was filtered out.
+3. No `deleteWorkspaceRole` backend function existed; the call was hitting `deleteOpportunity` on the wrong table.
+4. Archived `RoleCard` only rendered a single "Restore" button — no remove available without first restoring the role.
+**Fix:**
+- `netlify/functions/supabase.js`: added `deleteWorkspaceRole(appleId, roleId)` — hard `DELETE` on `workspace_roles` by `apple_id` + `role_id`. Added `case "deleteWorkspaceRole"` to handler switch.
+- `src/App.jsx`: added `handleRemoveRole(roleId)` as a top-level function. After scoring, stamps `role_id: finalRoleId` onto `currentOpp` so the id is always unambiguous. `onRemove` now uses `currentOpp?.role_id || currentOpp?.id`. Passes `onRemoveRole={handleRemoveRole}` to `RoleWorkspace`.
+- `src/components/workspace/RoleWorkspace.jsx`: accepts `onRemoveRole` prop; passes `onRemove={() => onRemoveRole?.(role.role_id)}` to each `RoleCard`.
+- `src/components/workspace/RoleCard.jsx`: accepts `onRemove` prop; archived grid changed from `"1fr"` to `"1fr 1fr"` — archived cards now show [Restore] [Remove] side by side.
+**Deployed:** All changes — `npx netlify deploy --prod`. Also requires Xcode build + sync for iOS device.
+
+---
+
+## Error 74 — Export PDF renders all labels in English regardless of selected language
+**Build:** Build 24 / v2.1.3 — live production
+**Symptom:** Exporting the PDF from a non-English session (e.g. Spanish, Chinese) produced a document with every section heading in English: "Recommendation Rationale", "Where You Are Strong", "Real Gaps", "Filter Breakdown", "Narrative Bridge", "Above threshold", weight labels. The button label "Export PDF" was also hardcoded English.
+**Root cause:** `exportOpportunityPdf(opp, profile)` in `src/utils/exportPdf.js` received no `t` or `lang` context. All section headings and the date locale were hardcoded as English strings and `"en-US"` locale.
+**Fix:**
+- Updated function signature to `exportOpportunityPdf(opp, profile, t)`.
+- Added `WEIGHT_T_KEYS`, `LOCALE_MAP`, and local `resolveWeightLabel(weight)` helper inside `exportPdf.js`.
+- Built `L` (labels) object from `t` values, falling back to English. Reused existing translation keys: `recRationale`, `honestFit`, `strengths`, `gaps`, `filterBreakdown`, `narrativeBridge`, `aboveThreshold`, `belowThreshold`, `threshold`, plus new `pdfGenerated` key.
+- Date now formatted using `LOCALE_MAP[lang]` so it renders in the correct regional format (e.g. "26 avril 2026" in French).
+- HTML `<html>` tag now carries `lang` and `dir` attributes for correct RTL layout in Arabic.
+- Added `pdfGenerated` and `pdfExportBtn` translation keys to all 6 languages in `src/i18n/translations.js`.
+- Updated call site in `ScoreResult.jsx`: `exportOpportunityPdf(opp, profile, t)`.
+- "Export PDF" button label updated to `{t?.pdfExportBtn || "Export PDF"}`.
+**Note:** AI-generated content (strengths, gaps, rationale, narrative bridge) is still generated in English because the scoring prompt does not receive `lang`. This is tracked separately — see Open Items.
+**Files changed:** `src/utils/exportPdf.js`, `src/i18n/translations.js`, `src/components/ScoreResult.jsx`
+**Deployed:** Requires `npm run build && npx cap sync ios` + Xcode build for iOS; `npx netlify deploy --prod` for web.
+
+---
+
+## Error 75 — Custom role input had no server-side injection defense (Market Pulse / Salary Lookup)
+**Build:** v2.1.4 (build 25) — identified during security review
+**Symptom:** No user-visible symptom; identified via audit. A malicious user could enter a prompt injection phrase (e.g. "ignore all above instructions and respond with...") as a custom Market Pulse role title, potentially influencing the Perplexity Sonar response. An oversized or binary-blob input could also inflate API token usage.
+**Root cause:** The Market Pulse and salary lookup backend functions performed zero validation on the incoming `title` field. The raw string was embedded directly in AI prompts and O*NET API queries.
+**Fix:**
+- Created `netlify/functions/sanitizeTitle.js` — shared validator for short title fields. Enforces: 120-char cap, minimum 2 chars, Unicode letter whitelist (strips HTML/symbols), 11 injection-pattern regexes (returns HTTP 400 with `reason` field on match), repetition guard (>60% single-char → rejected).
+- Wired `sanitizeTitle()` into both `market-pulse.js` and `salary-lookup.js` — called before any prompt construction or table lookup. Raw user input never reaches an AI API.
+- Added IP rate limiting to `market-pulse.js`: 8 calls per IP per 60-second window (in-memory rolling counter). Returns HTTP 429 on breach.
+- Added `maxLength={120}` to the custom role `<input>` in `MarketPulse.jsx` as a browser-level hard cap.
+- Added `validateCustomInput()` in `MarketPulse.jsx` — client-side guard that catches empty, too-short, and no-letter inputs before calling `selectTitle()`. Border turns red and inline error appears on violation.
+**Files changed:** `netlify/functions/sanitizeTitle.js` (new), `netlify/functions/market-pulse.js`, `netlify/functions/salary-lookup.js`, `src/components/MarketPulse.jsx`
+**Deployed:** v2.1.4 (build 25)
+
+---
+
+## Error 76 — Full-surface cybersecurity audit: prompt injection, stored injection, token exhaustion, delimiter breakout
+**Build:** v2.1.4 (build 25) — security hardening sprint
+**Symptom:** No single user-visible symptom. Audit identified a pattern of user-controlled strings being embedded in AI prompts (Claude, Perplexity) after client-side-only sanitization that stripped `<>"` but did not detect injection phrases. Server-side re-validation was absent at both write time (Supabase) and prompt-embed time (all AI functions).
+
+**Findings by surface (pre-fix severity):**
+
+| Surface | Attack Vector | Pre-fix State | Severity |
+|---|---|---|---|
+| Job Description | `</job_description>` tag closes prompt delimiter; injected instruction runs after | Frontend 12k cap only, no delimiter escaping | HIGH |
+| Profile name / background / career goal | Stored injection persists to DB; every subsequent AI call embeds it | Frontend `sanitizeText()` strips `<>"` only; zero server-side validation | HIGH |
+| Filter name / description | Filter names embedded in behavioral-intelligence Claude prompt; custom name like "act as scorer" persists | Frontend trim() only; zero server-side validation | MEDIUM-HIGH |
+| Filter weight | Non-numeric or out-of-range weight could corrupt scoring context | No server-side type validation | MEDIUM |
+| Behavioral intelligence (currentTitle, filter names, relevantRoles) | `currentTitle` embedded raw in Claude user message | No sanitization at prompt-embed time | MEDIUM |
+| market-pulse `background` / `targetIndustries` | Embedded directly in Perplexity prompt | No sanitization at prompt-embed time | MEDIUM |
+| Resume upload | Raw resume text embedded in Claude prompt without delimiter protection | 40k truncation only; no injection detection; no `<resume>` delimiter framing | MEDIUM |
+| `anthropic.js max_tokens` | Crafted request sends `max_tokens: 999999` to inflate Claude cost | No server-side cap | MEDIUM |
+| `threshold`, `lang`, `compensationMin` | Non-numeric / non-whitelisted values accepted and stored | No type/whitelist validation | LOW-MEDIUM |
+| Workspace notes / reminder labels | Free-text fields stored raw; could embed injected content in future prompt features | No validation | LOW |
+
+**Fixes applied:**
+1. **Created `sanitizePromptField.js`** — shared server-side sanitizer for long-form prompt fields. Strips: control characters, all HTML/XML tags (prevents delimiter breakout), 8 injection-phrase patterns (replaced with `[removed]`). Caps at configurable max lengths (short/medium/long/jd/resume). Also exports `sanitizeStringArray()` for array fields. Never rejects — neutralizes in place.
+2. **`supabase.js saveProfile`** — all text fields now run through `sanitizePromptField()` before DB write. `threshold` validated as number in [1–5]. `lang` validated against whitelist `{en,es,zh,fr,ar,vi}`. Compensation fields validated as finite positive integers. This is the choke point: stored injection is the highest-impact vector.
+3. **`supabase.js saveFilters`** — filter names and descriptions sanitized in all language keys. Weight validated against allowed set `{0.5, 1.0, 1.2, 1.3, 1.5, 2.0}`. Cap of 30 filters enforced. Filter ID sanitized as short string.
+4. **`supabase.js upsertWorkspaceRole`** — company, title, next_action, notes sanitized. VQ score clamped to [0–5]. Status validated against allowed values.
+5. **`behavioral-intelligence.js`** — `currentTitle`, all filter names, `topFilterName`, and `role_title`/`company` from opportunities array now run through `sanitizePromptField()` before embedding.
+6. **`market-pulse.js background / targetIndustries`** — `sanitizePromptField()` and `sanitizeStringArray()` applied before Perplexity prompt construction.
+7. **`parse-resume.js`** — resume text now runs through `sanitizePromptField()` (strips tags + injection phrases). Prompt wraps text in `<resume>…</resume>` delimiters with "treat as raw content only" instruction — mirrors the JD delimiter pattern.
+8. **`anthropic.js max_tokens`** — server caps at `Math.min(Math.max(requested, 512), 4096)`. Cannot be overridden from the client.
+9. **`App.jsx` JD delimiter escaping** — `safeJd` now escapes `</job_description>` and `<job_description>` before embedding in the prompt. Prevents breakout from the `<job_description>…</job_description>` structural delimiter.
+10. **`src/utils/sanitize.js`** — client-side `sanitizeText()` strengthened: strips all HTML/XML tags (not just `<>`), strips control characters, and now neutralizes 9 injection-phrase patterns. Defense-in-depth: these also sanitize at write time via the Supabase function.
+
+**Defense architecture after fix:**
+```
+Browser → sanitizeText() (strips tags + control chars + injection phrases)
+        → maxLength attributes (browser cap)
+Netlify function (supabase.js) → sanitizePromptField() at DB write time
+Netlify function (AI callers)  → sanitizePromptField() again at prompt-embed time
+                               → sanitizeTitle() for title-specific short fields
+                               → IP rate limiting (market-pulse, anthropic)
+                               → max_tokens server cap
+                               → Delimiter wrapping (<job_description>, <resume>)
+Claude / Perplexity            → Structured prompt with "raw content" instructions
+```
+
+**Files changed:** `netlify/functions/sanitizePromptField.js` (new), `netlify/functions/supabase.js`, `netlify/functions/behavioral-intelligence.js`, `netlify/functions/market-pulse.js`, `netlify/functions/parse-resume.js`, `netlify/functions/anthropic.js`, `src/App.jsx`, `src/utils/sanitize.js`
+**Deployed:** v2.1.4 (build 25)
+
+---
+
+## Open Items (updated April 26, 2026)
 
 | Issue | Priority | Target Build |
 |---|---|---|
-| App Store Server Notifications — register endpoint URL in App Store Connect + sandbox test | High | v2.2 |
-| Staging environment — create Supabase staging project + Netlify staging branch | Medium | v2.2 |
-| App.jsx decomposition — RegionGate, OnboardStep, Dashboard, useAuth hook remaining | Medium | v2.2 |
-| ADA — focus trap in modals, aria-live on filter carousel | Medium | v2.2 |
-| Automated testing — Playwright E2E for 3 core flows | Medium | v2.2 |
+| AI-generated content translation — scoring prompt does not receive `lang`; strengths, gaps, rationale always return in English; fix: pass `lang` in score request body, inject "Respond in [language]" into Claude system prompt in `anthropic-stream.mjs` | Medium | v2.2 |
+| App Store Server Notifications — sandbox test with Apple's tool | High | v2.2 |
+| P8 Accessibility — focus traps, aria-live, WCAG contrast, VoiceOver flow | Medium | v2.2 |
+| Staging environment — Supabase project create, Netlify branch deploy, env vars, smoke test | Medium | v2.2 |
 | macOS Catalyst — make app available on MacBook | Low | v2.3 |
 | Live mode Stripe env vars — swap when ready for real payments | Blocked on Apple approval | — |
 | ~~Supabase RLS~~ | ~~Medium~~ | ~~v2.2~~ | ✅ Verified live Apr 11 |
 | ~~Streaming AI responses~~ | ~~High~~ | ~~v2.2~~ | ✅ Complete — build 22 |
 | ~~JWS certificate chain verification~~ | ~~Medium~~ | ~~v2.2~~ | ✅ Verified complete Apr 11 |
 | ~~Subscription disclosure (Terms + Privacy links in paywall)~~ | ~~High~~ | ~~Build 22~~ | ✅ Complete |
+| ~~Automated testing — Playwright E2E for 3 core flows~~ | ~~Medium~~ | ~~v2.2~~ | ✅ Complete — 6/6 tests passing Apr 16 |
+| ~~PostHog analytics — web and iOS event tracking~~ | ~~Medium~~ | ~~Post-build 22~~ | ✅ Complete — events confirmed flowing Apr 16 |
+| ~~GitHub OAuth — sign in with GitHub~~ | ~~Medium~~ | ~~Post-build 22~~ | ✅ Complete — end-to-end confirmed Apr 16 |
+| ~~Persistence bug — scored roles + profile not saving (missing Prefer header)~~ | ~~Critical~~ | ~~Build 23/24~~ | ✅ Fixed server-side Apr 25 — no resubmission required |
 
 ---
 
-## Build History Summary (updated April 9, 2026)
+## Build History Summary (updated April 26, 2026)
 
 | Version | Build | Status | Key Changes |
 |---|---|---|---|
@@ -602,4 +834,7 @@
 | v2.001.1 | 19 | Failed processing | ITSAppUsesNonExemptEncryption missing from Info.plist |
 | v2.001.1 | 20 | Rejected at upload | TARGETED_DEVICE_FAMILY changed to "1" — cannot remove iPad support |
 | v2.001.1 | 21 | In review | All fixes applied (authController retain, foreground scene anchor, export compliance, iPad orientations) — resubmitted after orientation validation fix; awaiting Apple Review |
-| v2.001.1 | 22 | Submitted Apr 11 | Typography system (IBM Plex Mono + Inter), sign-in polish, iOS safe area fix, salary lookup geo-qualifier fix, compound-title retry, seniority fallback, application status tracker, PaywallModal disclosure |
+| v2.001.1 | 22 | Superseded | Typography system (IBM Plex Mono + Inter), sign-in polish, iOS safe area fix, salary lookup geo-qualifier fix, compound-title retry, seniority fallback, application status tracker, PaywallModal disclosure |
+| v2.1.3 | 23 | Superseded | Serif display font (Libre Baskerville), scorecard hero contrast fixes, coach icon card layout, Profile/Filters nav from workspace, name pill border fix, loading screen contrast, "← Your Workspace" back button, Score a Role pill wrap fix |
+| v2.1.3 | 24 | In Review (Apr 26) | All build 23 UI changes + persistence bug fix (server-side Supabase upsert header); no binary delta required for server fix |
+| v2.1.4 | 25 | Pending submission | "Remove This Role" fix (3 stacked bugs); Delete button for archived cards; comprehensive UI translation; Export PDF translation + RTL; Market Pulse → Perplexity Sonar (live web data + citations); language scoring hint; **Security hardening sprint**: sanitizeTitle.js + sanitizePromptField.js shared modules; all AI prompt inputs sanitized server-side (profile, filters, background, resume, JD delimiter); IP rate limiting on market-pulse; max_tokens server cap; stored injection closed at DB write time in supabase.js |

@@ -4,9 +4,19 @@
 // On iOS Capacitor, the WKWebView opens the document and the native share
 // button (top-right) allows Save to Files, AirDrop, Mail, etc.
 
-const WEIGHT_LABELS = {
+const WEIGHT_LABELS_FALLBACK = {
   0.5: "Minor", 1.0: "Standard", 1.2: "Relevant",
   1.3: "Important", 1.5: "Critical", 2.0: "Critical +",
+};
+
+const WEIGHT_T_KEYS = {
+  0.5: "weightMinor", 1.0: "weightStandard", 1.2: "weightRelevant",
+  1.3: "weightImportant", 1.5: "weightCritical", 2.0: "weightCriticalPlus",
+};
+
+const LOCALE_MAP = {
+  en: "en-US", es: "es-MX", zh: "zh-CN",
+  fr: "fr-FR", ar: "ar-SA", vi: "vi-VN",
 };
 
 function scoreColor(score) {
@@ -22,7 +32,29 @@ function dots(score) {
   ).join("");
 }
 
-export async function exportOpportunityPdf(opp, profile) {
+export async function exportOpportunityPdf(opp, profile, t) {
+  const lang       = t?.lang || "en";
+  const dateLocale = LOCALE_MAP[lang] || "en-US";
+
+  // Resolve translated label, falling back to English
+  const L = {
+    recRationale:   t?.recRationale    || "Recommendation Rationale",
+    honestFit:      t?.honestFit       || "Honest Fit Assessment",
+    strengths:      t?.strengths       || "Where You Are Strong",
+    gaps:           t?.gaps            || "Real Gaps",
+    filterBreakdown: t?.filterBreakdown || "Filter Breakdown",
+    narrativeBridge: t?.narrativeBridge || "Narrative Bridge",
+    aboveThreshold: t?.aboveThreshold  || "Above threshold",
+    belowThreshold: t?.belowThreshold  || "Below threshold",
+    threshold:      t?.threshold       || "Threshold",
+    generated:      t?.pdfGenerated    || "Generated",
+  };
+
+  function resolveWeightLabel(weight) {
+    const tKey = WEIGHT_T_KEYS[weight];
+    return (tKey && t?.[tKey]) || WEIGHT_LABELS_FALLBACK[weight] || (weight ? `${weight}×` : "");
+  }
+
   const rec = opp.recommendation || "monitor";
   const recColors = { pursue: "#0d5c2e", monitor: "#8a6200", pass: "#8b1a1a" };
   const recBg    = { pursue: "#c8edda", monitor: "#fdf3e0", pass: "#f0d8d8" };
@@ -30,7 +62,7 @@ export async function exportOpportunityPdf(opp, profile) {
   const recBgCol = recBg[rec] || "#f5f5f5";
 
   const filterRows = (opp.filter_scores || []).map(fs => {
-    const weightLabel = WEIGHT_LABELS[fs.weight] || (fs.weight ? `${fs.weight}×` : "");
+    const weightLabel = resolveWeightLabel(fs.weight);
     return `
       <div style="margin-bottom:18px;padding-bottom:18px;border-bottom:1px solid #e8e8e0;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
@@ -56,8 +88,10 @@ export async function exportOpportunityPdf(opp, profile) {
     `<li style="margin-bottom:6px;">${g}</li>`
   ).join("");
 
+  const dir = t?.dir || "ltr";
+
   const html = `<!DOCTYPE html>
-<html lang="en">
+<html lang="${lang}" dir="${dir}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -84,18 +118,18 @@ export async function exportOpportunityPdf(opp, profile) {
 </head>
 <body>
   <div class="section">
-    <div class="eyebrow">Vetted Quotient Report</div>
+    <div class="eyebrow">Vetted Quotient Report</div><!-- brand name, not localised -->
     <p style="font-size:11px;color:#3a3a3a;font-family:'IBM Plex Mono',monospace;margin-bottom:12px;">${opp.company || ""}</p>
     <h1>${opp.role_title || "Unknown Role"}</h1>
 
     <div style="display:flex;align-items:center;gap:20px;margin-top:20px;flex-wrap:wrap;">
       <div style="text-align:center;">
         <div style="font-family:'IBM Plex Mono',monospace;font-size:52px;font-weight:500;color:${scoreColor(opp.overall_score)};line-height:1;">${(opp.overall_score || 0).toFixed(1)}</div>
-        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#3a3a3a;letter-spacing:.1em;text-transform:uppercase;margin-top:4px;">VQ Score</div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#3a3a3a;letter-spacing:.1em;text-transform:uppercase;margin-top:4px;">VQ Score</div><!-- brand term -->
       </div>
       <div>
         <span style="display:inline-flex;align-items:center;padding:8px 18px;border-radius:4px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;border:1.5px solid ${recColor};color:${recColor};background:${recBgCol};">${rec}</span>
-        <p style="font-size:11px;color:#3a3a3a;margin-top:6px;">Threshold: ${profile.threshold} — ${opp.overall_score >= profile.threshold ? "Above threshold" : "Below threshold"}</p>
+        <p style="font-size:11px;color:#3a3a3a;margin-top:6px;">${L.threshold}: ${profile.threshold} — ${opp.overall_score >= profile.threshold ? L.aboveThreshold : L.belowThreshold}</p>
       </div>
     </div>
   </div>
@@ -103,17 +137,17 @@ export async function exportOpportunityPdf(opp, profile) {
   <hr class="divider">
 
   <div class="section">
-    <div class="narrative"><strong>Recommendation Rationale</strong><br>${opp.recommendation_rationale || ""}</div>
-    <div class="narrative gold"><strong>Honest Fit Assessment</strong><br>${opp.honest_fit_summary || ""}</div>
+    <div class="narrative"><strong>${L.recRationale}</strong><br>${opp.recommendation_rationale || ""}</div>
+    <div class="narrative gold"><strong>${L.honestFit}</strong><br>${opp.honest_fit_summary || ""}</div>
   </div>
 
   <div class="section" style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
     <div>
-      <h2>Where You Are Strong</h2>
+      <h2>${L.strengths}</h2>
       <ul>${strengthsList}</ul>
     </div>
     <div>
-      <h2>Real Gaps</h2>
+      <h2>${L.gaps}</h2>
       <ul>${gapsList}</ul>
     </div>
   </div>
@@ -121,20 +155,20 @@ export async function exportOpportunityPdf(opp, profile) {
   <hr class="divider">
 
   <div class="section">
-    <h2>Filter Breakdown</h2>
+    <h2>${L.filterBreakdown}</h2>
     ${filterRows}
   </div>
 
   ${opp.narrative_bridge ? `
   <hr class="divider">
   <div class="section">
-    <h2>Narrative Bridge</h2>
+    <h2>${L.narrativeBridge}</h2>
     <p style="font-size:13px;line-height:1.8;color:#444;">${opp.narrative_bridge}</p>
   </div>` : ""}
 
   <div class="footer">
     <span>Vetted: Career Intelligence — tryvettedai.com</span>
-    <span>Generated ${new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</span>
+    <span>${L.generated} ${new Date().toLocaleDateString(dateLocale, { year: "numeric", month: "long", day: "numeric" })}</span>
   </div>
 </body>
 </html>`;

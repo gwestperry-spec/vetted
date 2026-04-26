@@ -33,14 +33,29 @@
       font-src 'self' https://fonts.gstatic.com;
       connect-src 'self'
         https://celebrated-gelato-56d525.netlify.app
-        https://appleid.apple.com
-        https://api.allorigins.win;
+        https://appleid.apple.com;
       img-src 'self' data: https://images.unsplash.com;
       frame-src 'none';
       object-src 'none';
       base-uri 'self';
       form-action 'self';
     """
+
+# ── Cache-Control: HTML always revalidated, hashed assets cached forever ──────
+[[headers]]
+  for = "/*.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/blog/*"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
 
 # ── Function-specific headers ─────────────────────────────────────────────
 [[headers]]
@@ -66,6 +81,9 @@
 
 [functions."behavioral-intelligence"]
   timeout = 30
+
+[functions."fetch-jd"]
+  timeout = 20
 
 # ── Staging context ───────────────────────────────────────────────────────────
 # Deploy the `staging` branch to a separate Netlify environment with its own
@@ -128,3 +146,10 @@
   to = "https://us.i.posthog.com/:splat"
   status = 200
   force = true
+
+# ── SPA fallback — serves index.html for all React routes ─────────────────────
+# Must be last so static files (blog HTML, sitemap, robots.txt) are served first.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

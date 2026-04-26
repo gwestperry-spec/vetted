@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Font Comparison — Inter vs Libre Baskerville</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #E8EDE8;
+    padding: 32px 24px 48px;
+    min-height: 100vh;
+  }
+
+  /* ── Page header ── */
+  .page-header {
+    text-align: center;
+    margin-bottom: 28px;
+    font-family: 'Inter', sans-serif;
+  }
+  .page-header h1 {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: #1A2E1A;
+    margin-bottom: 6px;
+  }
+  .page-header p {
+    font-size: 11px;
+    color: #4A6A4A;
+    letter-spacing: .06em;
+  }
+
+  /* ── Two-column layout ── */
+  .compare-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    max-width: 880px;
+    margin: 0 auto;
+  }
+
+  /* ── Column label ── */
+  .col-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: #27500A;
+    background: #EAF3DE;
+    border: 1px solid #C8DDB8;
+    border-radius: 4px;
+    padding: 6px 12px;
+    text-align: center;
+    margin-bottom: 12px;
+  }
+
+  /* ── Card shell ── */
+  .card {
+    background: #fff;
+    border: 1px solid #E0E8E0;
+    border-left: 4px solid #3A7A3A;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 14px;
+    box-shadow: 0 1px 4px rgba(26,46,26,0.06);
+  }
+
+  /* ── Hero block ── */
+  .hero {
+    background: #1A3A1A;
+    padding: 14px 18px 16px;
+    text-align: center;
+    position: relative;
+  }
+  .hero-eyebrow {
+    font-size: 8px;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.5);
+    margin-bottom: 2px;
+  }
+  .hero-score {
+    font-size: 44px;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1;
+    margin-bottom: 3px;
+  }
+  .hero-sub {
+    font-size: 8px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.35);
+  }
+
+  /* ── Title block ── */
+  .title-block {
+    padding: 11px 16px 10px;
+    border-bottom: 1px solid #EEF4EE;
+    text-align: center;
+  }
+  .role-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #1A2E1A;
+    margin-bottom: 3px;
+    line-height: 1.25;
+  }
+  .company-name {
+    font-size: 12px;
+    color: #4A6A4A;
+  }
+
+  /* ── Buttons row ── */
+  .btn-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    border-top: 1px solid #EEF4EE;
+  }
+  .action-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    padding: 10px 4px;
+    border: none;
+    border-right: 1px solid #EEF4EE;
+    background: #F8FAF8;
+    cursor: pointer;
+    min-height: 44px;
+  }
+  .action-btn:last-child { border-right: none; }
+  .action-btn.primary { background: #EAF3DE; }
+  .action-btn .btn-icon { font-size: 13px; }
+  .action-btn .btn-label {
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: #1A2E1A;
+  }
+  .action-btn.primary .btn-label { color: #1A3A1A; }
+
+  /* ── Score result hero ── */
+  .result-hero {
+    background: #1A3A1A;
+    border-left: 4px solid #3A7A3A;
+    padding: 14px 18px 18px;
+    margin-bottom: 0;
+    border-radius: 8px 8px 0 0;
+  }
+  .result-back {
+    font-size: 8px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.4);
+    margin-bottom: 10px;
+  }
+  .result-company {
+    font-size: 8px;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.5);
+    margin-bottom: 3px;
+  }
+  .result-role {
+    font-size: 16px;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1.25;
+    margin-bottom: 14px;
+  }
+  .result-score-row {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+  .result-score-num {
+    font-size: 52px;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1;
+  }
+  .result-score-label {
+    font-size: 8px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.4);
+    margin-bottom: 4px;
+  }
+  .verdict-pill {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: #fff;
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 20px;
+    padding: 5px 14px;
+    margin-bottom: 6px;
+  }
+  .threshold-line {
+    font-size: 8px;
+    color: rgba(255,255,255,0.4);
+    letter-spacing: .06em;
+  }
+
+  /* ── Tab bar ── */
+  .tab-bar {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    border-bottom: 1px solid #D8E8D8;
+    background: #fff;
+  }
+  .tab {
+    padding: 12px 4px;
+    border: none;
+    background: none;
+    font-size: 8px;
+    font-weight: 400;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: #4A6A4A;
+    border-bottom: 2px solid transparent;
+    text-align: center;
+    cursor: pointer;
+  }
+  .tab.active {
+    font-weight: 700;
+    color: #1A2E1A;
+    border-bottom-color: #3A7A3A;
+  }
+
+  /* ── Insight sections ── */
+  .insights-wrap {
+    background: #fff;
+    border: 1px solid #E0E8E0;
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    padding: 14px 14px 16px;
+    margin-bottom: 14px;
+  }
+  .insight-label-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .insight-label {
+    font-size: 7.5px;
+    font-weight: 700;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: #27500A;
+    white-space: nowrap;
+  }
+  .insight-divider {
+    flex: 1;
+    height: 0.5px;
+    background: #C8DDB8;
+  }
+  .insight-text {
+    font-size: 12px;
+    line-height: 1.7;
+    color: #1A2E1A;
+    background: #F8FAF8;
+    border-radius: 6px;
+    padding: 10px 12px;
+    margin-bottom: 12px;
+  }
+  .insight-item {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    background: #F6FAF0;
+    border-left: 2px solid #3A7A3A;
+    border-radius: 5px;
+    padding: 8px 10px;
+    margin-bottom: 6px;
+  }
+  .insight-item .check {
+    color: #3A7A3A;
+    font-weight: 700;
+    font-size: 12px;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .insight-item span {
+    font-size: 12px;
+    line-height: 1.65;
+    color: #1A3A1A;
+  }
+
+  /* ── Filter card ── */
+  .filter-card {
+    background: #F6FAF0;
+    border: 1px solid #C8DDB8;
+    border-left: 3px solid #3A7A3A;
+    border-radius: 7px;
+    padding: 10px 12px;
+    margin-bottom: 7px;
+  }
+  .filter-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 7px;
+  }
+  .filter-name {
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+    color: #1A2E1A;
+  }
+  .filter-score {
+    font-size: 18px;
+    font-weight: 700;
+    color: #3A7A3A;
+    line-height: 1;
+  }
+  .filter-bar-track {
+    height: 3px;
+    background: rgba(0,0,0,0.08);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 7px;
+  }
+  .filter-bar-fill {
+    height: 100%;
+    background: #3A7A3A;
+    border-radius: 2px;
+  }
+  .filter-rationale {
+    font-size: 11px;
+    line-height: 1.65;
+    color: #1A2E1A;
+  }
+
+  /* ── FONT VARIANTS ────────────────────────────────────────────────── */
+
+  /* Option A: Inter — everything */
+  .font-inter .hero-eyebrow,
+  .font-inter .hero-score,
+  .font-inter .hero-sub,
+  .font-inter .role-title,
+  .font-inter .company-name,
+  .font-inter .btn-label,
+  .font-inter .result-back,
+  .font-inter .result-company,
+  .font-inter .result-role,
+  .font-inter .result-score-num,
+  .font-inter .result-score-label,
+  .font-inter .verdict-pill,
+  .font-inter .threshold-line,
+  .font-inter .tab,
+  .font-inter .insight-label,
+  .font-inter .insight-text,
+  .font-inter .insight-item span,
+  .font-inter .filter-name,
+  .font-inter .filter-score,
+  .font-inter .filter-rationale {
+    font-family: 'Inter', sans-serif;
+  }
+
+  /* Option B: Libre Baskerville — everything */
+  .font-libre .hero-eyebrow,
+  .font-libre .hero-sub,
+  .font-libre .company-name,
+  .font-libre .btn-label,
+  .font-libre .result-back,
+  .font-libre .result-company,
+  .font-libre .result-score-label,
+  .font-libre .threshold-line,
+  .font-libre .tab,
+  .font-libre .insight-label,
+  .font-libre .filter-name {
+    font-family: 'Libre Baskerville', serif;
+    letter-spacing: .04em; /* serifs need less tracking */
+  }
+
+  .font-libre .hero-score,
+  .font-libre .result-score-num,
+  .font-libre .filter-score {
+    font-family: 'Libre Baskerville', serif;
+  }
+
+  .font-libre .role-title,
+  .font-libre .result-role,
+  .font-libre .verdict-pill,
+  .font-libre .insight-text,
+  .font-libre .insight-item span,
+  .font-libre .filter-rationale {
+    font-family: 'Libre Baskerville', serif;
+  }
+
+  /* Slight size bumps for serif legibility */
+  .font-libre .insight-text { font-size: 12.5px; line-height: 1.8; }
+  .font-libre .insight-item span { font-size: 12.5px; }
+  .font-libre .filter-rationale { font-size: 11.5px; line-height: 1.7; }
+  .font-libre .result-role { font-size: 15px; }
+  .font-libre .role-title { font-size: 14.5px; }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <h1>Font Direction — Choose One</h1>
+  <p>Same components, same weights, same content — only the typeface changes</p>
+</div>
+
+<div class="compare-grid">
+
+  <!-- ── OPTION A: Inter ─────────────────────────────────────────────── -->
+  <div class="font-inter">
+    <div class="col-label">Option A · Inter (Sans-Serif)</div>
+
+    <!-- Workspace role card -->
+    <div class="card">
+      <div class="hero">
+        <p class="hero-eyebrow">PURSUE</p>
+        <p class="hero-score">4.2</p>
+        <p class="hero-sub">VQ SCORE</p>
+      </div>
+      <div class="title-block">
+        <p class="role-title">VP of Product</p>
+        <p class="company-name">Acme Corp · View ↗</p>
+      </div>
+      <div class="btn-row">
+        <div class="action-btn primary">
+          <span class="btn-icon">▶</span>
+          <span class="btn-label">Review</span>
+        </div>
+        <div class="action-btn">
+          <span class="btn-icon">🔔</span>
+          <span class="btn-label">Remind</span>
+        </div>
+        <div class="action-btn">
+          <span class="btn-icon">📁</span>
+          <span class="btn-label">Archive</span>
+        </div>
+        <div class="action-btn">
+          <span class="btn-icon">◎</span>
+          <span class="btn-label">I Applied</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Score result view -->
+    <div class="result-hero">
+      <p class="result-back">← Workspace</p>
+      <p class="result-company">ACME CORP</p>
+      <p class="result-role">VP of Product</p>
+      <div class="result-score-row">
+        <div>
+          <p class="result-score-label">VQ SCORE</p>
+          <p class="result-score-num">4.2</p>
+        </div>
+        <div style="text-align:right">
+          <p class="verdict-pill">PURSUE</p>
+          <p class="threshold-line">THRESHOLD 3.5 · ABOVE</p>
+        </div>
+      </div>
+    </div>
+    <div class="tab-bar">
+      <div class="tab active">INSIGHTS</div>
+      <div class="tab">FILTERS</div>
+      <div class="tab">COACH</div>
+      <div class="tab">STATUS</div>
+    </div>
+    <div class="insights-wrap">
+      <div class="insight-label-row">
+        <span class="insight-label">RECOMMENDATION RATIONALE</span>
+        <div class="insight-divider"></div>
+      </div>
+      <p class="insight-text">Strong scope with direct P&amp;L ownership and CEO reporting line. Equity terms are unspecified but the leadership access alone warrants serious consideration.</p>
+
+      <div class="insight-label-row">
+        <span class="insight-label">WHERE YOU ARE STRONG</span>
+        <div class="insight-divider"></div>
+      </div>
+      <div class="insight-item">
+        <span class="check">✓</span>
+        <span>CEO reporting line positions you for executive-level influence immediately</span>
+      </div>
+      <div class="insight-item">
+        <span class="check">✓</span>
+        <span>Clear P&amp;L ownership matches your stated career goal</span>
+      </div>
+
+      <!-- Filter card -->
+      <div style="margin-top:10px">
+        <div class="insight-label-row">
+          <span class="insight-label">FILTERS</span>
+          <div class="insight-divider"></div>
+        </div>
+        <div class="filter-card">
+          <div class="filter-header">
+            <span class="filter-name">Financial Accountability · Critical</span>
+            <span class="filter-score">4</span>
+          </div>
+          <div class="filter-bar-track">
+            <div class="filter-bar-fill" style="width:80%"></div>
+          </div>
+          <p class="filter-rationale">Budget owner with full P&amp;L responsibility stated explicitly in the job description.</p>
+        </div>
+        <div class="filter-card" style="background:#FAFAE8;border-color:#D8C870;border-left-color:#B8A030;">
+          <div class="filter-header">
+            <span class="filter-name">Clear Success Measures · Important</span>
+            <span class="filter-score" style="color:#B8A030;">3</span>
+          </div>
+          <div class="filter-bar-track">
+            <div class="filter-bar-fill" style="width:60%;background:#B8A030;"></div>
+          </div>
+          <p class="filter-rationale">Metrics referenced but not quantified — growth targets and KPIs absent from posting.</p>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /Option A -->
+
+  <!-- ── OPTION B: Libre Baskerville ────────────────────────────────── -->
+  <div class="font-libre">
+    <div class="col-label">Option B · Libre Baskerville (Serif)</div>
+
+    <!-- Workspace role card -->
+    <div class="card">
+      <div class="hero">
+        <p class="hero-eyebrow">PURSUE</p>
+        <p class="hero-score">4.2</p>
+        <p class="hero-sub">VQ SCORE</p>
+      </div>
+      <div class="title-block">
+        <p class="role-title">VP of Product</p>
+        <p class="company-name">Acme Corp · View ↗</p>
+      </div>
+      <div class="btn-row">
+        <div class="action-btn primary">
+          <span class="btn-icon">▶</span>
+          <span class="btn-label">Review</span>
+        </div>
+        <div class="action-btn">
+          <span class="btn-icon">🔔</span>
+          <span class="btn-label">Remind</span>
+        </div>
+        <div class="action-btn">
+          <span class="btn-icon">📁</span>
+          <span class="btn-label">Archive</span>
+        </div>
+        <div class="action-btn">
+          <span class="btn-icon">◎</span>
+          <span class="btn-label">I Applied</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Score result view -->
+    <div class="result-hero">
+      <p class="result-back">← Workspace</p>
+      <p class="result-company">ACME CORP</p>
+      <p class="result-role">VP of Product</p>
+      <div class="result-score-row">
+        <div>
+          <p class="result-score-label">VQ SCORE</p>
+          <p class="result-score-num">4.2</p>
+        </div>
+        <div style="text-align:right">
+          <p class="verdict-pill">PURSUE</p>
+          <p class="threshold-line">THRESHOLD 3.5 · ABOVE</p>
+        </div>
+      </div>
+    </div>
+    <div class="tab-bar">
+      <div class="tab active">INSIGHTS</div>
+      <div class="tab">FILTERS</div>
+      <div class="tab">COACH</div>
+      <div class="tab">STATUS</div>
+    </div>
+    <div class="insights-wrap">
+      <div class="insight-label-row">
+        <span class="insight-label">RECOMMENDATION RATIONALE</span>
+        <div class="insight-divider"></div>
+      </div>
+      <p class="insight-text">Strong scope with direct P&amp;L ownership and CEO reporting line. Equity terms are unspecified but the leadership access alone warrants serious consideration.</p>
+
+      <div class="insight-label-row">
+        <span class="insight-label">WHERE YOU ARE STRONG</span>
+        <div class="insight-divider"></div>
+      </div>
+      <div class="insight-item">
+        <span class="check">✓</span>
+        <span>CEO reporting line positions you for executive-level influence immediately</span>
+      </div>
+      <div class="insight-item">
+        <span class="check">✓</span>
+        <span>Clear P&amp;L ownership matches your stated career goal</span>
+      </div>
+
+      <!-- Filter card -->
+      <div style="margin-top:10px">
+        <div class="insight-label-row">
+          <span class="insight-label">FILTERS</span>
+          <div class="insight-divider"></div>
+        </div>
+        <div class="filter-card">
+          <div class="filter-header">
+            <span class="filter-name">Financial Accountability · Critical</span>
+            <span class="filter-score">4</span>
+          </div>
+          <div class="filter-bar-track">
+            <div class="filter-bar-fill" style="width:80%"></div>
+          </div>
+          <p class="filter-rationale">Budget owner with full P&amp;L responsibility stated explicitly in the job description.</p>
+        </div>
+        <div class="filter-card" style="background:#FAFAE8;border-color:#D8C870;border-left-color:#B8A030;">
+          <div class="filter-header">
+            <span class="filter-name">Clear Success Measures · Important</span>
+            <span class="filter-score" style="color:#B8A030;">3</span>
+          </div>
+          <div class="filter-bar-track">
+            <div class="filter-bar-fill" style="width:60%;background:#B8A030;"></div>
+          </div>
+          <p class="filter-rationale">Metrics referenced but not quantified — growth targets and KPIs absent from posting.</p>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /Option B -->
+
+</div><!-- /compare-grid -->
+
+</body>
+</html>

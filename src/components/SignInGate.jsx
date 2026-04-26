@@ -99,7 +99,7 @@ export default function SignInGate({ t, lang, setLang, onSignIn, onGitHubSignIn,
       <p style={{
         fontFamily: "var(--font-data)",
         fontSize: 11,
-        color: "#4A5A4A",
+        color: "#1A2E1A",
         letterSpacing: "0.2em",
         textTransform: "uppercase",
         marginTop: 6,
@@ -148,7 +148,7 @@ export default function SignInGate({ t, lang, setLang, onSignIn, onGitHubSignIn,
           {guidance.steps && (
             <ol style={{ margin: 0, paddingLeft: 18 }}>
               {guidance.steps.map((step, i) => (
-                <li key={i} style={{ fontSize: 12, color: "#8A9A8A", lineHeight: 1.7, marginBottom: 2 }}>
+                <li key={i} style={{ fontSize: 12, color: "#1A2E1A", lineHeight: 1.7, marginBottom: 2 }}>
                   {step}
                 </li>
               ))}
@@ -160,7 +160,7 @@ export default function SignInGate({ t, lang, setLang, onSignIn, onGitHubSignIn,
               style={{
                 marginTop: 12, width: "100%", padding: "8px 12px",
                 background: "transparent", border: "1px solid #D8E8D8",
-                borderRadius: 8, fontSize: 12, color: "#8A9A8A",
+                borderRadius: 8, fontSize: 12, color: "#1A2E1A",
                 cursor: "pointer", fontFamily: "var(--font-data)",
                 letterSpacing: ".06em", textTransform: "uppercase",
               }}
@@ -220,7 +220,7 @@ export default function SignInGate({ t, lang, setLang, onSignIn, onGitHubSignIn,
             display: "flex", alignItems: "center", gap: 8, width: "100%", maxWidth: 320, margin: "4px 0",
           }}>
             <div style={{ flex: 1, height: 1, background: "#D8E8D8" }} />
-            <span style={{ fontFamily: "var(--font-data)", fontSize: 10, color: "#8A9A8A", letterSpacing: ".1em", textTransform: "uppercase", whiteSpace: "nowrap" }}>
+            <span style={{ fontFamily: "var(--font-data)", fontSize: 10, color: "#1A2E1A", letterSpacing: ".1em", textTransform: "uppercase", whiteSpace: "nowrap" }}>
               or on web
             </span>
             <div style={{ flex: 1, height: 1, background: "#D8E8D8" }} />
@@ -249,7 +249,7 @@ export default function SignInGate({ t, lang, setLang, onSignIn, onGitHubSignIn,
       <p style={{
         fontFamily: "var(--font-prose)",
         fontSize: 12,
-        color: "#5A6A5A",
+        color: "#1A2E1A",
         textAlign: "center",
         marginTop: 0,
         marginBottom: 8,
@@ -259,15 +259,52 @@ export default function SignInGate({ t, lang, setLang, onSignIn, onGitHubSignIn,
       <p style={{
         fontFamily: "var(--font-prose)",
         fontSize: 11,
-        color: "#7A8A7A",
+        color: "#1A2E1A",
         textAlign: "center",
         lineHeight: 1.8,
         marginTop: 8,
       }}>
-        <a href={ENDPOINTS.privacy} target="_blank" rel="noopener noreferrer" style={{ color: "#7A8A7A", textDecoration: "none" }}>Terms of Use</a>
+        <a href={ENDPOINTS.privacy} target="_blank" rel="noopener noreferrer" style={{ color: "#1A2E1A", textDecoration: "none" }}>Terms of Use</a>
         {"  ·  "}
-        <a href={ENDPOINTS.privacy} target="_blank" rel="noopener noreferrer" style={{ color: "#7A8A7A", textDecoration: "none" }}>Privacy Policy</a>
+        <a href={ENDPOINTS.privacy} target="_blank" rel="noopener noreferrer" style={{ color: "#1A2E1A", textDecoration: "none" }}>Privacy Policy</a>
       </p>
+
+      {/* ── Blog footer (web only — hidden in native app) ── */}
+      {!isNative() && (
+        <div style={{
+          width: "100%",
+          maxWidth: 320,
+          marginTop: 20,
+          paddingTop: 16,
+          borderTop: "1px solid #E0E8E0",
+          paddingBottom: 12,
+          textAlign: "center",
+        }}>
+          <a
+            href="/blog"
+            style={{
+              display: "block",
+              fontFamily: "var(--font-prose)",
+              fontSize: 13,
+              fontWeight: 500,
+              color: "#2d6a4f",
+              textDecoration: "none",
+              letterSpacing: "0.04em",
+              marginBottom: 4,
+            }}
+          >
+            CAREER INTELLIGENCE BLOG
+          </a>
+          <span style={{
+            fontFamily: "var(--font-prose)",
+            fontSize: 11,
+            fontWeight: 400,
+            color: "#1A2E1A",
+          }}>
+            tryvettedai.com
+          </span>
+        </div>
+      )}
     </div>
   );
 }

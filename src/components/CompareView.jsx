@@ -2,6 +2,9 @@
 // Feature #6 of the Vantage Suite. Renders two scored opportunities in a
 // dual-column layout with a filter-by-filter score comparison.
 
+import { useRef } from "react";
+import { useFocusOnMount } from "../hooks/useFocusTrap.js";
+
 const WEIGHT_LABELS = {
   0.5: "Minor", 1.0: "Standard", 1.2: "Relevant",
   1.3: "Important", 1.5: "Critical", 2.0: "Critical +",
@@ -50,7 +53,7 @@ function OppHeader({ t, opp, profile, isWinner, onViewFull }) {
       <p style={{
         fontFamily: "var(--font-data)", fontSize: 10,
         letterSpacing: ".12em", textTransform: "uppercase",
-        color: "#5A6A5A", marginBottom: 4, wordBreak: "break-word",
+        color: "#1A2E1A", marginBottom: 4, wordBreak: "break-word",
       }}>{opp.company}</p>
       <h2 style={{
         fontFamily: "var(--font-prose)", fontSize: 17,
@@ -83,7 +86,7 @@ function OppHeader({ t, opp, profile, isWinner, onViewFull }) {
         {t[opp.recommendation] || opp.recommendation}
       </div>
 
-      <p style={{ fontSize: 11, color: "#5A6A5A", marginBottom: 14 }}>
+      <p style={{ fontSize: 11, color: "#1A2E1A", marginBottom: 14 }}>
         {t.threshold}: {profile.threshold} — {opp.overall_score >= profile.threshold ? t.aboveThreshold : t.belowThreshold}
       </p>
 
@@ -100,6 +103,9 @@ function OppHeader({ t, opp, profile, isWinner, onViewFull }) {
 
 // ── Main CompareView ─────────────────────────────────────────────────────────
 export default function CompareView({ t, profile, oppA, oppB, onBack, onViewOpp }) {
+  const mainRef = useRef(null);
+  useFocusOnMount(mainRef, { onEscape: onBack });
+
   if (!oppA || !oppB) return null;
 
   const winnerIsA = oppA.overall_score >= oppB.overall_score;
@@ -116,7 +122,7 @@ export default function CompareView({ t, profile, oppA, oppB, onBack, onViewOpp 
   const bMap = Object.fromEntries((oppB.filter_scores || []).map(f => [f.filter_id, f]));
 
   return (
-    <main id="main-content" aria-label={t.compareTitle}>
+    <main ref={mainRef} id="main-content" aria-label={t.compareTitle} tabIndex={-1} style={{ outline: "none" }}>
       <button className="back-link" onClick={onBack}>{t.compareBack}</button>
 
       <div style={{
@@ -181,8 +187,8 @@ export default function CompareView({ t, profile, oppA, oppB, onBack, onViewOpp 
           </span>
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6 }}>
-          <span style={{ fontSize: 10, color: "#5A6A5A", maxWidth: "45%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{oppA.role_title}</span>
-          <span style={{ fontSize: 10, color: "#5A6A5A", maxWidth: "45%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textAlign: "right" }}>{oppB.role_title}</span>
+          <span style={{ fontSize: 10, color: "#1A2E1A", maxWidth: "45%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{oppA.role_title}</span>
+          <span style={{ fontSize: 10, color: "#1A2E1A", maxWidth: "45%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textAlign: "right" }}>{oppB.role_title}</span>
         </div>
       </div>
 
@@ -301,8 +307,8 @@ export default function CompareView({ t, profile, oppA, oppB, onBack, onViewOpp 
                 {/* Rationale rows */}
                 {(fa?.rationale || fb?.rationale) && (
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                    <p style={{ fontSize: 11, color: "#5A6A5A", lineHeight: 1.6 }}>{fa?.rationale || ""}</p>
-                    <p style={{ fontSize: 11, color: "#5A6A5A", lineHeight: 1.6 }}>{fb?.rationale || ""}</p>
+                    <p style={{ fontSize: 11, color: "#1A2E1A", lineHeight: 1.6 }}>{fa?.rationale || ""}</p>
+                    <p style={{ fontSize: 11, color: "#1A2E1A", lineHeight: 1.6 }}>{fb?.rationale || ""}</p>
                   </div>
                 )}
               </div>

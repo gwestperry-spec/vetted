@@ -83,6 +83,19 @@ if (typeof document !== "undefined" && !document.getElementById("vq-loading-keyf
   document.head.appendChild(s);
 }
 
+// ─── Weight label map — matches exportPdf.js ──────────────────────────────
+const WEIGHT_LABELS = {
+  0.5: "Minor",
+  1.0: "Standard",
+  1.2: "Relevant",
+  1.3: "Important",
+  1.5: "Critical",
+  2.0: "Critical+",
+};
+function weightLabel(w) {
+  return WEIGHT_LABELS[w] ?? (w !== undefined ? `${Number(w).toFixed(1)}×` : null);
+}
+
 // ─── Score color helper ────────────────────────────────────────────────────
 function scoreColor(score) {
   if (score >= 4) return "#3A7A3A";
@@ -94,7 +107,7 @@ function scoreColor(score) {
 function FilterRow({ name, status, score }) {
   // status: "waiting" | "active" | "done"
   const dotColor = status === "done" ? "#3A7A3A" : status === "active" ? "#B8A030" : "#D8E8D8";
-  const nameColor = status === "done" ? "#3A5A3A" : status === "active" ? "#1A2E1A" : "#8A9A8A";
+  const nameColor = status === "done" ? "#1A2E1A" : status === "active" ? "#1A2E1A" : "#1A2E1A";
   const nameFontWeight = status === "active" ? 600 : 400;
 
   return (
@@ -140,11 +153,15 @@ function FilterRow({ name, status, score }) {
 
 // ─── VQLoadingScreen ───────────────────────────────────────────────────────
 // Props:
-//   loadingMsg       {string}  — status line (unused visually but kept for aria)
+//   loadingMsg       {string}  — aria label
 //   streamingFilters {Array}   — live filter scores from SSE stream
-//                                [{filter_name, score, rationale}, ...]
-//   filters          {Array}   — full user filter list [{id, name, ...}]
-export function VQLoadingScreen({ loadingMsg, streamingFilters = [], filters = [] }) {
+//   filters          {Array}   — full user filter list (default + custom)
+//   scoringPhase     {number}  — 0–3
+//   t                {object}  — translations object for current language
+//   lang             {string}  — current language code (en/es/zh/fr/ar/vi)
+//
+// Typography: IBM Plex Mono for all data/labels, Libre Baskerville for prose
+export function VQLoadingScreen({ loadingMsg, streamingFilters = [], filters = [], scoringPhase = 0, t = {}, lang = "en" }) {
   // Pick initial coaching pair
   const initIdx = useRef(null);
   if (initIdx.current === null) {
@@ -154,34 +171,29 @@ export function VQLoadingScreen({ loadingMsg, streamingFilters = [], filters = [
     _lastCoachingIdx = initIdx.current;
   }
 
-  const [pairIdx, setPairIdx]           = useState(initIdx.current);
-  const [phase, setPhase]               = useState("in"); // "in" | "out"
+  const [pairIdx, setPairIdx]                 = useState(initIdx.current);
+  const [phase, setPhase]                     = useState("in");
   const [coachingVisible, setCoachingVisible] = useState(false);
 
-  // ── Time-based progress fallback ────────────────────────────────────────
-  // Drives the bar and active-dot position when streaming isn't delivering
-  // real filter data (e.g. Netlify CDN buffering, iOS WKWebView fallback).
-  // Real streaming data always takes precedence via Math.max below.
+  // ── Time-based progress fallback ─────────────────────────────────────────
   const startTimeRef = useRef(Date.now());
   const [timePct, setTimePct] = useState(0);
 
   useEffect(() => {
     const iv = setInterval(() => {
       const elapsed = Date.now() - startTimeRef.current;
-      // Exponential ease-out: reaches ~88% at ~15s, leaving headroom for completion
       const eased = 1 - Math.exp(-(elapsed / 15000) * 3);
-      setTimePct(Math.min(88, Math.round(eased * 100)));
+      const cap = scoringPhase >= 3 ? 100 : scoringPhase >= 2 ? 99 : 88;
+      setTimePct(Math.min(cap, Math.round(eased * 100)));
     }, 400);
     return () => clearInterval(iv);
-  }, []);
+  }, [scoringPhase]);
 
-  // Brief delay before coaching pair fades in
   useEffect(() => {
-    const t = setTimeout(() => setCoachingVisible(true), 500);
-    return () => clearTimeout(t);
+    const revealTimer = setTimeout(() => setCoachingVisible(true), 600);
+    return () => clearTimeout(revealTimer);
   }, []);
 
-  // Cycle coaching pairs every 5 seconds
   useEffect(() => {
     const cycle = setInterval(() => {
       setPhase("out");
@@ -199,36 +211,39 @@ export function VQLoadingScreen({ loadingMsg, streamingFilters = [], filters = [
     return () => clearInterval(cycle);
   }, []);
 
-  const totalFilters = Math.max(filters.length, 1);
+  const totalFilters   = Math.max(filters.length, 1);
+  const realPct        = Math.round((streamingFilters.length / totalFilters) * 100);
+  const displayPct     = Math.max(realPct, timePct);
 
-  // Real streaming progress (0 when no filters have arrived yet)
-  const realPct = Math.round((streamingFilters.length / totalFilters) * 100);
-
-  // Display the higher of real streaming progress or time-based estimate.
-  // Once streaming kicks in (realPct > 0), real data drives the bar.
-  const displayPct = Math.max(realPct, timePct);
-
-  // Build filter display list: merge full filter list with streamed results
   const filterRows = filters.map(f => {
-    const filterName = typeof f.name === "object" ? (f.name.en || Object.values(f.name)[0]) : f.name;
+    // Resolve localized filter name: try current lang, fall back to en, then first available
+    const filterName = typeof f.name === "object"
+      ? (f.name[lang] || f.name.en || Object.values(f.name)[0])
+      : (f.name || "");
     const streamed = streamingFilters.find(sf =>
       sf.filter_name?.toLowerCase() === filterName?.toLowerCase()
     );
-    const isDone = streamed !== undefined;
-    return { name: filterName, isDone, score: streamed?.score };
+    return { name: filterName, weight: f.weight, isDone: streamed !== undefined, score: streamed?.score };
   });
 
-  // Active dot position: real streamed count OR time-estimated position
-  const realDoneCount = streamingFilters.length;
+  const realDoneCount      = streamingFilters.length;
   const estimatedDoneCount = Math.floor((timePct / 100) * totalFilters);
-  // Use real count when streaming is delivering data, otherwise use time estimate
-  const doneCount = realDoneCount > 0 ? realDoneCount : estimatedDoneCount;
+  const doneCount          = realDoneCount > 0 ? realDoneCount : estimatedDoneCount;
 
   const filterRowsWithStatus = filterRows.map((row, i) => {
-    if (row.isDone) return { ...row, status: "done" };
+    if (row.isDone)    return { ...row, status: "done" };
     if (i === doneCount) return { ...row, status: "active" };
     return { ...row, status: "waiting" };
   });
+
+  // Phase label shown in the hero — use translations with English fallback
+  const phaseLabels = [
+    t.loadingPhaseReading    || "Reading",
+    t.loadingPhaseScoring    || "Scoring",
+    t.loadingPhaseGenerating || "Generating",
+    t.loadingPhaseFinalizing || "Finalizing",
+  ];
+  const phaseLabel = phaseLabels[Math.min(scoringPhase, 3)];
 
   return (
     <div
@@ -238,122 +253,255 @@ export function VQLoadingScreen({ loadingMsg, streamingFilters = [], filters = [
       style={{
         display: "flex",
         flexDirection: "column",
-        alignItems: "stretch",
-        padding: "32px 20px 48px",
-        maxWidth: 420,
-        margin: "0 auto",
-        gap: 0,
+        minHeight: "100vh",
+        background: "#F7F5EF",
       }}
     >
-      {/* ── Progress bar ── */}
-      <div style={{ marginBottom: 20 }}>
+      {/* ── DARK HERO — wordmark + progress ─────────────────────────────── */}
+      <div style={{
+        background: "#1A3A1A",
+        borderBottom: "4px solid #3A7A3A",
+        padding: "20px 24px 22px",
+        flexShrink: 0,
+      }}>
+        {/* Wordmark row */}
         <div style={{
           display: "flex",
-          justifyContent: "space-between",
           alignItems: "center",
-          marginBottom: 6,
+          justifyContent: "space-between",
+          marginBottom: 18,
         }}>
           <span style={{
             fontFamily: "var(--font-data)",
             fontSize: 11,
-            color: "#8A9A8A",
-            letterSpacing: ".12em",
+            fontWeight: 700,
+            letterSpacing: ".2em",
             textTransform: "uppercase",
-          }}>Analyzing</span>
+            color: "rgba(255,255,255,0.9)",
+          }}>Vetted</span>
           <span style={{
             fontFamily: "var(--font-data)",
-            fontSize: 11,
-            color: "#3A7A3A",
+            fontSize: 9,
+            letterSpacing: ".12em",
+            textTransform: "uppercase",
+            color: "rgba(255,255,255,0.75)",
+          }}>{phaseLabel}…</span>
+        </div>
+
+        {/* Progress bar */}
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: 8,
+        }}>
+          <span style={{
+            fontFamily: "var(--font-data)",
+            fontSize: 9,
+            letterSpacing: ".14em",
+            textTransform: "uppercase",
+            color: "rgba(255,255,255,0.78)",
+          }}>{t.loadingAnalyzing || "Analyzing role"}</span>
+          <span style={{
+            fontFamily: "var(--font-data)",
+            fontSize: 14,
+            fontWeight: 600,
+            color: "#7AB87A",
             letterSpacing: ".04em",
           }}>{displayPct}%</span>
         </div>
         <div style={{
           width: "100%",
-          height: 4,
-          background: "#E0E8E0",
+          height: 3,
+          background: "rgba(255,255,255,0.12)",
           borderRadius: 2,
           overflow: "hidden",
         }}>
           <div style={{
             height: "100%",
             width: `${displayPct}%`,
-            background: "#3A7A3A",
+            background: "#7AB87A",
             borderRadius: 2,
             transition: "width 0.5s ease",
           }} />
         </div>
       </div>
 
-      {/* ── Filter completion card ── */}
+      {/* ── FILTER COMPLETION CARD ───────────────────────────────────────── */}
       {filters.length > 0 && (
         <div style={{
-          background: "#F0F4F0",
-          borderRadius: 12,
-          border: "1px solid #D8E8D8",
-          padding: "16px 18px",
-          marginBottom: 28,
+          margin: "20px 20px 0",
+          background: "#fff",
+          borderRadius: 14,
+          border: "1px solid #DED9CE",
+          overflow: "hidden",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
         }}>
-          {/* Header */}
+          {/* Card header */}
           <div style={{
-            fontFamily: "var(--font-data)",
-            fontSize: 11,
-            color: "#8A9A8A",
-            letterSpacing: ".15em",
-            textTransform: "uppercase",
-            marginBottom: 10,
-          }}>YOUR FILTERS</div>
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "12px 16px",
+            borderBottom: "1px solid #F0EDE4",
+          }}>
+            <span style={{
+              fontFamily: "var(--font-data)",
+              fontSize: 9,
+              fontWeight: 700,
+              letterSpacing: ".16em",
+              textTransform: "uppercase",
+              color: "#7B776C",
+            }}>{t.loadingYourFilters || "Your Filters"}</span>
+            <span style={{
+              fontFamily: "var(--font-data)",
+              fontSize: 9,
+              color: "#7B776C",
+              letterSpacing: ".06em",
+            }}>
+              {streamingFilters.length} / {filters.length}
+            </span>
+          </div>
 
-          {/* Filter rows */}
-          {filterRowsWithStatus.map((row, i) => (
-            <FilterRow
-              key={row.name || i}
-              name={row.name}
-              status={row.status}
-              score={row.score}
-            />
-          ))}
+          {/* Filter rows — redesigned */}
+          {filterRowsWithStatus.map((row, i) => {
+            const isDone   = row.status === "done";
+            const isActive = row.status === "active";
+            const dotColor = isDone ? "#3A7A3A" : isActive ? "#B8A030" : "#DED9CE";
+            const scoreColor = row.score >= 4 ? "#3A7A3A" : row.score >= 3 ? "#B8A030" : "#C05050";
+
+            return (
+              <div key={row.name || i} style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                padding: "11px 16px",
+                borderBottom: i < filterRowsWithStatus.length - 1 ? "1px solid #F0EDE4" : "none",
+                background: isActive ? "#FAFAF7" : "transparent",
+                transition: "background 0.3s ease",
+              }}>
+                {/* Status dot */}
+                <div style={{
+                  width: 7,
+                  height: 7,
+                  borderRadius: "50%",
+                  background: dotColor,
+                  flexShrink: 0,
+                  transition: "background 0.4s ease",
+                  animation: isActive ? "vq-pulse-dot 1.2s ease-in-out infinite" : "none",
+                }} />
+
+                {/* Filter name — mono for data label */}
+                <span style={{
+                  fontFamily: "var(--font-data)",
+                  fontSize: 10,
+                  fontWeight: isDone ? 500 : isActive ? 600 : 400,
+                  color: isDone || isActive ? "#1A1A18" : "#7B776C",
+                  flex: 1,
+                  letterSpacing: ".02em",
+                  transition: "color 0.3s ease",
+                }}>{row.name}</span>
+
+                {/* Weight badge — descriptor label, skip Standard (baseline) */}
+                {row.weight !== undefined && row.weight !== 1.0 && weightLabel(row.weight) && (
+                  <span style={{
+                    fontFamily: "var(--font-data)",
+                    fontSize: 8,
+                    color: isDone || isActive ? "#9B9690" : "#C0BBB4",
+                    letterSpacing: ".06em",
+                    textTransform: "uppercase",
+                    flexShrink: 0,
+                    marginRight: 2,
+                    transition: "color 0.3s ease",
+                  }}>{weightLabel(row.weight)}</span>
+                )}
+
+                {/* Score — Libre Baskerville numeral when done */}
+                {isDone && row.score !== undefined && (
+                  <span style={{
+                    fontFamily: "var(--font-prose)",
+                    fontSize: 18,
+                    fontWeight: 700,
+                    color: scoreColor,
+                    lineHeight: 1,
+                    flexShrink: 0,
+                  }}>{row.score}</span>
+                )}
+
+                {/* Active label */}
+                {isActive && (
+                  <span style={{
+                    fontFamily: "var(--font-data)",
+                    fontSize: 9,
+                    color: "#B8A030",
+                    letterSpacing: ".1em",
+                    textTransform: "uppercase",
+                  }}>{t.loadingActiveFilter || "scoring"}</span>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
 
-      {/* ── Coaching pair ── */}
-      {coachingVisible && (
-        <div
-          aria-hidden="true"
-          style={{
-            textAlign: "center",
-            animation: phase === "in"
-              ? "vq-fadein 0.45s ease forwards"
-              : phase === "out"
-              ? "vq-fadeout 0.35s ease forwards"
-              : "none",
-          }}
-        >
-          <p style={{
-            fontFamily: "var(--font-prose)",
-            fontSize: 17,
-            fontWeight: 500,
-            color: "#3A5A3A",
-            lineHeight: 1.5,
-            textAlign: "center",
-            maxWidth: 320,
-            margin: "0 auto 10px",
-          }}>
-            {COACHING_PAIRS[pairIdx].question}
-          </p>
-          <p style={{
-            fontFamily: "var(--font-data)",
-            fontSize: 12,
-            color: "#8A9A8A",
-            textAlign: "center",
-            maxWidth: 320,
-            margin: "0 auto",
-            letterSpacing: ".04em",
-            lineHeight: 1.7,
-          }}>
-            {COACHING_PAIRS[pairIdx].statement}
-          </p>
-        </div>
-      )}
+      {/* ── COACHING PAIR ────────────────────────────────────────────────── */}
+      <div style={{
+        flex: 1,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "28px 28px 48px",
+      }}>
+        {coachingVisible && (
+          <div
+            aria-hidden="true"
+            style={{
+              textAlign: "center",
+              maxWidth: 320,
+              animation: phase === "in"
+                ? "vq-fadein 0.45s ease forwards"
+                : phase === "out"
+                ? "vq-fadeout 0.35s ease forwards"
+                : "none",
+            }}
+          >
+            {/* Question — serif, editorial weight */}
+            <p style={{
+              fontFamily: "var(--font-prose)",
+              fontSize: 18,
+              fontWeight: 700,
+              fontStyle: "italic",
+              color: "#1A1A18",
+              lineHeight: 1.55,
+              margin: "0 auto 14px",
+            }}>
+              {COACHING_PAIRS[pairIdx].question}
+            </p>
+
+            {/* Divider */}
+            <div style={{
+              width: 32,
+              height: 1,
+              background: "#C8DDB8",
+              margin: "0 auto 14px",
+            }} />
+
+            {/* Statement — mono, data register */}
+            <p style={{
+              fontFamily: "var(--font-data)",
+              fontSize: 11,
+              fontWeight: 600,
+              color: "#3A3A38",
+              letterSpacing: ".04em",
+              lineHeight: 1.75,
+              margin: 0,
+            }}>
+              {COACHING_PAIRS[pairIdx].statement}
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -370,25 +518,82 @@ export function ScoringProgress({ phase }) {
   const pct = Math.round(((phase + 1) / SCORING_PHASES.length) * 100);
   return (
     <div className="loading-wrap" role="status" aria-live="polite" aria-label="Scoring in progress">
-      <div className="scoring-progress">
-        <div style={{ textAlign: "center" }}>
-          <div style={{ fontFamily: "var(--font-prose)", fontSize: 17, fontWeight: 700, marginBottom: 4 }}>
-            Analyzing opportunity
-          </div>
-          <div style={{ fontFamily: "var(--font-data)", fontSize: 10, color: "var(--muted)", letterSpacing: ".15em", textTransform: "uppercase" }}>
-            {pct}% complete
-          </div>
+      <div style={{
+        maxWidth: 380,
+        margin: "0 auto",
+        padding: "32px 20px",
+      }}>
+        {/* Title */}
+        <p style={{
+          fontFamily: "var(--font-prose)",
+          fontSize: 20,
+          fontWeight: 700,
+          fontStyle: "italic",
+          color: "#1A1A18",
+          textAlign: "center",
+          marginBottom: 6,
+          lineHeight: 1.3,
+        }}>
+          Analyzing opportunity
+        </p>
+        <p style={{
+          fontFamily: "var(--font-data)",
+          fontSize: 10,
+          color: "#7B776C",
+          letterSpacing: ".14em",
+          textTransform: "uppercase",
+          textAlign: "center",
+          marginBottom: 20,
+        }}>
+          {pct}% complete
+        </p>
+
+        {/* Bar */}
+        <div style={{
+          height: 3,
+          background: "#DED9CE",
+          borderRadius: 2,
+          overflow: "hidden",
+          marginBottom: 24,
+        }}>
+          <div style={{
+            height: "100%",
+            width: `${pct}%`,
+            background: "#3A7A3A",
+            borderRadius: 2,
+            transition: "width 0.4s ease",
+          }} />
         </div>
-        <div className="scoring-progress-bar-track" aria-hidden="true">
-          <div className="scoring-progress-bar-fill" style={{ width: `${pct}%` }} />
-        </div>
-        <div className="scoring-progress-steps" aria-hidden="true">
-          {SCORING_PHASES.map((p, i) => (
-            <div key={p.key} className={`scoring-progress-step${i === phase ? " active" : i < phase ? " done" : ""}`}>
-              <div className="scoring-step-dot" />
-              <span>{i < phase ? "✓ " : ""}{p.label}</span>
-            </div>
-          ))}
+
+        {/* Phase steps */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {SCORING_PHASES.map((p, i) => {
+            const isDone   = i < phase;
+            const isActive = i === phase;
+            return (
+              <div key={p.key} style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+              }}>
+                <div style={{
+                  width: 7, height: 7, borderRadius: "50%", flexShrink: 0,
+                  background: isDone ? "#3A7A3A" : isActive ? "#B8A030" : "#DED9CE",
+                  animation: isActive ? "vq-pulse-dot 1.2s ease-in-out infinite" : "none",
+                  transition: "background 0.3s ease",
+                }} />
+                <span style={{
+                  fontFamily: "var(--font-data)",
+                  fontSize: 11,
+                  color: isDone ? "#3A7A3A" : isActive ? "#1A1A18" : "#7B776C",
+                  fontWeight: isActive ? 600 : 400,
+                  letterSpacing: ".02em",
+                }}>
+                  {isDone ? "✓ " : ""}{p.label}
+                </span>
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>

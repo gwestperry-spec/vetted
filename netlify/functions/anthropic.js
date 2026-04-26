@@ -323,9 +323,13 @@ exports.handler = async function (event) {
   }
 
   // ── Strip model/system overrides, proxy to Anthropic ──────────────────
+  // Cap max_tokens server-side — prevents a crafted request from requesting
+  // an arbitrarily large completion and inflating cost. 4096 is sufficient
+  // for the most detailed score output (gap/strength lists, narrative, etc.).
+  const requestedTokens = typeof parsedBody.max_tokens === "number" ? parsedBody.max_tokens : 4096;
   const safeBody = JSON.stringify({
     model: "claude-haiku-4-5-20251001",
-    max_tokens: parsedBody.max_tokens || 4096,
+    max_tokens: Math.min(Math.max(requestedTokens, 512), 4096),
     messages: messages || [],
   });
 

@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { ENDPOINTS } from "../config.js";
 import { handleError } from "../utils/handleError.js";
+import { useFocusTrap } from "../hooks/useFocusTrap.js";
 
 const LINK = { color: "var(--muted)", textDecoration: "underline" };
 
@@ -69,11 +70,16 @@ const isNativeApp = window.Capacitor?.isNativePlatform?.() === true;
 // Tier rank — higher index = higher tier
 const TIER_RANK = { free: 0, signal: 1, signal_lifetime: 2, vantage: 3, vantage_lifetime: 4 };
 
-export default function PaywallModal({ authUser, onClose }) {
+// contextCopy — optional string shown as a highlighted banner above the tier
+// cards. Used when PaywallModal is opened from a specific locked workspace
+// action (e.g. "Reminders require Signal. Never miss a follow-up.").
+export default function PaywallModal({ authUser, onClose, contextCopy }) {
   const [loading, setLoading] = useState(null);
   const [restoring, setRestoring] = useState(false);
   const [restoreMsg, setRestoreMsg] = useState("");
   const [error, setError] = useState("");
+  const dialogRef = useRef(null);
+  useFocusTrap(dialogRef, { onClose });
 
   // ── iOS — StoreKit 2 via native plugin ────────────────────────────────────
   async function handleIAPUpgrade(tier) {
@@ -254,7 +260,7 @@ export default function PaywallModal({ authUser, onClose }) {
       }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div style={{
+      <div ref={dialogRef} style={{
         background: "var(--paper)", borderRadius: 8, width: "100%", maxWidth: 600,
         padding: "32px 28px", position: "relative", maxHeight: "90vh", overflowY: "auto",
         boxShadow: "0 8px 40px rgba(15,14,12,0.28)",
@@ -271,18 +277,34 @@ export default function PaywallModal({ authUser, onClose }) {
           }}
         >×</button>
 
-        {/* Header */}
-        <div style={{ textAlign: "center", marginBottom: 28 }}>
-          <p style={{ fontFamily: "var(--font-data)", fontSize: 10, letterSpacing: ".2em", textTransform: "uppercase", color: "var(--muted)", marginBottom: 8 }}>
-            You've used all 10 free scores this month
-          </p>
-          <h2 id="paywall-title" style={{ fontFamily: "var(--font-prose)", fontSize: 26, fontWeight: 700, marginBottom: 8 }}>
-            Upgrade to keep scoring
-          </h2>
-          <p style={{ fontSize: 14, color: "var(--muted)", lineHeight: 1.6, maxWidth: 380, margin: "0 auto" }}>
-            Unlimited scoring. Full AI analysis. Cancel anytime.
-          </p>
-        </div>
+        {/* Header — two modes:
+              Feature gate (contextCopy set): feature description is the headline
+              Quota hit  (contextCopy null) : generic "used all 10" message         */}
+        {(() => {
+          const isFeatureGate = Boolean(contextCopy);
+          // Detect tier from copy; strip trailing "Signal/Vantage feature." for headline
+          const tierLabel = contextCopy?.toLowerCase().includes("vantage")
+            ? "Vantage feature"
+            : "Signal feature";
+          const headline = contextCopy
+            ? contextCopy.replace(/[\.\s]*(Signal|Vantage) feature\.?$/i, "").trim()
+            : null;
+          return (
+            <div style={{ textAlign: "center", marginBottom: 28 }}>
+              <p style={{ fontFamily: "var(--font-data)", fontSize: 10, letterSpacing: ".2em", textTransform: "uppercase", color: "var(--muted)", marginBottom: 8 }}>
+                {isFeatureGate ? tierLabel : "You've used all 10 free scores this month"}
+              </p>
+              <h2 id="paywall-title" style={{ fontFamily: "var(--font-prose)", fontSize: isFeatureGate ? 22 : 26, fontWeight: 700, marginBottom: 8, lineHeight: 1.25 }}>
+                {isFeatureGate ? headline : "Upgrade to keep scoring"}
+              </h2>
+              <p style={{ fontSize: 14, color: "var(--muted)", lineHeight: 1.6, maxWidth: 380, margin: "0 auto" }}>
+                {isFeatureGate
+                  ? "Upgrade to unlock — scoring stays free."
+                  : "Unlimited scoring. Full AI analysis. Cancel anytime."}
+              </p>
+            </div>
+          );
+        })()}
 
         {/* Tier cards */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 20 }}>

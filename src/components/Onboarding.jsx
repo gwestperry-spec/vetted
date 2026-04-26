@@ -2,6 +2,7 @@ import { useState, useCallback, useRef, useId } from "react";
 import { ENDPOINTS } from "../config.js";
 import LangSwitcher from "./LangSwitcher.jsx";
 import { sanitizeText, MAX_SHORT, MAX_LONG } from "../utils/sanitize.js";
+import CoachMark from "./CoachMark.jsx";
 
 const NA_COUNTRIES = [
   { code: "us", flag: "🇺🇸" },
@@ -54,7 +55,7 @@ export function RegionGate({ t, lang, setLang, selectedCountry, setSelectedCount
     <div className="region-gate">
       <div style={{ textAlign: "center", marginBottom: 32 }}>
         <p className="header-eyebrow">{t.appEyebrow}</p>
-        <h1 style={{ fontFamily: "var(--font-prose)", fontSize: 32, fontWeight: 700, color: "#1A2E1A", marginBottom: 8 }}>
+        <h1 style={{ fontFamily: "var(--font-display)", fontSize: 32, fontWeight: 700, color: "#1A2E1A", marginBottom: 8 }}>
           {t.appTitle1}<span style={{ color: "var(--accent)" }}>{t.appTitleAccent}</span>{t.appTitle2}
         </h1>
       </div>
@@ -152,7 +153,7 @@ export function OnboardStep({ t, profile, setProfile, onNext, userTier, onUpgrad
     // Reset so same file can be re-selected if needed
     e.target.value = "";
 
-    if (!isVantageUser) { onUpgrade?.(); return; }
+    if (!isVantageUser) { onUpgrade?.(t?.paywallResume || "Upload your resume to auto-fill your profile and sharpen every score. Signal feature."); return; }
 
     setResumeLoading(true);
     setResumeStatus("");
@@ -191,9 +192,28 @@ export function OnboardStep({ t, profile, setProfile, onNext, userTier, onUpgrad
 
   return (
     <section aria-labelledby="profile-heading">
-      <div className="card">
-        <h2 className="card-title" id="profile-heading">{t.profileTitle}</h2>
-        <p className="card-subtitle">{t.profileSubtitle}</p>
+      <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+        {/* ── Dark hero banner ── */}
+        <div style={{ background: "#1A2E1A", padding: "22px 28px 20px", borderRadius: "11px 11px 0 0" }}>
+          <p style={{ fontFamily: "var(--font-data)", fontSize: 8, letterSpacing: ".18em", textTransform: "uppercase", color: "rgba(255,255,255,0.38)", marginBottom: 10 }}>
+            STEP 1 OF 3
+          </p>
+          <h2 id="profile-heading" style={{ fontFamily: "var(--font-display)", fontStyle: "normal", fontSize: 24, fontWeight: 700, color: "#fff", lineHeight: 1.1, margin: 0, marginBottom: 6 }}>
+            {t.profileTitle}
+          </h2>
+          <p style={{ fontFamily: "var(--font-prose)", fontStyle: "normal", fontSize: 13, color: "rgba(255,255,255,0.62)", lineHeight: 1.5, margin: 0 }}>
+            {t.profileSubtitle}
+          </p>
+        </div>
+
+        {/* ── Card body ── */}
+        <div style={{ padding: "24px 28px 28px" }}>
+        <CoachMark
+          storageKey="vetted_cm_profile"
+          title={t.cmProfileTitle}
+          body={t.cmProfileBody}
+          dir={t.dir}
+        />
 
         {/* ── Resume upload (Vantage) ── */}
         <div style={{ marginBottom: 20, padding: "14px 16px", background: "var(--cream)", borderRadius: "var(--r)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
@@ -211,7 +231,7 @@ export function OnboardStep({ t, profile, setProfile, onNext, userTier, onUpgrad
             <input ref={fileInputRef} type="file" accept=".pdf,.txt" onChange={handleResumeUpload} style={{ display: "none" }} aria-label={t.resumeUpload} />
             <button
               className="btn btn-secondary btn-sm"
-              onClick={() => isVantageUser ? fileInputRef.current?.click() : onUpgrade?.()}
+              onClick={() => isVantageUser ? fileInputRef.current?.click() : onUpgrade?.(t?.paywallResume || "Upload your resume to auto-fill your profile and sharpen every score. Signal feature.")}
               disabled={resumeLoading}
               style={{ minWidth: 120 }}
             >
@@ -269,6 +289,7 @@ export function OnboardStep({ t, profile, setProfile, onNext, userTier, onUpgrad
         <div className="btn-actions">
           <button className="btn btn-primary" onClick={onNext} disabled={!valid} aria-disabled={!valid}>{t.btnBuildFramework}</button>
         </div>
+        </div>{/* end card body */}
       </div>
     </section>
   );

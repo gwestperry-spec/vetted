@@ -12,3 +12,6 @@ ios/App/App.xcodeproj/.claude/
 /playwright-report/
 /test-results/
 tests/.auth/
+
+# Local Netlify folder
+.netlify

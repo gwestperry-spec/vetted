@@ -89,9 +89,9 @@ export function useAuth({ setProfile, setLang, setFilters, setOpportunities, set
           strengths: o.strengths || [],
           gaps: o.gaps || [],
         })));
-        setStep("dashboard");
+        setStep("workspace");
       } else if (savedProfile) {
-        setStep("dashboard");
+        setStep("workspace");
       } else {
         // Fresh user — no saved data found; send to onboarding
         setStep("onboard");
@@ -175,6 +175,12 @@ export function useAuth({ setProfile, setLang, setFilters, setOpportunities, set
               sessionStorage.getItem("vetted_session_token") ||
               localStorage.getItem("vetted_session_token") || "";
             setAuthUser({ ...user, sessionToken: restoredToken });
+            // DEV PREVIEW: skip live fetch if vetted_preview_mode is set in localStorage
+            if (localStorage.getItem("vetted_preview_mode")) {
+              setUserTier(localStorage.getItem("vetted_preview_tier") || "signal");
+              setStep("workspace");
+              return;
+            }
             const result = await fetch(ENDPOINTS.supabase, {
               method: "POST",
               headers: { "Content-Type": "application/json", "X-Vetted-Token": restoredToken },
@@ -230,7 +236,7 @@ export function useAuth({ setProfile, setLang, setFilters, setOpportunities, set
                 })));
               }
               if (saved?.profile) {
-                setStep("dashboard");
+                setStep("workspace");
               } else {
                 setStep("onboard");
               }
