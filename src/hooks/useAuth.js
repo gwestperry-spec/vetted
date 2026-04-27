@@ -15,6 +15,7 @@ export function useAuth({ setProfile, setLang, setFilters, setOpportunities, set
   const [authUser, setAuthUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState("");
+  const [sessionRestoring, setSessionRestoring] = useState(true);
   const [userTier, setUserTier] = useState("free");
   const [devTierOverride, setDevTierOverride] = useState(null); // DEV ONLY — never persisted
   const loadCallRef = useRef(0); // incremented on each loadUserData call; stale calls abort on mismatch
@@ -245,8 +246,8 @@ export function useAuth({ setProfile, setLang, setFilters, setOpportunities, set
         }
       } catch (e) {
         console.warn("[restoreSession]", e?.message);
-        // Network may not be ready yet on warm launch — don't clear auth state,
-        // just leave the member where they are. They can retry manually.
+      } finally {
+        setSessionRestoring(false);
       }
     }
     restoreSession();
@@ -391,6 +392,7 @@ export function useAuth({ setProfile, setLang, setFilters, setOpportunities, set
   return {
     authUser,
     authLoading,
+    sessionRestoring,
     authError,
     setAuthError,
     userTier,

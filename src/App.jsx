@@ -226,7 +226,7 @@ export default function App() {
 
   // ── Auth hook ─────────────────────────────────────────────────────────────
   const {
-    authUser, authLoading, authError, setAuthError,
+    authUser, authLoading, sessionRestoring, authError, setAuthError,
     userTier, setUserTier,
     devTierOverride, setDevTierOverride,
     handleSignInWithApple, handleSignInWithGitHub, handleSignOut, clearAuthState, dbCall,
@@ -793,6 +793,11 @@ export default function App() {
   }
 
   const stepIdx = { onboard: 0, filters: 1, workspace: 2, result: 2, compare: 2 }[step] ?? 0;
+
+  // ── Session restore splash — blank while restoring to avoid flicker ────────
+  if (sessionRestoring) {
+    return <div className="app" style={{ background: "var(--paper)", minHeight: "100%" }} />;
+  }
 
   // ── Auth gate — show sign in screen if not authenticated ─────────────────
   if (!authUser) {
