@@ -1,6 +1,6 @@
 # Vetted: Career Intelligence — Error Report & Fix Log
-**Compiled:** April 6, 2026
-**Versions covered:** v1.0 through v2.0.3 (build 16)
+**Compiled:** April 6, 2026 — last updated April 27, 2026
+**Versions covered:** v1.0 through v2.1.4 (post-build 25)
 **Source:** Full development chat history
 
 ---
@@ -790,7 +790,61 @@ Claude / Perplexity            → Structured prompt with "raw content" instruct
 
 ---
 
-## Open Items (updated April 26, 2026)
+## Error 77 — Profile restore missing fields + wrong key names after session restore
+**Build:** v2.1.4 / post-build 25 — identified during session restore audit (April 27, 2026)
+**Symptom:** After a warm launch or cold relaunch, several profile fields failed to populate even though they were saved in Supabase: compensation values, location preferences, country, currency, timeline, and hard constraints.
+**Root cause:** `restoreSession()` in `useAuth.js` used incorrect profile state keys in its `setProfile()` call:
+  - `compMin` → should be `compensationMin`
+  - `compMax` → should be `compensationTarget`
+  - `location` (single string, first element only) → should be `locationPrefs` (full array)
+  - `timeline`, `country`, `currency`, `hardConstraints` were entirely absent from the restore mapping
+  Additionally, `netlify/functions/supabase.js saveProfile` was not persisting `timeline`, `country`, or `currency` columns — they were never written to the DB.
+**Fix:**
+  - `useAuth.js restoreSession`: corrected all field key names, added missing fields to setProfile mapping
+  - `useAuth.js loadUserData`: added `timeline`, `country`, `currency` to post-sign-in setProfile call
+  - `supabase.js saveProfile`: added `timeline`, `country`, `currency` to upsert row
+**Files:** `src/hooks/useAuth.js`, `netlify/functions/supabase.js`
+**Deployed:** Post-build 25 — server-side change applied via git push (Netlify auto-deploy). iOS cap sync required for client fix.
+
+---
+
+## Error 78 — Market Pulse joyplot bars invisible + target comp displayed as "$350000K"
+**Build:** v2.1.4 / post-build 25 — surfaced after Error 77 fix restored compensationTarget (April 27, 2026)
+**Symptom:** Market Pulse joyplot showed flat horizontal lines instead of salary distribution curves. The target comp annotation read "$350000K" instead of "$350K". Both issues were silently hidden before Error 77 fix because `compensationTarget` was always `""` (never restored).
+**Root cause:** Compensation values are stored in **full dollars** (e.g. `350000` = $350K) — this is the onboarding form's expected format per placeholder text "e.g. 220000". The joyplot correctly divides salary API data by 1000 (`d.min / 1000`) to convert to K-scale before plotting. The target comp line did **not** apply this division — it used `parseFloat(profile.compensationTarget)` raw, giving `targetK = 350000`. This caused:
+  1. The chart axis to span 0–350,000K, squishing the actual $120K–$140K salary bars to invisibly thin slivers on the far left
+  2. `fmtK(350000, "USD")` to format as `"$350000k"`
+**Fix:**
+  - `MarketPulse.jsx`: added `/1000` in target calc: `parseFloat(profile.compensationTarget) / 1000 * ...`
+  - `App.jsx`: added `fmtComp()` helper that formats full-dollar values as K amounts (`350000 → $350K`) for the profile tab FLOOR/TARGET display (which previously showed raw value + "k" suffix)
+**Files:** `src/components/MarketPulse.jsx`, `src/App.jsx`
+**Deployed:** Post-build 25 — git push + cap sync ios.
+
+---
+
+## Error 79 — Display name stuck as "User" after every Apple Sign In except the first
+**Build:** v2.1.4 / post-build 25 — reported by user (April 27, 2026)
+**Symptom:** Profile tab always showed "User" as the name heading. User's real name never appeared, even though it was saved in Supabase.
+**Root cause:** Apple Sign In only returns `givenName` on the very first sign-in. On every subsequent login `givenName` is empty, so the auth flow resolved `displayName = givenName || data.user.displayName || "" → ""` and fell back to `resolvedName || "User"`. `loadUserData()` (called after sign-in) correctly wrote the real name to `profile.name` from `savedProfile.display_name`, but never updated `authUser.displayName`. The profile tab rendered `authUser?.displayName || profile.name` — `authUser.displayName = "User"` is truthy, so it won the OR chain and showed "User" instead of the real name.
+**Fix:**
+  1. `useAuth.js loadUserData`: after loading saved profile, if `display_name` is set and not "User", update `authUser.displayName` via `setAuthUser(prev → ...)` and re-persist to localStorage. Mirrors what `restoreSession` already did for warm launches.
+  2. `App.jsx ProfileTab`: `(rawDisplayName && rawDisplayName !== "User") ? rawDisplayName : (profile.name || rawDisplayName || "You")` — treats "User" as a missing-name sentinel and falls through to the saved profile name.
+**Files:** `src/hooks/useAuth.js`, `src/App.jsx`
+**Deployed:** Post-build 25 — git push + cap sync ios.
+
+---
+
+## Error 80 — Per-field EDIT buttons absent from profile tab (UX gap)
+**Build:** v2.1.4 / post-build 25 — reported by user (April 27, 2026)
+**Symptom:** Profile tab had one "Edit profile" button that walked users through all 12 onboarding steps sequentially. Changing a single field required clicking through 9–10 unrelated steps.
+**Root cause:** `ProfileField` component accepted an `onEdit` prop (with inline EDIT button), and `OnboardStep` had the `initialStep` prop to jump to a specific step by ID. Neither was wired up — all `ProfileField` instances were rendered without `onEdit`, and `ProfileSection` EDIT headers called `onEditProfile()` without a step ID (defaulting to step 0).
+**Fix:** Wired `onEdit={() => onEditProfile("stepId")}` on all 13 `ProfileField` instances (careerGoal, background, targetRoles, targetIndustries, timeline, compensationMin, compensationTarget, threshold, locationPrefs, hardConstraints, country) plus inline EDIT buttons on the identity block (name, currentTitle). `ProfileSection` EDIT headers now jump to the first field of their section. `onEditProfile(stepId)` sets `initialStep` on `OnboardStep` so it opens directly at the correct step.
+**Files:** `src/App.jsx`
+**Deployed:** Post-build 25 — git push + cap sync ios.
+
+---
+
+## Open Items (updated April 27, 2026)
 
 | Issue | Priority | Target Build |
 |---|---|---|
@@ -838,3 +892,4 @@ Claude / Perplexity            → Structured prompt with "raw content" instruct
 | v2.1.3 | 23 | Superseded | Serif display font (Libre Baskerville), scorecard hero contrast fixes, coach icon card layout, Profile/Filters nav from workspace, name pill border fix, loading screen contrast, "← Your Workspace" back button, Score a Role pill wrap fix |
 | v2.1.3 | 24 | In Review (Apr 26) | All build 23 UI changes + persistence bug fix (server-side Supabase upsert header); no binary delta required for server fix |
 | v2.1.4 | 25 | Pending submission | "Remove This Role" fix (3 stacked bugs); Delete button for archived cards; comprehensive UI translation; Export PDF translation + RTL; Market Pulse → Perplexity Sonar (live web data + citations); language scoring hint; **Security hardening sprint**: sanitizeTitle.js + sanitizePromptField.js shared modules; all AI prompt inputs sanitized server-side (profile, filters, background, resume, JD delimiter); IP rate limiting on market-pulse; max_tokens server cap; stored injection closed at DB write time in supabase.js |
+| v2.1.4 | post-25 | Live (Apr 27) | Profile restore key mismatch fix (Errors 77–78); Market Pulse joyplot target comp scale fix; display name "User" fix; per-field EDIT buttons on profile tab; timeline/country/currency now persisted to Supabase; fmtComp() helper for full-dollar comp display; session restore completeness audit |
