@@ -183,6 +183,7 @@ export default function App() {
   const [step, setStep] = useState("onboard");
   const [activeTab, setActiveTab] = useState("workspace");
   const [menuOpen, setMenuOpen] = useState(false);
+  const [editingProfile, setEditingProfile] = useState(false);
   const [profile, setProfile] = useState({
     name: "", currentTitle: "", background: "", targetRoles: [], targetIndustries: [],
     compensationMin: "", compensationTarget: "", locationPrefs: [], hardConstraints: "",
@@ -840,13 +841,29 @@ export default function App() {
       <div className="app">
         {/* ── Onboarding flow ──────────────────────────────────────────────── */}
         {step === "onboard" && (
-          <OnboardStep t={t} profile={profile} setProfile={setProfile} currency={profile.currency || "USD"} userTier={devTierOverride || userTier} onUpgrade={(copy) => { setPaywallContext(copy || null); setShowPaywall(true); }} authUser={authUser} onNext={() => {
-            setStep("filters");
-            if (authUser?.id) {
-              dbCall("saveProfile", { action: "saveProfile", appleId: authUser.id, profile: { ...profile, lang, displayName: authUser.displayName, email: authUser.email } })
-                .catch(err => handleError(err, "save_profile"));
-            }
-          }} />
+          <OnboardStep
+            t={t} profile={profile} setProfile={setProfile}
+            currency={profile.currency || "USD"}
+            userTier={devTierOverride || userTier}
+            onUpgrade={(copy) => { setPaywallContext(copy || null); setShowPaywall(true); }}
+            authUser={authUser}
+            isEditing={editingProfile}
+            onDone={() => {
+              setEditingProfile(false);
+              setStep("workspace");
+              if (authUser?.id) {
+                dbCall("saveProfile", { action: "saveProfile", appleId: authUser.id, profile: { ...profile, lang, displayName: authUser.displayName, email: authUser.email } })
+                  .catch(err => handleError(err, "save_profile"));
+              }
+            }}
+            onNext={() => {
+              setStep("filters");
+              if (authUser?.id) {
+                dbCall("saveProfile", { action: "saveProfile", appleId: authUser.id, profile: { ...profile, lang, displayName: authUser.displayName, email: authUser.email } })
+                  .catch(err => handleError(err, "save_profile"));
+              }
+            }}
+          />
         )}
         {step === "filters" && (
           <FiltersStep t={t} lang={lang} filters={filters} setFilters={setFilters} userTier={devTierOverride || userTier} onUpgrade={(copy) => { setPaywallContext(copy || null); setShowPaywall(true); }} onBack={() => setStep("onboard")} onNext={() => {
@@ -921,7 +938,7 @@ export default function App() {
                 onMarkApplied={handleMarkWorkspaceApplied}
                 onUnmarkApplied={handleUnmarkWorkspaceApplied}
                 onOpenAdvocate={() => setShowAdvocate(true)}
-                onEditProfile={() => setStep("onboard")}
+                onEditProfile={() => { setEditingProfile(true); setStep("onboard"); }}
                 onEditFilters={() => { setActiveTab("filters"); }}
                 onScore={scoreOpportunity}
                 loading={loading}
@@ -983,7 +1000,7 @@ export default function App() {
                 profile={profile} setProfile={setProfile}
                 authUser={authUser} userTier={devTierOverride || userTier}
                 onSignOut={handleSignOut}
-                onEditProfile={() => setStep("onboard")}
+                onEditProfile={() => { setEditingProfile(true); setStep("onboard"); }}
                 onUpgrade={() => { setShowPaywall(true); }}
               />
             )}

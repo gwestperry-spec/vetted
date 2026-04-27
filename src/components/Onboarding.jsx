@@ -43,7 +43,7 @@ function buildSteps(t) {
 }
 
 // ─── OnboardStep ──────────────────────────────────────────────────────────
-export function OnboardStep({ t, profile, setProfile, onNext, userTier, onUpgrade, authUser, currency }) {
+export function OnboardStep({ t, profile, setProfile, onNext, userTier, onUpgrade, authUser, currency, isEditing, onDone }) {
   const steps = buildSteps(t);
   const [idx, setIdx]             = useState(0);
   const [direction, setDirection] = useState("next");
@@ -73,13 +73,13 @@ export function OnboardStep({ t, profile, setProfile, onNext, userTier, onUpgrad
   }
 
   function goNext() {
-    if (idx === total - 1) { onNext(); return; }
+    if (idx === total - 1) { isEditing && onDone ? onDone() : onNext(); return; }
     setDirection("next");
     setIdx(i => i + 1);
   }
 
   function goBack() {
-    if (idx === 0) return;
+    if (idx === 0) { if (isEditing && onDone) onDone(); return; }
     setDirection("back");
     setIdx(i => i - 1);
   }
@@ -164,12 +164,23 @@ export function OnboardStep({ t, profile, setProfile, onNext, userTier, onUpgrad
         <div style={{ fontFamily: "var(--font-data)", fontSize: 11, letterSpacing: "0.18em", color: "var(--ink)", textTransform: "uppercase" }}>
           VETTED
         </div>
-        <div style={{ textAlign: "end" }}>
-          <div style={{ fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: "0.12em", color: "#8A9A8A", textTransform: "uppercase" }}>
-            {t.stepProfile?.toUpperCase() || "PROFILE"}
-          </div>
-          <div style={{ fontFamily: "var(--font-data)", fontSize: 10, letterSpacing: "0.10em", color: "var(--ink)", textTransform: "uppercase", marginTop: 2 }}>
-            {idx + 1} / {total}
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
+          {isEditing && onDone && (
+            <button onClick={onDone} style={{
+              background: "transparent", border: "none", cursor: "pointer",
+              fontFamily: "var(--font-data)", fontSize: 10, letterSpacing: "0.12em",
+              color: "var(--muted)", textTransform: "uppercase", padding: "2px 0",
+            }}>
+              ← PROFILE
+            </button>
+          )}
+          <div style={{ textAlign: "end" }}>
+            <div style={{ fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: "0.12em", color: "#8A9A8A", textTransform: "uppercase" }}>
+              {isEditing ? "EDITING" : (t.stepProfile?.toUpperCase() || "PROFILE")}
+            </div>
+            <div style={{ fontFamily: "var(--font-data)", fontSize: 10, letterSpacing: "0.10em", color: "var(--ink)", textTransform: "uppercase", marginTop: 2 }}>
+              {idx + 1} / {total}
+            </div>
           </div>
         </div>
       </header>
@@ -262,7 +273,7 @@ export function OnboardStep({ t, profile, setProfile, onNext, userTier, onUpgrad
               transition: "background 200ms ease",
             }}
           >
-            {(idx === total - 1 ? (t.btnBuildFramework || "Finish") : "Continue").toUpperCase()}
+            {(idx === total - 1 ? (isEditing ? "Save" : (t.btnBuildFramework || "Finish")) : "Continue").toUpperCase()}
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
               <path d="M3 7H11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
               <path d="M8 4L11 7L8 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
