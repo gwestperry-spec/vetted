@@ -11,13 +11,14 @@
   --shadow:
     rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
 
-  --font-data: 'IBM Plex Mono', 'Courier New', monospace;
-  --font-prose: 'Libre Baskerville', Georgia, serif;
+  --font-display: 'Libre Baskerville', Georgia, serif;
+  --font-data: var(--font-display);
+  --font-prose: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   --sans: var(--font-prose);
-  --heading: var(--font-prose);
+  --heading: var(--font-display);
   --mono: var(--font-data);
 
-  font: 18px/145% var(--font-prose);
+  font: 16px/1.6 var(--font-prose);
   letter-spacing: 0.18px;
   color-scheme: light dark;
   color: var(--text);

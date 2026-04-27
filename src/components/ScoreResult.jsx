@@ -8,7 +8,7 @@ import CoachMark from "./CoachMark.jsx";
 const VERDICT_THEME = {
   pursue:  { heroBg: "#1A3A1A", heroText: "#FFFFFF", border: "#3A7A3A", subText: "rgba(255,255,255,0.82)" },
   monitor: { heroBg: "#4A3000", heroText: "#FFFFFF", border: "#B8A030", subText: "rgba(255,255,255,0.82)" },
-  pass:    { heroBg: "#4A0000", heroText: "#FFFFFF", border: "#C05050", subText: "rgba(255,255,255,0.82)" },
+  pass:    { heroBg: "#252B25", heroText: "#FFFFFF", border: "#5A6A5A", subText: "rgba(255,255,255,0.72)" },
 };
 
 function getTheme(rec) {
@@ -39,30 +39,13 @@ function truncateWords(text, maxWords) {
   return words.slice(0, maxWords).join(" ") + "…";
 }
 
-const COACHING_STYLES = {
-  conservative: {
-    label: "Advisor",
-    description: "Honest counsel — protect optionality, surface real risks",
-    instruction: `Coaching style: ADVISOR.
-You are acting as a trusted advisor whose job is to protect the candidate's long-term career capital.
-- Frame the candidate's positioning carefully and protect their current reputation.
-- Highlight risks and gaps honestly; suggest they address weaknesses before engaging.
-- Interview prep should focus on honest, measured answers — no overreach.
-- Negotiation advice should be realistic and grounded; don't overestimate leverage.
-- Verdict should prioritize fit, stability, and informed decision-making over speed.`,
-  },
-  assertive: {
-    label: "Advocate",
-    description: "Argue their strongest case — compress the timeline",
-    instruction: `Coaching style: ADVOCATE.
-You are acting as a fierce advocate whose job is to help the candidate win this specific opportunity.
-- Frame the candidate's background at its highest credible interpretation.
-- Minimise gaps in language — reframe them as growth opportunities or learning edges.
-- Interview prep should coach them to lead with strengths and redirect gap questions confidently.
-- Negotiation advice should identify every angle of leverage and coach them to use it.
-- Verdict should lean toward action and controlled risk if the upside is real.`,
-  },
-};
+const ADVOCATE_INSTRUCTION = `You are a warm, empathetic career coach and fierce advocate for this candidate.
+- Frame their background at its highest credible interpretation — lead with strengths.
+- Reframe gaps as growth edges or learning opportunities, never as liabilities.
+- Interview prep: coach them to own their story and redirect gap questions with confidence.
+- Negotiation advice: surface every angle of leverage and encourage them to use it.
+- Verdict: lean toward action and realistic optimism when the upside is real.
+- Tone: gentle, kind, encouraging — never bossy, never shaming. Some searches take years.`;
 
 function isVantage(tier) {
   return tier === "vantage" || tier === "vantage_lifetime";
@@ -316,12 +299,11 @@ function InsightsSection({ opp, t }) {
 // ── Weight label helper ───────────────────────────────────────────────────
 function resolveWeightLabel(value, t) {
   const map = {
-    0.5: t?.weightMinor        || "Minor",
-    1.0: t?.weightStandard     || "Standard",
-    1.2: t?.weightRelevant     || "Relevant",
-    1.3: t?.weightImportant    || "Important",
-    1.5: t?.weightCritical     || "Critical",
-    2.0: t?.weightCriticalPlus || "Critical +",
+    1.0: t?.weightNotImportant      || "Not Important",
+    1.5: t?.weightSlightlyImportant || "Slightly Important",
+    2.0: t?.weightImportant         || "Important",
+    2.5: t?.weightVeryImportant     || "Very Important",
+    3.0: t?.weightCritical          || "Critical",
   };
   return map[value] ?? `${value}×`;
 }
@@ -337,54 +319,56 @@ function FiltersSection({ filterScores, t }) {
   // Sort: lowest scores first so gaps surface immediately
   const sorted = [...filterScores].sort((a, b) => a.score - b.score);
 
+  function fsScoreColor(s) {
+    if (s >= 4.0) return "#1A2E1A"; // --score-high
+    if (s >= 3.0) return "#8A6A10"; // --score-mid
+    return "#5A6A5A";               // --score-pass
+  }
+
   return (
     <div style={{ padding: "16px 16px 40px" }}>
       {sorted.map((fs, i) => {
-        const barColor = fs.score < 2.5 ? "#C05050" : fs.score <= 3.5 ? "#B8A030" : "#3A7A3A";
-        const bgColor  = fs.score < 2.5 ? "#FDF5F5" : fs.score <= 3.5 ? "#FAFAE8" : "#F6FAF0";
-        const borderColor = fs.score < 2.5 ? "#E0C8C8" : fs.score <= 3.5 ? "#D8C870" : "#C8DDB8";
+        const numColor = fsScoreColor(fs.score);
         return (
           <div key={i} style={{
-            background: bgColor,
-            borderRadius: 8,
-            border: `1px solid ${borderColor}`,
-            borderLeft: `3px solid ${barColor}`,
+            background: "var(--cream)",
+            borderRadius: 10,
             padding: "12px 14px",
-            marginBottom: 8,
+            marginBottom: 6,
           }}>
             {/* Name + score row */}
-            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 8 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
               <span style={{
                 fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: ".09em",
-                color: "#1A2E1A", textTransform: "uppercase", flex: 1, marginRight: 10,
+                color: "#3A5A3A", textTransform: "uppercase", flex: 1, marginRight: 10,
                 fontWeight: 700,
               }}>
                 {fs.filter_name}
                 {fs.weight && fs.weight !== 1.0 && (
-                  <span style={{ color: "#4A6A4A", marginLeft: 6, fontWeight: 400 }}>
+                  <span style={{ color: "var(--muted-soft)", marginLeft: 6, fontWeight: 400 }}>
                     · {resolveWeightLabel(fs.weight, t)}
                   </span>
                 )}
               </span>
               <span style={{
-                fontFamily: "var(--font-data)", fontSize: 20, fontWeight: 700,
-                color: barColor, flexShrink: 0, lineHeight: 1,
+                fontFamily: "var(--font-data)", fontSize: 13, fontWeight: 500,
+                color: numColor, flexShrink: 0, lineHeight: 1,
               }}>
-                {fs.score}
+                {Number(fs.score).toFixed(1)}
               </span>
             </div>
             {/* Bar */}
-            <div style={{ height: 3, background: "rgba(0,0,0,0.08)", borderRadius: 2, overflow: "hidden", marginBottom: fs.rationale ? 8 : 0 }}>
+            <div style={{ height: 4, background: "var(--border)", borderRadius: 2, overflow: "hidden", marginBottom: fs.rationale ? 8 : 0 }}>
               <div style={{
                 height: "100%", width: `${(fs.score / 5) * 100}%`,
-                background: barColor, borderRadius: 2, transition: "width 0.4s ease",
+                background: numColor, borderRadius: 2, transition: "width 0.6s ease",
               }} />
             </div>
             {/* Rationale */}
             {fs.rationale && (
               <p style={{
-                fontFamily: "var(--font-prose)", fontSize: 12, lineHeight: 1.65,
-                color: "#1A2E1A", margin: 0,
+                fontFamily: "var(--font-prose)", fontSize: 12, lineHeight: 1.6,
+                color: "var(--muted-deep)", margin: 0,
               }}>
                 {fs.rationale}
               </p>
@@ -399,23 +383,16 @@ function FiltersSection({ filterScores, t }) {
 // ── Coach ─────────────────────────────────────────────────────────────────
 function CoachSection({ opp, profile, lang, userTier, authUser, onUpgrade, t }) {
   const canVantage = isVantage(userTier);
-  const [coachingCache, setCoachingCache]   = useState({});
-  const [coachingStyle, setCoachingStyle]   = useState("conservative");
+  const [coachingCache, setCoachingCache]   = useState(null);
   const [coachingLoading, setCoachingLoading] = useState(false);
   const [coachingError, setCoachingError]   = useState("");
   const [coachingOpen, setCoachingOpen]     = useState(false);
 
-  const coaching = coachingCache[coachingStyle] || null;
-
-  function handleStyleChange(style) {
-    setCoachingStyle(style);
-    setCoachingError("");
-    if (coachingCache[style]) setCoachingOpen(true);
-  }
+  const coaching = coachingCache || null;
 
   async function fetchCoaching() {
     if (!canVantage) { onUpgrade?.(t?.paywallCompare || "Unlock personalized coaching. Vantage feature."); return; }
-    if (coachingCache[coachingStyle]) { setCoachingOpen(true); return; }
+    if (coachingCache) { setCoachingOpen(true); return; }
     if (coachingLoading) return;
 
     setCoachingLoading(true);
@@ -438,14 +415,13 @@ function CoachSection({ opp, profile, lang, userTier, authUser, onUpgrade, t }) 
         .map(fs => `- ${fs.filter_name}: ${fs.score}/5 — ${fs.rationale}`)
         .join("\n");
 
-      const styleConfig = COACHING_STYLES[coachingStyle];
       const langName = LANG_NAMES[lang] || "English";
 
       const prompt = `You are an executive career coach. Be brief — write like a trusted advisor in a 15-minute meeting, not a report. Each section must be 60 words or fewer.
 
 Respond entirely in ${langName}. All JSON values must be written in ${langName}.
 
-${styleConfig.instruction}
+${ADVOCATE_INSTRUCTION}
 
 CANDIDATE PROFILE:
 ${profileSummary}
@@ -488,15 +464,12 @@ Respond ONLY with valid JSON (no markdown). Each value must be 60 words or fewer
       const text = data.content?.map(b => (typeof b.text === "string" ? b.text : "")).join("") || "";
       const raw = JSON.parse(text.replace(/```json|```/g, "").trim());
 
-      setCoachingCache(prev => ({
-        ...prev,
-        [coachingStyle]: {
-          interview_prep:    String(raw.interview_prep    || ""),
-          positioning_angle: String(raw.positioning_angle || ""),
-          negotiation:       String(raw.negotiation       || ""),
-          go_no_go:          String(raw.go_no_go          || ""),
-        },
-      }));
+      setCoachingCache({
+        interview_prep:    String(raw.interview_prep    || ""),
+        positioning_angle: String(raw.positioning_angle || ""),
+        negotiation:       String(raw.negotiation       || ""),
+        go_no_go:          String(raw.go_no_go          || ""),
+      });
     } catch (err) {
       handleError(err, "coaching_prompts");
       setCoachingError("Coaching failed to load. Please try again.");
@@ -521,45 +494,6 @@ Respond ONLY with valid JSON (no markdown). Each value must be 60 words or fewer
           <p style={{ fontFamily: "var(--font-prose)", fontSize: 13, color: "#1A2E1A", lineHeight: 1.65, marginBottom: 0 }}>
             {t?.coachingGateDesc || "Personalized interview prep, positioning strategy, and negotiation leverage — tailored to this exact role and your profile."}
           </p>
-        </div>
-      )}
-
-      {/* Style toggle — Vantage only */}
-      {canVantage && (
-        <div role="group" aria-label="Coaching style" style={{
-          display: "grid", gridTemplateColumns: "1fr 1fr",
-          border: "1px solid #D8E8D8", borderRadius: 8, overflow: "hidden", marginBottom: 14,
-        }}>
-          {Object.entries(COACHING_STYLES).map(([key, style], i) => (
-            <button
-              key={key}
-              type="button"
-              onClick={() => handleStyleChange(key)}
-              aria-pressed={coachingStyle === key}
-              style={{
-                padding: "12px 10px", minHeight: 48,
-                fontFamily: "var(--font-data)", fontSize: 10, fontWeight: 700,
-                letterSpacing: ".08em", textTransform: "uppercase",
-                border: "none",
-                borderRight: i === 0 ? "1px solid #D8E8D8" : "none",
-                cursor: "pointer",
-                background: coachingStyle === key ? "#1A3A1A" : "transparent",
-                color: coachingStyle === key ? "#fff" : "#4A6A4A",
-                transition: "all .15s",
-              }}
-            >
-              <span style={{ display: "block", marginBottom: 2 }}>
-                {key === "conservative" ? (t?.coachingStyleAdvisor || style.label) : (t?.coachingStyleAdvocate || style.label)}
-              </span>
-              <span style={{
-                fontFamily: "var(--font-prose)", fontSize: 10, fontWeight: 400,
-                letterSpacing: 0, textTransform: "none",
-                color: coachingStyle === key ? "rgba(255,255,255,0.6)" : "#4A6A4A",
-              }}>
-                {key === "conservative" ? (t?.coachingStyleAdvisorDesc || style.description) : (t?.coachingStyleAdvocateDesc || style.description)}
-              </span>
-            </button>
-          ))}
         </div>
       )}
 
@@ -649,25 +583,6 @@ Respond ONLY with valid JSON (no markdown). Each value must be 60 words or fewer
             );
           })}
 
-          {!coachingLoading && (
-            <p style={{ fontSize: 11, color: "#4A6A4A", fontFamily: "var(--font-data)", letterSpacing: ".04em", marginTop: 4 }}>
-              Want a different lens?{" "}
-              <button
-                onClick={() => {
-                  const other = coachingStyle === "conservative" ? "assertive" : "conservative";
-                  handleStyleChange(other);
-                }}
-                style={{
-                  background: "none", border: "none",
-                  color: "#27500A", cursor: "pointer",
-                  fontSize: 11, fontWeight: 700, padding: 0,
-                  textDecoration: "underline", letterSpacing: ".04em",
-                }}
-              >
-                Switch to {coachingStyle === "conservative" ? "Advocate" : "Advisor"}
-              </button>
-            </p>
-          )}
         </div>
       )}
 
@@ -678,7 +593,7 @@ Respond ONLY with valid JSON (no markdown). Each value must be 60 words or fewer
             fontFamily: "var(--font-data)", fontSize: 10, color: "#4A6A4A",
             letterSpacing: ".12em", textTransform: "uppercase",
           }}>
-            Generating {coachingStyle === "conservative" ? "advisor" : "advocate"} coaching…
+            Generating coaching…
           </div>
         </div>
       )}
@@ -691,8 +606,10 @@ export default function ScoreResult({ t, lang, opp, profile, onBack, onRemove, o
   if (!opp) return null;
 
   // Default to INSIGHTS — the most valuable content
-  const [activeTab, setActiveTab]     = useState("insights");
-  const [localStatus, setLocalStatus] = useState(opp.application_status || "applied");
+  const [activeTab, setActiveTab]         = useState("insights");
+  const [localStatus, setLocalStatus]     = useState(opp.application_status || "applied");
+  const [actionStatus, setActionStatus]   = useState(null); // null | 'passed' | 'saved' | 'applied'
+  const [showOverflow, setShowOverflow]   = useState(false);
 
   const rec   = opp.recommendation || "monitor";
   const theme = getTheme(rec);
@@ -717,94 +634,85 @@ export default function ScoreResult({ t, lang, opp, profile, onBack, onRemove, o
       style={{
         display: "flex",
         flexDirection: "column",
+        position: "relative",
         minHeight: "calc(100vh - max(env(safe-area-inset-top,44px),44px) - 80px)",
         margin: "0 -16px",
         background: "var(--paper)",
       }}
     >
-      {/* ── VERDICT HERO BLOCK ────────────────────────────────────────────── */}
+      {/* ── SCORECARD HERO — paper background, editorial layout ─────────── */}
       <div style={{
-        background: theme.heroBg,
-        borderLeft: `4px solid ${theme.border}`,
-        padding: "14px 20px 18px",
+        background: "var(--paper)",
+        padding: "8px 20px 24px",
         flexShrink: 0,
-        position: "relative",
+        borderBottom: "0.5px solid var(--border)",
       }}>
-        {/* Back link — top left */}
+        {/* Back + nav row */}
         <button
           onClick={onBack}
           style={{
             background: "none", border: "none", cursor: "pointer",
-            fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: ".1em",
-            textTransform: "uppercase",
-            color: "rgba(255,255,255,0.82)",
-            fontWeight: 600,
-            padding: "0 0 12px 0",
-            display: "block",
+            display: "inline-flex", alignItems: "center", gap: 6,
+            padding: "6px 0 14px 0",
+            fontFamily: "var(--font-data)", fontSize: 10, letterSpacing: "0.14em",
+            color: "var(--ink)", textTransform: "uppercase",
           }}
         >
-          {t?.backWorkspace || "← Your Workspace"}
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+            <path d="M7 2L3 5L7 8" stroke="currentColor" strokeWidth="1.4"
+                  strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+          BACK
         </button>
 
-        {/* Company */}
+        {/* VERDICT eyebrow */}
         <p style={{
-          fontFamily: "var(--font-data)", fontSize: 9, fontWeight: 600,
-          letterSpacing: ".16em", textTransform: "uppercase",
-          color: theme.subText, marginBottom: 3,
+          fontFamily: "var(--font-data)", fontSize: 11, fontWeight: 500,
+          letterSpacing: "0.16em", textTransform: "uppercase",
+          color: theme.border, margin: "0 0 8px 0",
         }}>
-          {opp.company || "—"}
+          VERDICT · {verdictLabel}
         </p>
 
-        {/* Role title — display serif */}
+        {/* Big VQ score */}
+        <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 14 }}>
+          <span style={{
+            fontFamily: "var(--font-prose)", fontSize: 96, fontWeight: 500,
+            color: "var(--ink)", lineHeight: 0.9,
+            letterSpacing: "-0.03em",
+          }}>
+            {score}
+          </span>
+          <span style={{
+            fontFamily: "var(--font-prose)", fontSize: 22, fontWeight: 400,
+            color: "#8A9A8A", fontStyle: "italic",
+          }}>/ 5</span>
+        </div>
+
+        {/* Role title */}
         <h1 style={{
-          fontFamily: "var(--font-display)", fontStyle: "normal", fontSize: 17, fontWeight: 700,
-          color: theme.heroText, lineHeight: 1.25, marginBottom: 16,
+          fontFamily: "var(--font-prose)", fontStyle: "normal", fontSize: 24, fontWeight: 500,
+          color: "var(--ink)", lineHeight: 1.18, margin: "0 0 6px 0",
+          letterSpacing: "-0.005em",
         }}>
           {opp.role_title || "Untitled Role"}
         </h1>
 
-        {/* Score + verdict row */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-          {/* Large score */}
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            <span style={{
-              fontFamily: "var(--font-data)", fontSize: 9, fontWeight: 700,
-              letterSpacing: ".16em", textTransform: "uppercase",
-              color: theme.subText, marginBottom: 2,
-            }}>VQ SCORE</span>
-            <span style={{
-              fontFamily: "var(--font-display)", fontStyle: "normal", fontSize: 56, fontWeight: 700,
-              color: theme.heroText, lineHeight: 1,
-            }}>
-              {score}
+        {/* Company · comp — italic, muted */}
+        <p style={{
+          fontFamily: "var(--font-prose)", fontSize: 15, fontStyle: "italic",
+          color: "var(--muted-deep)", margin: 0, lineHeight: 1.4,
+        }}>
+          {opp.company || "—"}
+          {profile.threshold && (
+            <span style={{ color: "#8A9A8A" }}>
+              {" "}· Threshold {profile.threshold}{" "}
+              <span style={{ color: opp.overall_score >= profile.threshold ? "var(--score-high)" : "var(--score-mid)" }}>
+                ({opp.overall_score >= profile.threshold ? "above" : "below"})
+              </span>
             </span>
-          </div>
-
-          {/* Verdict + threshold — display serif, right-aligned, vertically centered */}
-          <div style={{ textAlign: "right" }}>
-            <span style={{
-              fontFamily: "var(--font-display)", fontStyle: "normal", fontSize: 26, fontWeight: 700,
-              color: theme.heroText, lineHeight: 1, display: "block",
-              marginBottom: 8,
-            }}>
-              {verdictLabel}
-            </span>
-            <span style={{
-              fontFamily: "var(--font-display)", fontStyle: "normal", fontSize: 13, fontWeight: 700,
-              color: theme.heroText, lineHeight: 1, display: "block",
-              marginBottom: 3,
-            }}>
-              {profile.threshold}
-            </span>
-            <span style={{
-              fontFamily: "var(--font-data)", fontSize: 9, fontWeight: 600,
-              color: theme.subText, letterSpacing: ".1em",
-              textTransform: "uppercase", display: "block",
-            }}>
-              Threshold · {opp.overall_score >= profile.threshold ? "Above" : "Below"}
-            </span>
-          </div>
-        </div>
+          )}
+        </p>
       </div>
 
       {/* ── HORIZONTAL TAB BAR ───────────────────────────────────────────── */}
@@ -848,7 +756,7 @@ export default function ScoreResult({ t, lang, opp, profile, onBack, onRemove, o
       {/* ── CONTENT AREA ─────────────────────────────────────────────────── */}
       <div style={{
         flex: 1, overflowY: "auto", WebkitOverflowScrolling: "touch",
-        minHeight: 0,
+        minHeight: 0, paddingBottom: 96,
       }}>
         {activeTab === "insights" && (
           <div style={{ padding: "16px 16px 0" }}>
@@ -881,6 +789,157 @@ export default function ScoreResult({ t, lang, opp, profile, onBack, onRemove, o
           />
         )}
       </div>
+
+      {/* ── ACTION TRACKER — Pass / Save / Apply ─────────────────────────── */}
+      <ActionTracker
+        status={actionStatus}
+        onSelect={(next) => {
+          const newVal = actionStatus === next ? null : next;
+          setActionStatus(newVal);
+          if (newVal === "passed")  onUpdateStatus?.(opp.id, "passed");
+          if (newVal === "applied") onUpdateStatus?.(opp.id, "applied");
+        }}
+        onOverflow={() => setShowOverflow(true)}
+      />
+
+      {showOverflow && (
+        <OverflowSheet
+          canVantage={canVantage}
+          onClose={() => setShowOverflow(false)}
+          onRescore={onBack}
+          onExport={() => exportOpportunityPdf(opp, profile, t)}
+          onUpgrade={onUpgrade}
+          t={t}
+        />
+      )}
     </main>
+  );
+}
+
+// ── ActionTracker ─────────────────────────────────────────────────────────
+function ActionTracker({ status, onSelect, onOverflow }) {
+  const items = [
+    {
+      id: "passed", label: "PASS", short: "PASSED",
+      icon: <><path d="M3 7L11 7" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/><path d="M3 3L11 11" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></>,
+    },
+    {
+      id: "saved", label: "SAVE", short: "SAVED",
+      icon: <path d="M3 2h8v10l-4-2.5L3 12V2z" stroke="currentColor" strokeWidth="1.3" fill="none" strokeLinejoin="round"/>,
+    },
+    {
+      id: "applied", label: "APPLY", short: "APPLIED",
+      icon: <path d="M2 7l3 3 7-7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" fill="none"/>,
+    },
+  ];
+  return (
+    <div style={{
+      position: "absolute", left: 0, right: 0, bottom: 0, zIndex: 5,
+      padding: "10px 16px 28px",
+      background: "linear-gradient(to top, rgba(250,250,248,0.98) 60%, rgba(250,250,248,0))",
+      display: "flex", gap: 8, alignItems: "stretch",
+    }}>
+      <div style={{
+        flex: 1, display: "flex",
+        background: "#FFFFFF",
+        border: "0.5px solid var(--border)",
+        borderRadius: 999, overflow: "hidden",
+        boxShadow: "0 2px 12px rgba(15,15,12,0.06)",
+      }}>
+        {items.map((it, i) => {
+          const active = status === it.id;
+          return (
+            <button key={it.id} onClick={() => onSelect(it.id)} style={{
+              flex: 1, minHeight: 48,
+              background: active ? "var(--ink)" : "transparent",
+              color: active ? "#F4F8F0" : "var(--ink)",
+              border: "none",
+              borderInlineStart: i === 0 ? "none" : "0.5px solid var(--border)",
+              fontFamily: "var(--font-data)", fontSize: 11, fontWeight: 500,
+              letterSpacing: "0.14em", textTransform: "uppercase",
+              cursor: "pointer",
+              display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 7,
+              transition: "background 0.15s, color 0.15s",
+            }}>
+              <svg width="13" height="13" viewBox="0 0 14 14" fill="none">{it.icon}</svg>
+              {active ? it.short : it.label}
+            </button>
+          );
+        })}
+      </div>
+      <button onClick={onOverflow} aria-label="More actions" style={{
+        width: 48, minHeight: 48,
+        background: "#FFFFFF",
+        border: "0.5px solid var(--border)",
+        borderRadius: 999, cursor: "pointer",
+        display: "inline-flex", alignItems: "center", justifyContent: "center",
+        boxShadow: "0 2px 12px rgba(15,15,12,0.06)",
+        flexShrink: 0,
+      }}>
+        <svg width="16" height="4" viewBox="0 0 16 4" fill="none">
+          <circle cx="2"  cy="2" r="1.4" fill="var(--ink)"/>
+          <circle cx="8"  cy="2" r="1.4" fill="var(--ink)"/>
+          <circle cx="14" cy="2" r="1.4" fill="var(--ink)"/>
+        </svg>
+      </button>
+    </div>
+  );
+}
+
+// ── OverflowSheet ─────────────────────────────────────────────────────────
+function OverflowSheet({ canVantage, onClose, onRescore, onExport, onUpgrade, t }) {
+  const items = [
+    { id: "rescore", label: "Re-score with current filters", hint: "Run again if your filters changed",
+      action: () => { onClose(); onRescore?.(); } },
+    { id: "export",  label: "Export PDF",  hint: canVantage ? "Full scorecard with rationale" : null,
+      locked: !canVantage,
+      action: () => { if (!canVantage) { onClose(); onUpgrade?.(t?.paywallCompare || "Export a full PDF breakdown. Vantage feature."); } else { onExport?.(); onClose(); } } },
+    { id: "compare", label: "Compare with another role", hint: canVantage ? null : "VANTAGE",
+      locked: !canVantage,
+      action: () => { if (!canVantage) { onClose(); onUpgrade?.(t?.paywallCompare || "Compare roles side-by-side. Vantage feature."); } } },
+  ];
+  return (
+    <div onClick={onClose} style={{
+      position: "absolute", inset: 0, zIndex: 30,
+      background: "rgba(15,15,12,0.32)",
+      display: "flex", alignItems: "flex-end",
+    }}>
+      <div onClick={(e) => e.stopPropagation()} style={{
+        width: "100%",
+        background: "var(--cream)",
+        borderTopLeftRadius: 20, borderTopRightRadius: 20,
+        padding: "12px 0 32px",
+        boxShadow: "0 -8px 32px rgba(15,15,12,0.18)",
+      }}>
+        <div style={{
+          width: 40, height: 4, borderRadius: 2,
+          background: "var(--border)", margin: "4px auto 12px",
+        }}/>
+        <div style={{ padding: "0 4px" }}>
+          {items.map((it, i) => (
+            <button key={it.id} onClick={it.action} style={{
+              width: "100%",
+              padding: "14px 20px",
+              background: "transparent", border: "none",
+              borderTop: i === 0 ? "none" : "0.5px solid var(--border)",
+              textAlign: "start",
+              cursor: it.locked ? "default" : "pointer",
+              opacity: it.locked ? 0.5 : 1,
+              display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12,
+            }}>
+              <span style={{ fontFamily: "var(--font-prose)", fontSize: 15, color: "var(--ink)" }}>
+                {it.locked ? "🔒 " : ""}{it.label}
+              </span>
+              {it.hint && (
+                <span style={{
+                  fontFamily: "var(--font-data)", fontSize: 9.5, letterSpacing: "0.16em",
+                  textTransform: "uppercase", color: "#8A9A8A",
+                }}>{it.hint}</span>
+              )}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }

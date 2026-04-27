@@ -76,9 +76,9 @@ function formatDashDate() {
 
 // ─── Score color helper ────────────────────────────────────────────────────
 function scoreColor(score, onDark = false) {
-  if (score >= 4.0) return onDark ? "#7AB87A" : "#3A7A3A";
-  if (score >= 3.0) return "#B8A030";
-  return "#C05050";
+  if (score >= 4.0) return onDark ? "#E8F0E8" : "#1A2E1A"; // --score-high
+  if (score >= 3.0) return "#8A6A10";                       // --score-mid
+  return "#5A6A5A";                                          // --score-pass (sage, deliberate)
 }
 
 // ─── Verdict pill styles ───────────────────────────────────────────────────
@@ -93,10 +93,10 @@ function verdictPill(recommendation, onDark = false) {
       ? { bg: "rgba(212,168,64,0.25)", color: "#F0D090" }
       : { bg: "#FAEEDA", color: "#633806" };
   }
-  // pass
+  // pass — sage neutral, not red (pass is a decision, not a failure)
   return onDark
-    ? { bg: "rgba(192,80,80,0.25)", color: "#F0A0A0" }
-    : { bg: "#F8ECEC", color: "#C05050" };
+    ? { bg: "rgba(90,106,90,0.25)", color: "#C4D8C0" }
+    : { bg: "#EEF0EE", color: "#3A4A3A" };
 }
 
 // ─── Section label ─────────────────────────────────────────────────────────

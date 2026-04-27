@@ -11,9 +11,9 @@ const WEIGHT_LABELS = {
 };
 
 function scoreColor(score) {
-  if (score >= 4) return "var(--success)";
-  if (score >= 3) return "var(--gold)";
-  return "var(--pass)";
+  if (score >= 4) return "var(--score-high)";
+  if (score >= 3) return "var(--score-mid)";
+  return "var(--score-pass)";
 }
 
 function ScoreDots({ score }) {
@@ -32,10 +32,10 @@ function ScoreDots({ score }) {
 
 // ── Single column header ─────────────────────────────────────────────────────
 function OppHeader({ t, opp, profile, isWinner, onViewFull }) {
-  const sc = opp.overall_score >= 4 ? "high" : opp.overall_score >= profile.threshold ? "mid" : "low";
-  const scoreColorClass = { high: "var(--success)", mid: "var(--gold)", low: "var(--pass)" }[sc];
-  const recBg = { pursue: "#c8edda", monitor: "var(--warn-bg)", pass: "var(--pass-bg)" };
-  const recColor = { pursue: "var(--success)", monitor: "var(--gold)", pass: "var(--pass)" };
+  const sc = opp.overall_score >= 4 ? "high" : opp.overall_score >= 3 ? "mid" : "low";
+  const scoreColorClass = { high: "var(--score-high)", mid: "var(--score-mid)", low: "var(--score-pass)" }[sc];
+  const recBg    = { pursue: "var(--pursue-bg)",    monitor: "var(--monitor-bg)",    pass: "var(--pass-pill-bg)"    };
+  const recColor = { pursue: "var(--pursue-fg)",    monitor: "var(--monitor-fg)",    pass: "var(--pass-pill-fg)"    };
 
   return (
     <div style={{ padding: "20px 16px 16px", borderBottom: "1px solid var(--border)" }}>
@@ -204,7 +204,7 @@ export default function CompareView({ t, profile, oppA, oppB, onBack, onViewOpp 
           <ul style={{ paddingLeft: 16 }}>
             {(oppA.strengths || []).map((s, i) => <li key={i} style={{ fontSize: 12, lineHeight: 1.6, marginBottom: 4, color: "var(--ink)" }}>{s}</li>)}
           </ul>
-          <p style={{ fontFamily: "var(--font-data)", fontSize: 11, letterSpacing: ".15em", textTransform: "uppercase", color: "var(--pass)", marginTop: 14, marginBottom: 8, fontWeight: 700 }}>
+          <p style={{ fontFamily: "var(--font-data)", fontSize: 11, letterSpacing: ".15em", textTransform: "uppercase", color: "var(--error)", marginTop: 14, marginBottom: 8, fontWeight: 700 }}>
             {t.gaps}
           </p>
           <ul style={{ paddingLeft: 16 }}>
@@ -219,7 +219,7 @@ export default function CompareView({ t, profile, oppA, oppB, onBack, onViewOpp 
           <ul style={{ paddingLeft: 16 }}>
             {(oppB.strengths || []).map((s, i) => <li key={i} style={{ fontSize: 12, lineHeight: 1.6, marginBottom: 4, color: "var(--ink)" }}>{s}</li>)}
           </ul>
-          <p style={{ fontFamily: "var(--font-data)", fontSize: 11, letterSpacing: ".15em", textTransform: "uppercase", color: "var(--pass)", marginTop: 14, marginBottom: 8, fontWeight: 700 }}>
+          <p style={{ fontFamily: "var(--font-data)", fontSize: 11, letterSpacing: ".15em", textTransform: "uppercase", color: "var(--error)", marginTop: 14, marginBottom: 8, fontWeight: 700 }}>
             {t.gaps}
           </p>
           <ul style={{ paddingLeft: 16 }}>

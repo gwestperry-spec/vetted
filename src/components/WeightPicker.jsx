@@ -2,17 +2,16 @@
 // Replaces native <select> so text is centered on iOS (WKWebView renders
 // native selects misaligned). Step ‹/› buttons cycle through WEIGHT_OPTIONS.
 export const WEIGHT_OPTIONS = [
-  { value: 0.5, label: "Minor" },
-  { value: 1.0, label: "Standard" },
-  { value: 1.2, label: "Relevant" },
-  { value: 1.3, label: "Important" },
-  { value: 1.5, label: "Critical" },
-  { value: 2.0, label: "Critical +" },
+  { value: 1.0, label: "Not Important" },
+  { value: 1.5, label: "Slightly Important" },
+  { value: 2.0, label: "Important" },
+  { value: 2.5, label: "Very Important" },
+  { value: 3.0, label: "Critical" },
 ];
 
 const WEIGHT_T_KEYS = {
-  0.5: "weightMinor", 1.0: "weightStandard", 1.2: "weightRelevant",
-  1.3: "weightImportant", 1.5: "weightCritical", 2.0: "weightCriticalPlus",
+  1.0: "weightNotImportant", 1.5: "weightSlightlyImportant",
+  2.0: "weightImportant", 2.5: "weightVeryImportant", 3.0: "weightCritical",
 };
 
 export default function WeightPicker({ value, onChange, ariaLabel, t }) {

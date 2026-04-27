@@ -44,11 +44,11 @@ const VERDICT_THEME = {
     badgeColor: "#633806",
   },
   pass: {
-    heroBg:   "#4A0000",
+    heroBg:   "#252B25",
     heroText: "#FFFFFF",
-    border:   "#C05050",
-    badgeBg:  "#FCEBEB",
-    badgeColor: "#791F1F",
+    border:   "#5A6A5A",
+    badgeBg:  "#EEF0EE",
+    badgeColor: "#3A4A3A",
   },
   applied: {
     heroBg:   "#1A3A1A",
@@ -192,105 +192,108 @@ export default function RoleCard({
       background: "#FFFFFF",
       border: inCompareQueue ? "1.5px solid #1A2E1A" : "1px solid #E0E8E0",
       borderLeft: `4px solid ${theme.border}`,
-      borderRadius: 8,
+      borderRadius: 12,
       marginBottom: 10,
       overflow: "hidden",
       transition: "border-color 0.15s",
     }}>
 
-      {/* ── HERO BLOCK: dark bg, large centered score + verdict ── */}
+      {/* ── DARK HERO: eyebrow + title/score — matches design spec ── */}
       <div style={{
         background: theme.heroBg,
-        padding: "16px 20px 14px",
-        textAlign: "center",
-        position: "relative",
+        padding: "20px 24px",
+        display: "flex",
+        flexDirection: "column",
+        gap: 18,
       }}>
-        {/* Timestamp — top right */}
-        <span style={{
-          position: "absolute", top: 10, right: 14,
-          fontFamily: "var(--font-data)", fontSize: 9,
-          color: "rgba(255,255,255,0.45)", letterSpacing: ".04em",
-        }}>
-          {relativeTime(role.updated_at || role.created_at)}
-        </span>
-
-        {/* Verdict label (small caps above score) */}
+        {/* Eyebrow: 66.6% width, centered, hairline as border-bottom */}
         <p style={{
-          fontFamily: "var(--font-data)", fontSize: 9,
-          letterSpacing: ".18em", textTransform: "uppercase",
-          color: "rgba(255,255,255,0.65)",
-          marginBottom: 4,
-        }}>
-          {verdictLabel}
-        </p>
-
-        {/* VQ Score — large */}
-        {hasScore ? (
-          <p style={{
-            fontFamily: "var(--font-data)", fontSize: 44, fontWeight: 700,
-            color: theme.heroText, lineHeight: 1, marginBottom: 4,
-          }}>
-            {scoreStr}
-          </p>
-        ) : isQueued ? (
-          <p style={{
-            fontFamily: "var(--font-data)", fontSize: 18, fontWeight: 600,
-            color: "rgba(255,255,255,0.55)", lineHeight: 1, marginBottom: 4,
-          }}>
-            {t?.wsScoring || "Scoring…"}
-          </p>
-        ) : (
-          <p style={{
-            fontFamily: "var(--font-data)", fontSize: 28, fontWeight: 700,
-            color: "rgba(255,255,255,0.3)", lineHeight: 1, marginBottom: 4,
-          }}>—</p>
-        )}
-
-        {/* "VQ SCORE · time" sub-label */}
-        <p style={{
-          fontFamily: "var(--font-data)", fontSize: 9,
-          letterSpacing: ".12em", textTransform: "uppercase",
-          color: "rgba(255,255,255,0.4)",
-          marginBottom: 0,
-        }}>
-          VQ SCORE
-        </p>
-      </div>
-
-      {/* ── TITLE + COMPANY ── */}
-      <div style={{
-        padding: "12px 16px 10px",
-        borderBottom: "1px solid #EEF4EE",
-        textAlign: "center",
-      }}>
-        <p style={{
-          fontFamily: "var(--font-prose)", fontSize: 15, fontWeight: 700,
-          color: "#1A2E1A", marginBottom: 3,
-          overflow: "hidden", textOverflow: "ellipsis",
-          display: "-webkit-box", WebkitLineClamp: 1, WebkitBoxOrient: "vertical",
-        }}>
-          {role.title || "Untitled Role"}
-        </p>
-        <p style={{
-          fontFamily: "var(--font-prose)", fontSize: 12,
-          color: "#4A6A4A",
+          width: "66.6667%",
+          margin: "0 auto",
+          textAlign: "center",
+          fontFamily: "var(--font-display)", fontSize: 10, fontWeight: 400,
+          letterSpacing: ".16em", textTransform: "uppercase",
+          color: "#A8C0A8", lineHeight: 1.4,
+          borderBottom: "0.5px solid rgba(244,248,240,0.15)",
+          paddingBottom: 10,
           overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
         }}>
-          {role.company || "Unknown Company"}
-          {role.source_url && (
-            <span>
-              {" · "}
-              <a
-                href={role.source_url}
-                target="_blank" rel="noopener noreferrer"
-                style={{ color: "#4A8A4A", textDecoration: "none" }}
-                onClick={e => e.stopPropagation()}
-              >
-                {t?.wsViewPosting || "View ↗"}
-              </a>
-            </span>
-          )}
+          {verdictLabel}
+          {role.company ? ` · ${role.company}` : ""}
+          {relativeTime(role.updated_at || role.created_at)
+            ? ` · ${relativeTime(role.updated_at || role.created_at)}`
+            : ""}
         </p>
+
+        {/* Body: title/company left, score right — align-items: end */}
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "1fr auto",
+          gap: 24,
+          alignItems: "end",
+        }}>
+          {/* Left: role title + company meta */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            <p style={{
+              fontFamily: "var(--font-display)", fontStyle: "normal",
+              fontSize: 22, fontWeight: 700, lineHeight: 1.2,
+              color: "#F4F8F0",
+              overflow: "hidden", textOverflow: "ellipsis",
+              display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical",
+              margin: 0,
+            }}>
+              {role.title || "Untitled Role"}
+            </p>
+            <p style={{
+              fontFamily: "var(--font-display)", fontStyle: "normal",
+              fontSize: 11, fontWeight: 400, letterSpacing: ".10em",
+              textTransform: "uppercase", color: "#C4D8C0",
+              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+              margin: 0,
+            }}>
+              {role.company || "—"}
+              {role.source_url && (
+                <span>
+                  {" · "}
+                  <a
+                    href={role.source_url}
+                    target="_blank" rel="noopener noreferrer"
+                    style={{ color: "#A8C0A8", textDecoration: "none" }}
+                    onClick={e => e.stopPropagation()}
+                  >
+                    {t?.wsViewPosting || "View ↗"}
+                  </a>
+                </span>
+              )}
+            </p>
+          </div>
+
+          {/* Right: VQ score — white on dark, 56px */}
+          <div style={{ flexShrink: 0 }}>
+            {hasScore ? (
+              <span style={{
+                fontFamily: "var(--font-display)", fontStyle: "normal",
+                fontSize: 56, fontWeight: 700, lineHeight: 1,
+                letterSpacing: "-0.02em", color: "#F4F8F0",
+                display: "block",
+              }}>
+                {scoreStr}
+              </span>
+            ) : isQueued ? (
+              <span style={{
+                fontFamily: "var(--font-display)", fontSize: 14, fontWeight: 400,
+                color: "rgba(244,248,240,0.45)", letterSpacing: ".06em",
+              }}>
+                {t?.wsScoring || "Scoring…"}
+              </span>
+            ) : (
+              <span style={{
+                fontFamily: "var(--font-display)", fontSize: 36,
+                color: "rgba(244,248,240,0.25)", lineHeight: 1,
+              }}>—</span>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* ── Pending reminders ── */}

@@ -11,7 +11,7 @@ import {
   trackScoreFailed,
   trackStreamFallbackTriggered,
 } from "./utils/analytics.js";
-import { Component, useState, useEffect, useRef } from "react";
+import React, { Component, useState, useEffect, useRef } from "react";
 import { useAuth } from "./hooks/useAuth.js";
 import { handleError } from "./utils/handleError.js";
 import LangSwitcher from "./components/LangSwitcher.jsx";
@@ -22,9 +22,15 @@ import WalkthroughModal from "./components/WalkthroughModal.jsx";
 import PaywallModal from "./components/PaywallModal.jsx";
 import FiltersStep from "./components/FiltersStep.jsx";
 import { VQLoadingScreen as VQLoadingScreenComponent } from "./components/VQLoadingScreen.jsx";
-import { RegionGate, OnboardStep } from "./components/Onboarding.jsx";
+import { OnboardStep } from "./components/Onboarding.jsx";
 import Dashboard from "./components/Dashboard.jsx";
 import RoleWorkspace from "./components/workspace/RoleWorkspace.jsx";
+import TabBarV2 from "./components/TabBarV2.jsx";
+import HamburgerSheet, { HamburgerButton } from "./components/HamburgerSheet.jsx";
+import MarketPulseCard from "./components/MarketPulse.jsx";
+import ScoreEntry from "./components/ScoreEntry.jsx";
+import VQAdvocateScreen, { VQAdvocateCard } from "./components/VQAdvocate.jsx";
+import { COUNTRY_MAP } from "./data/countries.js";
 
 // ─── Error boundary ────────────────────────────────────────────────────────
 export class ErrorBoundary extends Component {
@@ -65,19 +71,19 @@ export class ErrorBoundary extends Component {
 
 // ─── Default filters ──────────────────────────────────────────────────────
 const DEFAULT_FILTERS = [
-  { id: "pl_ownership", weight: 1.5, isCore: true,
+  { id: "pl_ownership", weight: 3.0, isCore: true,
     name: { en: "Financial Accountability", es: "Responsabilidad Financiera", zh: "财务责任", fr: "Responsabilité Financière", ar: "المساءلة المالية", vi: "Trách Nhiệm Tài Chính" },
     description: { en: "Does the role carry named financial accountability or is it support language?", es: "¿El rol lleva responsabilidad financiera nombrada?", zh: "该职位是否具有明确的财务责任？", fr: "Le rôle porte-t-il une responsabilité financière nommée?", ar: "هل يحمل الدور مسؤولية مالية محددة؟", vi: "Vai trò có trách nhiệm tài chính cụ thể hay chỉ là ngôn ngữ hỗ trợ?" } },
-  { id: "reporting_structure", weight: 1.2, isCore: true,
+  { id: "reporting_structure", weight: 2.0, isCore: true,
     name: { en: "Access to Leadership", es: "Acceso al Liderazgo", zh: "领导层接触", fr: "Accès au Leadership", ar: "الوصول إلى القيادة", vi: "Tiếp Cận Lãnh Đạo" },
     description: { en: "How many levels from the C-suite? What does visibility mean for trajectory?", es: "¿Cuántos niveles del C-suite?", zh: "距离C级高管有多少层级？", fr: "Combien de niveaux du C-suite?", ar: "كم عدد المستويات من المجموعة التنفيذية؟", vi: "Bao nhiêu cấp bậc so với ban lãnh đạo cấp cao?" } },
-  { id: "metric_specificity", weight: 1.3, isCore: true,
+  { id: "metric_specificity", weight: 2.5, isCore: true,
     name: { en: "Clear Success Measures", es: "Métricas de Éxito Claras", zh: "明确的成功指标", fr: "Mesures de Succès Claires", ar: "مقاييس نجاح واضحة", vi: "Thước Đo Thành Công Rõ Ràng" },
     description: { en: "Are success metrics explicit and financially anchored, or vague?", es: "¿Las métricas de éxito están declaradas explícitamente?", zh: "成功指标是否明确陈述并以财务为基础？", fr: "Les métriques de succès sont-elles explicites?", ar: "هل مقاييس النجاح محددة بوضوح؟", vi: "Các chỉ số thành công có cụ thể và gắn với tài chính không?" } },
-  { id: "scope_language", weight: 1.2, isCore: true,
+  { id: "scope_language", weight: 2.0, isCore: true,
     name: { en: "Organizational Impact", es: "Impacto Organizacional", zh: "组织影响力", fr: "Impact Organisationnel", ar: "الأثر التنظيمي", vi: "Tác Động Tổ Chức" },
     description: { en: "Is the role enterprise-wide, regional, or single-function? Does scope match title?", es: "¿Es el rol a nivel empresarial, regional o monofuncional?", zh: "该职位是企业级、区域性还是单一职能？", fr: "Le rôle est-il à l'échelle de l'entreprise?", ar: "هل الدور على مستوى المؤسسة أم إقليمي؟", vi: "Vai trò có phạm vi toàn doanh nghiệp, khu vực hay đơn chức năng?" } },
-  { id: "title_gap", weight: 1.0, isCore: true,
+  { id: "title_gap", weight: 1.5, isCore: true,
     name: { en: "Role Integrity", es: "Integridad del Rol", zh: "职位诚信度", fr: "Intégrité du Rôle", ar: "نزاهة الدور", vi: "Tính Toàn Vẹn của Vai Trò" },
     description: { en: "Does the role deliver what the title promises, or is it inflated/understated?", es: "¿El rol entrega lo que promete el título?", zh: "该职位是否兑现了职位名称所承诺的内容？", fr: "Le rôle tient-il les promesses du titre?", ar: "هل يحقق الدور ما يعد به المسمى؟", vi: "Vai trò có đáp ứng những gì chức danh hứa hẹn không?" } },
 ];
@@ -174,12 +180,13 @@ function ProgressBar({ t, stepIdx }) {
 // ════════════════════════════════════════════════════════════════════════════
 export default function App() {
   const [lang, setLang] = useState("en");
-  const [step, setStep] = useState("region");
-  const [selectedCountry, setSelectedCountry] = useState(null);
+  const [step, setStep] = useState("onboard");
+  const [activeTab, setActiveTab] = useState("workspace");
+  const [menuOpen, setMenuOpen] = useState(false);
   const [profile, setProfile] = useState({
     name: "", currentTitle: "", background: "", targetRoles: [], targetIndustries: [],
     compensationMin: "", compensationTarget: "", locationPrefs: [], hardConstraints: "",
-    careerGoal: "", threshold: 3.5,
+    careerGoal: "", threshold: 3.5, timeline: "", country: "us", currency: "USD",
   });
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
   const [opportunities, setOpportunities] = useState([]);
@@ -189,7 +196,8 @@ export default function App() {
   const [error, setError] = useState("");
   const [scoringPhase, setScoringPhase] = useState(0);
   const [streamingFilters, setStreamingFilters] = useState([]);
-  const [showPaywall, setShowPaywall] = useState(false);
+  const [showPaywall, setShowPaywall]   = useState(false);
+  const [showAdvocate, setShowAdvocate] = useState(false);
   const [upgradeSuccess, setUpgradeSuccess] = useState(false);
   const [showWalkthrough, setShowWalkthrough] = useState(false);
   const [pendingTierCheck, setPendingTierCheck] = useState(false);
@@ -199,6 +207,11 @@ export default function App() {
   // ── Workspace state ───────────────────────────────────────────────────────
   const [workspaceRoles,     setWorkspaceRoles]     = useState([]);
   const [workspaceReminders, setWorkspaceReminders] = useState([]);
+
+  // ── Market Pulse cache — persists across tab switches ─────────────────────
+  const [mpSalaryCache,   setMpSalaryCache]   = useState({});
+  const [mpInsightsCache, setMpInsightsCache] = useState({});
+  const [mpCitationsCache,setMpCitationsCache]= useState({});
   // Tracks which paywall invocation has a follow-up action to execute on upgrade
   const pendingWorkspaceAction = useRef(null);
   // Context copy for paywall (e.g. "Reminders require Signal. Never miss a follow-up.")
@@ -508,9 +521,10 @@ export default function App() {
         background: sanitizeText(profile.background, MAX_LONG), careerGoal: sanitizeText(profile.careerGoal),
         targetRoles: profile.targetRoles.map(r => sanitizeText(r)).join(", "),
         targetIndustries: profile.targetIndustries.map(i => sanitizeText(i)).join(", "),
-        comp: `$${sanitizeText(profile.compensationMin)}–$${sanitizeText(profile.compensationTarget)}`,
+        comp: `$${sanitizeText(profile.compensationMin)}–$${sanitizeText(profile.compensationTarget)} ${profile.currency || "USD"}`,
         locations: profile.locationPrefs.map(l => sanitizeText(l)).join(", "),
         constraints: sanitizeText(profile.hardConstraints, MAX_LONG), threshold: profile.threshold,
+        currency: profile.currency || "USD", country: profile.country || "us",
       };
       const profileSummary = [
         safeProfile.name          && `Name: ${safeProfile.name}`,
@@ -522,6 +536,7 @@ export default function App() {
         safeProfile.comp          && `Compensation: ${safeProfile.comp}`,
         safeProfile.locations     && `Location Preferences: ${safeProfile.locations}`,
         safeProfile.constraints   && `Hard Constraints: ${safeProfile.constraints}`,
+        `Market: ${safeProfile.country.toUpperCase()} · Currency: ${safeProfile.currency}`,
       ].filter(Boolean).join("\n");
       const fn = (field) => resolveLang(field, lang);
       const filterDefs = filters.map(f => `- ${sanitizeText(fn(f.name))} (weight: ${f.weight}x): ${sanitizeText(fn(f.description), MAX_LONG)}`).join("\n");
@@ -776,7 +791,7 @@ export default function App() {
     }
   }
 
-  const stepIdx = { region: -1, onboard: 0, filters: 1, workspace: 2, result: 2, compare: 2 }[step] ?? 0;
+  const stepIdx = { onboard: 0, filters: 1, workspace: 2, result: 2, compare: 2 }[step] ?? 0;
 
   // ── Auth gate — show sign in screen if not authenticated ─────────────────
   if (!authUser) {
@@ -804,6 +819,18 @@ export default function App() {
     );
   }
 
+  // ── Which screens show the persistent TabBar ─────────────────────────────
+  const isMainApp = step === "workspace";
+
+  // ── Hamburger menu actions ────────────────────────────────────────────────
+  function handleMenuAction(id) {
+    if (id === "upgrade")  { setShowPaywall(true); }
+    if (id === "advocate") { setShowAdvocate(true); }
+    if (id === "settings") { setActiveTab("profile"); }
+    if (id === "signout")  { handleSignOut(); }
+    if (id === "blog")     { window.open("https://tryvettedai.com/blog", "_blank", "noopener"); }
+  }
+
   return (
     <>
       <a href="#main-content" className="skip-link">Skip to main content</a>
@@ -811,31 +838,9 @@ export default function App() {
         style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clip: "rect(0,0,0,0)", whiteSpace: "nowrap" }} />
 
       <div className="app">
-        {/* Onboard/filters get compact dark bar; scorecard gets full AppHeader; workspace has its own */}
-        {(step === "onboard" || step === "filters") && (
-          <OnboardHeader
-            lang={lang} setLang={setLang} authUser={authUser}
-            onSignOut={handleSignOut} stepIdx={stepIdx}
-            stepLabel={step === "onboard" ? t.stepProfile : t.stepFilters}
-          />
-        )}
-        {step === "result" && <AppHeader t={t} lang={lang} setLang={setLang} noBorder />}
-        {step === "result" && authUser && (
-          <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 12, marginBottom: 8, marginTop: 4 }}>
-            <span style={{ fontSize: 12, color: "var(--muted)", fontFamily: "var(--font-data)" }}>
-              {authUser.displayName || authUser.email || "Signed in"}
-            </span>
-            <button className="btn btn-secondary btn-sm" onClick={handleSignOut} style={{ fontSize: 11, padding: "4px 12px", minHeight: 30 }}>
-              Sign Out
-            </button>
-          </div>
-        )}
-
-        {step === "region" && (
-          <RegionGate t={t} lang={lang} setLang={setLang} selectedCountry={selectedCountry} setSelectedCountry={setSelectedCountry} onContinue={() => setStep("onboard")} />
-        )}
+        {/* ── Onboarding flow ──────────────────────────────────────────────── */}
         {step === "onboard" && (
-          <OnboardStep t={t} profile={profile} setProfile={setProfile} userTier={devTierOverride || userTier} onUpgrade={(copy) => { setPaywallContext(copy || null); setShowPaywall(true); }} authUser={authUser} onNext={() => {
+          <OnboardStep t={t} profile={profile} setProfile={setProfile} currency={profile.currency || "USD"} userTier={devTierOverride || userTier} onUpgrade={(copy) => { setPaywallContext(copy || null); setShowPaywall(true); }} authUser={authUser} onNext={() => {
             setStep("filters");
             if (authUser?.id) {
               dbCall("saveProfile", { action: "saveProfile", appleId: authUser.id, profile: { ...profile, lang, displayName: authUser.displayName, email: authUser.email } })
@@ -852,95 +857,188 @@ export default function App() {
             }
           }} />
         )}
-        {pendingTierCheck && !upgradeSuccess && (
-          <div role="status" style={{
-            background: "#f5f3ee", borderLeft: "3px solid var(--accent)",
-            borderRadius: "var(--r)", padding: "12px 16px",
-            fontSize: 13, lineHeight: 1.6, marginBottom: 16,
-            display: "flex", alignItems: "center", gap: 10,
-          }}>
-            <span className="spinner" style={{ width: 13, height: 13, borderWidth: 2, flexShrink: 0 }} aria-hidden="true" />
-            <span>Waiting for payment confirmation — return here after completing checkout in your browser.</span>
-          </div>
-        )}
-        {upgradeSuccess && (
-          <div role="status" style={{
-            background: "#c8edda", color: "var(--success)",
-            borderLeft: "3px solid var(--success)",
-            borderRadius: "var(--r)", padding: "12px 16px",
-            fontSize: 13, lineHeight: 1.6, marginBottom: 16,
-            display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
-          }}>
-            <span>✓ Upgrade successful — unlimited scoring is now active.</span>
-            <button onClick={() => setUpgradeSuccess(false)} aria-label="Dismiss"
-              style={{ background: "none", border: "none", cursor: "pointer", color: "var(--success)", fontSize: 18, lineHeight: 1, padding: 0, minWidth: 24 }}>×</button>
-          </div>
-        )}
+
+        {/* ── Main app (workspace tabs + result + compare overlays) ─────────── */}
         {step === "workspace" && (
-          <RoleWorkspace
-            workspaceRoles={workspaceRoles}
-            workspaceReminders={workspaceReminders}
-            userTier={userTier}
-            authUser={authUser}
-            devTierOverride={devTierOverride}
-            onDevUnlock={() => setDevTierOverride(prev => prev ? null : "vantage")}
-            onViewRole={(opp) => { setCurrentOpp(opp); setStep("result"); }}
-            onCompare={(oppA, oppB) => { setCompareOpps([oppA, oppB]); setStep("compare"); }}
-            onArchive={handleArchiveRole}
-            onUnarchive={handleUnarchiveRole}
-            onRemoveRole={handleRemoveRole}
-            onSaveReminder={handleSaveReminder}
-            onCompleteReminder={handleCompleteReminder}
-            onOpenPaywall={openWorkspacePaywall}
-            onMarkApplied={handleMarkWorkspaceApplied}
-            onUnmarkApplied={handleUnmarkWorkspaceApplied}
-            onEditProfile={() => setStep("onboard")}
-            onEditFilters={() => setStep("filters")}
-            onScore={scoreOpportunity}
-            loading={loading}
-            scoringPhase={scoringPhase}
-            streamingFilters={streamingFilters}
-            error={error}
-            profile={profile}
-            filters={filters}
-            behavioralInsight={behavioralInsight}
-            onDismissInsight={(insightId) => {
-              setBehavioralInsight(null);
-              if (authUser?.id && insightId) {
-                dbCall("dismissInsight", { action: "dismissInsight", appleId: authUser.id, insightId })
-                  .catch(() => {});
-              }
-            }}
-            onActedOnInsight={(insightId) => {
-              setBehavioralInsight(null);
-              if (authUser?.id && insightId) {
-                dbCall("actedOnInsight", { action: "actedOnInsight", appleId: authUser.id, insightId })
-                  .catch(() => {});
-              }
-            }}
-            t={t}
-            lang={lang}
-            setLang={setLang}
-          />
+          <>
+            {/* Tier / upgrade banners */}
+            {pendingTierCheck && !upgradeSuccess && (
+              <div role="status" style={{
+                background: "#f5f3ee", borderLeft: "3px solid var(--accent)",
+                borderRadius: "var(--r)", padding: "12px 16px",
+                fontSize: 13, lineHeight: 1.6, margin: "0 0 16px",
+                display: "flex", alignItems: "center", gap: 10,
+              }}>
+                <span className="spinner" style={{ width: 13, height: 13, borderWidth: 2, flexShrink: 0 }} aria-hidden="true" />
+                <span>Waiting for payment confirmation — return here after completing checkout in your browser.</span>
+              </div>
+            )}
+            {upgradeSuccess && (
+              <div role="status" style={{
+                background: "#c8edda", color: "var(--success)",
+                borderLeft: "3px solid var(--success)",
+                borderRadius: "var(--r)", padding: "12px 16px",
+                fontSize: 13, lineHeight: 1.6, margin: "0 0 16px",
+                display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
+              }}>
+                <span>✓ Upgrade successful — unlimited scoring is now active.</span>
+                <button onClick={() => setUpgradeSuccess(false)} aria-label="Dismiss"
+                  style={{ background: "none", border: "none", cursor: "pointer", color: "var(--success)", fontSize: 18, lineHeight: 1, padding: 0, minWidth: 24 }}>×</button>
+              </div>
+            )}
+
+            {/* Tab content */}
+            {activeTab === "score" && (
+              <ScoreEntry
+                onScore={(jd, url) => {
+                  scoreOpportunity(jd, url);
+                  setActiveTab("workspace");
+                  setStep("workspace");
+                }}
+                loading={loading}
+                workspaceRoles={workspaceRoles}
+                onOpenMenu={() => setMenuOpen(true)}
+                t={t}
+              />
+            )}
+            {activeTab === "workspace" && (
+              <RoleWorkspace
+                onOpenMenu={() => setMenuOpen(true)}
+                workspaceRoles={workspaceRoles}
+                workspaceReminders={workspaceReminders}
+                userTier={userTier}
+                authUser={authUser}
+                devTierOverride={devTierOverride}
+                onDevUnlock={() => setDevTierOverride(prev => prev ? null : "vantage")}
+                onViewRole={(opp) => { setCurrentOpp(opp); setStep("result"); }}
+                onCompare={(oppA, oppB) => { setCompareOpps([oppA, oppB]); setStep("compare"); }}
+                onArchive={handleArchiveRole}
+                onUnarchive={handleUnarchiveRole}
+                onRemoveRole={handleRemoveRole}
+                onSaveReminder={handleSaveReminder}
+                onCompleteReminder={handleCompleteReminder}
+                onOpenPaywall={openWorkspacePaywall}
+                onMarkApplied={handleMarkWorkspaceApplied}
+                onUnmarkApplied={handleUnmarkWorkspaceApplied}
+                onOpenAdvocate={() => setShowAdvocate(true)}
+                onEditProfile={() => setStep("onboard")}
+                onEditFilters={() => { setActiveTab("filters"); }}
+                onScore={scoreOpportunity}
+                loading={loading}
+                scoringPhase={scoringPhase}
+                streamingFilters={streamingFilters}
+                error={error}
+                profile={profile}
+                filters={filters}
+                behavioralInsight={behavioralInsight}
+                onDismissInsight={(insightId) => {
+                  setBehavioralInsight(null);
+                  if (authUser?.id && insightId) {
+                    dbCall("dismissInsight", { action: "dismissInsight", appleId: authUser.id, insightId })
+                      .catch(() => {});
+                  }
+                }}
+                onActedOnInsight={(insightId) => {
+                  setBehavioralInsight(null);
+                  if (authUser?.id && insightId) {
+                    dbCall("actedOnInsight", { action: "actedOnInsight", appleId: authUser.id, insightId })
+                      .catch(() => {});
+                  }
+                }}
+                t={t}
+                lang={lang}
+                setLang={setLang}
+                openScoreForm={activeTab === "score"}
+                onScoreFormOpened={() => setActiveTab("workspace")}
+              />
+            )}
+            {activeTab === "market" && (
+              <MarketTab
+                t={t} profile={profile} authUser={authUser}
+                userTier={devTierOverride || userTier}
+                opportunities={opportunities}
+                currency={profile.currency || "USD"}
+                salaryCache={mpSalaryCache}     setSalaryCache={setMpSalaryCache}
+                insightsCache={mpInsightsCache} setInsightsCache={setMpInsightsCache}
+                citationsCache={mpCitationsCache} setCitationsCache={setMpCitationsCache}
+              />
+            )}
+            {activeTab === "filters" && (
+              <FiltersTab
+                t={t} lang={lang} filters={filters} setFilters={setFilters}
+                userTier={devTierOverride || userTier}
+                onUpgrade={(copy) => { setPaywallContext(copy || null); setShowPaywall(true); }}
+                onSave={() => {
+                  setActiveTab("score");
+                  if (authUser?.id) {
+                    dbCall("saveFilters", { action: "saveFilters", appleId: authUser.id, filters })
+                      .catch(err => handleError(err, "save_filters"));
+                  }
+                }}
+              />
+            )}
+            {activeTab === "profile" && (
+              <ProfileTab
+                t={t} lang={lang} setLang={setLang}
+                profile={profile} setProfile={setProfile}
+                authUser={authUser} userTier={devTierOverride || userTier}
+                onSignOut={handleSignOut}
+                onEditProfile={() => setStep("onboard")}
+                onUpgrade={() => { setShowPaywall(true); }}
+              />
+            )}
+
+            {/* Persistent bottom tab bar */}
+            <TabBarV2
+              active={activeTab}
+              onChange={(tab) => {
+                setActiveTab(tab);
+              }}
+            />
+
+            {/* Hamburger sheet */}
+            <HamburgerSheet
+              open={menuOpen}
+              onClose={() => setMenuOpen(false)}
+              onItem={handleMenuAction}
+              workspaceRoles={workspaceRoles}
+            />
+          </>
         )}
+
+        {/* ── ScoreResult — full screen overlay, no TabBar ──────────────────── */}
         {step === "result" && (
-          <ScoreResult t={t} lang={lang} opp={currentOpp} profile={profile} userTier={devTierOverride || userTier} authUser={authUser} onUpgrade={(copy) => { setPaywallContext(copy || null); setShowPaywall(true); }} onBack={() => setStep("workspace")}
-            onUpdateStatus={(oppId, status) => {
-              const now = new Date().toISOString();
-              setOpportunities(prev => prev.map(o => o.id === oppId ? { ...o, application_status: status, status_updated_at: now } : o));
-              setCurrentOpp(prev => prev?.id === oppId ? { ...prev, application_status: status, status_updated_at: now } : prev);
-              if (authUser?.id) {
-                dbCall("updateApplicationStatus", { action: "updateApplicationStatus", appleId: authUser.id, opportunityId: oppId, status })
-                  .catch(err => handleError(err, "update_status"));
-              }
-            }}
-            onRemove={() => {
-              // role_id is stamped on freshly-scored opps; id equals role_id for workspace-viewed opps
-              const roleId = currentOpp?.role_id || currentOpp?.id;
-              handleRemoveRole(roleId);
-              setStep("workspace");
-            }} />
+          <>
+            <AppHeader t={t} lang={lang} setLang={setLang} noBorder />
+            {authUser && (
+              <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 12, marginBottom: 8, marginTop: 4 }}>
+                <span style={{ fontSize: 12, color: "var(--muted)", fontFamily: "var(--font-data)" }}>
+                  {authUser.displayName || authUser.email || "Signed in"}
+                </span>
+                <button className="btn btn-secondary btn-sm" onClick={handleSignOut} style={{ fontSize: 11, padding: "4px 12px", minHeight: 30 }}>
+                  Sign Out
+                </button>
+              </div>
+            )}
+            <ScoreResult t={t} lang={lang} opp={currentOpp} profile={profile} userTier={devTierOverride || userTier} authUser={authUser} onUpgrade={(copy) => { setPaywallContext(copy || null); setShowPaywall(true); }} onBack={() => setStep("workspace")}
+              onUpdateStatus={(oppId, status) => {
+                const now = new Date().toISOString();
+                setOpportunities(prev => prev.map(o => o.id === oppId ? { ...o, application_status: status, status_updated_at: now } : o));
+                setCurrentOpp(prev => prev?.id === oppId ? { ...prev, application_status: status, status_updated_at: now } : prev);
+                if (authUser?.id) {
+                  dbCall("updateApplicationStatus", { action: "updateApplicationStatus", appleId: authUser.id, opportunityId: oppId, status })
+                    .catch(err => handleError(err, "update_status"));
+                }
+              }}
+              onRemove={() => {
+                const roleId = currentOpp?.role_id || currentOpp?.id;
+                handleRemoveRole(roleId);
+                setStep("workspace");
+              }} />
+          </>
         )}
+
+        {/* ── CompareView — full screen overlay, no TabBar ─────────────────── */}
         {step === "compare" && (
           <CompareView
             t={t}
@@ -964,35 +1062,327 @@ export default function App() {
         />
       )}
 
+      {showAdvocate && (
+        <VQAdvocateScreen
+          onClose={() => setShowAdvocate(false)}
+          opportunities={workspaceRoles}
+          profile={profile}
+        />
+      )}
+
       {showPaywall && (
         <PaywallModal
           authUser={authUser}
+          userTier={devTierOverride || userTier}
           contextCopy={paywallContext}
           onClose={(reason, tier) => {
             setShowPaywall(false);
             setPaywallContext(null);
             if (reason === "iap_success" && tier) {
-              // IAP validated server-side synchronously — apply tier immediately.
               setUserTier(tier);
               setUpgradeSuccess(true);
-              // Execute any pending workspace action that was blocked by this gate.
               if (pendingWorkspaceAction.current) {
                 pendingWorkspaceAction.current();
                 pendingWorkspaceAction.current = null;
               }
             } else if (reason === "pending") {
-              // Stripe web flow — poll until webhook updates Supabase.
               setPendingTierCheck(true);
             } else if (reason === "session_expired") {
               handleSignOut();
               setAuthError("Your session expired. Please sign in again to continue.");
             } else {
-              // Dismissed or cancelled — discard pending action
               pendingWorkspaceAction.current = null;
             }
           }}
         />
       )}
     </>
+  );
+}
+
+// ─── Tab screen wrappers ──────────────────────────────────────────────────────
+
+function MarketTab({ t, profile, authUser, userTier, opportunities, currency, salaryCache, setSalaryCache, insightsCache, setInsightsCache, citationsCache, setCitationsCache }) {
+  return (
+    <MarketPulseCard t={t} profile={profile} authUser={authUser} userTier={userTier} opportunities={opportunities} currency={currency}
+      salaryCache={salaryCache}   setSalaryCache={setSalaryCache}
+      insightsCache={insightsCache} setInsightsCache={setInsightsCache}
+      citationsCache={citationsCache} setCitationsCache={setCitationsCache}
+    />
+  );
+}
+
+function FiltersTab({ t, lang, filters, setFilters, userTier, onUpgrade, onSave }) {
+  return (
+    <FiltersStep
+      t={t} lang={lang} filters={filters} setFilters={setFilters}
+      userTier={userTier} onUpgrade={onUpgrade}
+      onBack={null}
+      onNext={onSave}
+    />
+  );
+}
+
+function ProfileTab({ t, lang, setLang, profile, authUser, userTier, onSignOut, onEditProfile, onUpgrade }) {
+  const [showLangPicker, setShowLangPicker] = React.useState(false);
+
+  const isVantage = userTier === "vantage" || userTier === "vantage_lifetime";
+  const isSignal  = userTier === "signal"  || userTier === "signal_lifetime";
+  const tierLabel = isVantage ? "VANTAGE" : isSignal ? "SIGNAL" : "FREE";
+  const tierColor = isVantage ? "var(--gold)" : isSignal ? "var(--accent)" : "var(--muted)";
+
+  const name  = authUser?.displayName || profile.name || "You";
+  const title = profile.currentTitle || "";
+
+  const LANG_NAMES = {
+    en: "English", es: "Español", pt: "Português", zh: "中文",
+    fr: "Français", ar: "العربية", vi: "Tiếng Việt",
+  };
+
+  return (
+    <main id="main-content" aria-label="Profile" style={{ background: "var(--paper)", minHeight: "100%" }}>
+
+      {/* Language picker overlay */}
+      {showLangPicker && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 500, background: "var(--paper)", display: "flex", flexDirection: "column" }}>
+          <header style={{ display: "flex", alignItems: "center", gap: 8, padding: "54px 16px 12px", borderBottom: "0.5px solid var(--border)" }}>
+            <button onClick={() => setShowLangPicker(false)} aria-label="Back" style={{ width: 36, height: 36, display: "inline-flex", alignItems: "center", justifyContent: "center", background: "transparent", border: "none", cursor: "pointer", color: "var(--ink)", padding: 0, marginLeft: -8 }}>
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M11 4L5 9L11 14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </button>
+            <div style={{ fontFamily: "var(--font-data)", fontSize: 11, letterSpacing: "0.18em", color: "var(--ink)", textTransform: "uppercase" }}>LANGUAGE</div>
+          </header>
+          <div style={{ padding: "20px 20px 12px" }}>
+            <h1 style={{ fontFamily: "var(--font-prose)", fontSize: 24, fontWeight: 500, color: "var(--ink)", margin: 0, lineHeight: 1.2, letterSpacing: "-0.005em" }}>
+              Pick your language.
+            </h1>
+            <p style={{ margin: "10px 0 0", fontFamily: "var(--font-prose)", fontSize: 14, fontStyle: "italic", color: "var(--muted)", lineHeight: 1.5 }}>
+              The whole app switches instantly. Past scorecards stay in the language they were generated.
+            </p>
+          </div>
+          <div style={{ flex: 1, overflowY: "auto", padding: "0 20px 32px" }}>
+            <div style={{ background: "#fff", border: "0.5px solid var(--border)", borderRadius: 14, overflow: "hidden" }}>
+              {[
+                { code: "en", native: "English",      name: "English" },
+                { code: "es", native: "Español",       name: "Spanish" },
+                { code: "fr", native: "Français",      name: "French" },
+                { code: "pt", native: "Português",     name: "Portuguese (BR)" },
+                { code: "zh", native: "中文",           name: "Chinese (Simplified)" },
+                { code: "ar", native: "العربية",       name: "Arabic",  rtl: true },
+                { code: "vi", native: "Tiếng Việt",   name: "Vietnamese" },
+              ].map(({ code, native, name, rtl }, i) => {
+                const active = lang === code;
+                return (
+                  <button key={code} onClick={() => { setLang(code); setShowLangPicker(false); }} dir="ltr" style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "16px 18px", minHeight: 64, background: "transparent", border: "none", cursor: "pointer", borderTop: i === 0 ? "none" : "0.5px solid var(--border)", textAlign: "left" }}>
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div style={{ fontFamily: "var(--font-prose)", fontSize: 17, fontWeight: 500, color: "var(--ink)", lineHeight: 1.2, direction: rtl ? "rtl" : "ltr" }}>{native}</div>
+                      <div style={{ fontFamily: "var(--font-data)", fontSize: 9.5, letterSpacing: "0.12em", color: "#8A9A8A", textTransform: "uppercase", marginTop: 4 }}>{name}{rtl ? " · RTL" : ""}</div>
+                    </div>
+                    {active
+                      ? <div style={{ width: 24, height: 24, borderRadius: 999, background: "var(--ink)", display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><svg width="11" height="9" viewBox="0 0 11 9" fill="none"><path d="M1 4.5L4 7.5L10 1.5" stroke="#F4F8F0" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg></div>
+                      : <div style={{ width: 24, height: 24, borderRadius: 999, border: "0.5px solid var(--border)", flexShrink: 0 }}/>
+                    }
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Header */}
+      <header style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "54px 8px 6px 20px" }}>
+        <div style={{ fontFamily: "var(--font-data)", fontSize: 11, letterSpacing: "0.18em", color: "var(--ink)", textTransform: "uppercase" }}>VETTED</div>
+      </header>
+
+      {/* Identity block */}
+      <div style={{ padding: "14px 20px 20px", borderBottom: "0.5px solid var(--border)" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+          <span style={{ fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--muted)" }}>
+            PROFILE ·
+          </span>
+          <button onClick={!isVantage && !isSignal ? onUpgrade : undefined} style={{ background: "transparent", border: "none", padding: 0, cursor: !isVantage && !isSignal ? "pointer" : "default", fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase", color: tierColor, fontWeight: 500 }}>
+            {tierLabel}{!isVantage ? " · UPGRADE →" : ""}
+          </button>
+        </div>
+        <h1 style={{ fontFamily: "var(--font-prose)", fontSize: 32, fontWeight: 500, color: "var(--ink)", lineHeight: 1.1, margin: 0, letterSpacing: "-0.015em" }}>
+          {name}
+        </h1>
+        {title && (
+          <div style={{ fontFamily: "var(--font-prose)", fontSize: 17, color: "var(--muted)", marginTop: 6, lineHeight: 1.35, fontStyle: "italic" }}>
+            {title}
+          </div>
+        )}
+        {authUser?.email && (
+          <div style={{ fontFamily: "var(--font-data)", fontSize: 11, color: "#8A9A8A", marginTop: 8, letterSpacing: "0.04em" }}>
+            {authUser.email}
+          </div>
+        )}
+      </div>
+
+      {/* Profile sections */}
+      <div style={{ paddingBottom: 110 }}>
+
+        {/* Goals & Background */}
+        <ProfileSection title="Goals & Background" onEdit={onEditProfile}>
+          {profile.careerGoal && (
+            <ProfileField label="OPTIMIZING FOR">
+              <p style={{ margin: 0, fontFamily: "var(--font-prose)", fontSize: 15, lineHeight: 1.55, color: "var(--ink)" }}>{profile.careerGoal}</p>
+            </ProfileField>
+          )}
+          {profile.background && (
+            <ProfileField label="EXPERIENCE">
+              <p style={{ margin: 0, fontFamily: "var(--font-prose)", fontSize: 14, lineHeight: 1.55, color: "var(--ink)", display: "-webkit-box", WebkitLineClamp: 4, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{profile.background}</p>
+            </ProfileField>
+          )}
+          {profile.targetRoles?.length > 0 && (
+            <ProfileField label="TARGET ROLES">
+              <TagList items={profile.targetRoles} />
+            </ProfileField>
+          )}
+          {profile.targetIndustries?.length > 0 && (
+            <ProfileField label="INDUSTRIES">
+              <TagList items={profile.targetIndustries} />
+            </ProfileField>
+          )}
+          {profile.timeline && (() => {
+            const opt = t?.timelineOptions?.find(o => o.value === profile.timeline);
+            return (
+              <ProfileField label="LANDING WINDOW">
+                <p style={{ margin: 0, fontFamily: "var(--font-prose)", fontSize: 15, color: "var(--ink)" }}>
+                  {opt?.label || profile.timeline}
+                </p>
+              </ProfileField>
+            );
+          })()}
+        </ProfileSection>
+
+        {/* Compensation */}
+        {(profile.compensationMin || profile.compensationTarget) && (
+          <ProfileSection title="Compensation" onEdit={onEditProfile}>
+            <div style={{ display: "flex", gap: 32, padding: "4px 0" }}>
+              {profile.compensationMin && (
+                <div>
+                  <div style={{ fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: "0.12em", color: "#8A9A8A", textTransform: "uppercase", marginBottom: 6 }}>FLOOR</div>
+                  <div style={{ fontFamily: "var(--font-prose)", fontSize: 28, fontWeight: 500, color: "var(--ink)", lineHeight: 1, letterSpacing: "-0.015em" }}>
+                    ${profile.compensationMin}<span style={{ fontSize: 16, color: "#8A9A8A" }}>k</span>
+                  </div>
+                </div>
+              )}
+              {profile.compensationTarget && (
+                <div>
+                  <div style={{ fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: "0.12em", color: "#8A9A8A", textTransform: "uppercase", marginBottom: 6 }}>TARGET</div>
+                  <div style={{ fontFamily: "var(--font-prose)", fontSize: 28, fontWeight: 500, color: "var(--accent)", lineHeight: 1, letterSpacing: "-0.015em" }}>
+                    ${profile.compensationTarget}<span style={{ fontSize: 16, color: "#8A9A8A" }}>k</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </ProfileSection>
+        )}
+
+        {/* Preferences — threshold, location, constraints, country */}
+        <ProfileSection title="Preferences" onEdit={onEditProfile}>
+          {profile.threshold && (() => {
+            const opt = t?.thresholdOptions?.find(o => o.value === profile.threshold);
+            return (
+              <ProfileField label="VQ FLOOR">
+                <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+                  <span style={{ fontFamily: "var(--font-prose)", fontSize: 26, fontWeight: 500, color: "var(--ink)", letterSpacing: "-0.015em", lineHeight: 1 }}>
+                    {profile.threshold}
+                  </span>
+                  {opt && (
+                    <span style={{ fontFamily: "var(--font-prose)", fontSize: 13, fontStyle: "italic", color: "var(--muted)" }}>
+                      {opt.label}
+                    </span>
+                  )}
+                </div>
+              </ProfileField>
+            );
+          })()}
+          {profile.locationPrefs?.length > 0 && (
+            <ProfileField label="LOCATION">
+              <TagList items={profile.locationPrefs} />
+            </ProfileField>
+          )}
+          {profile.hardConstraints && (
+            <ProfileField label="HARD NOs">
+              <p style={{ margin: 0, fontFamily: "var(--font-prose)", fontSize: 14, lineHeight: 1.55, color: "var(--ink)" }}>{profile.hardConstraints}</p>
+            </ProfileField>
+          )}
+          {profile.country && (() => {
+            const c = COUNTRY_MAP[profile.country];
+            return (
+              <ProfileField label="COUNTRY">
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  {c?.flag && <span style={{ fontSize: 22, lineHeight: 1 }}>{c.flag}</span>}
+                  <div>
+                    <div style={{ fontFamily: "var(--font-prose)", fontSize: 15, color: "var(--ink)" }}>{c?.name || profile.country.toUpperCase()}</div>
+                    <div style={{ fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: "0.08em", color: "#8A9A8A", textTransform: "uppercase", marginTop: 2 }}>{profile.currency}</div>
+                  </div>
+                </div>
+              </ProfileField>
+            );
+          })()}
+        </ProfileSection>
+
+        {/* Settings rows */}
+        <div style={{ borderTop: "0.5px solid var(--border)", padding: "0 20px" }}>
+          {/* Language */}
+          <button onClick={() => setShowLangPicker(true)} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 0", background: "transparent", border: "none", cursor: "pointer", borderBottom: "0.5px solid var(--border)", textAlign: "left" }}>
+            <div>
+              <div style={{ fontFamily: "var(--font-prose)", fontSize: 15, fontWeight: 500, color: "var(--ink)", lineHeight: 1.2 }}>Language</div>
+              <div style={{ fontFamily: "var(--font-data)", fontSize: 10, letterSpacing: "0.08em", color: "#8A9A8A", textTransform: "uppercase", marginTop: 3 }}>{LANG_NAMES[lang] || lang}</div>
+            </div>
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M3 1.5L7 5L3 8.5" stroke="#8A9A8A" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          </button>
+
+          {/* Edit profile */}
+          <button onClick={onEditProfile} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 0", background: "transparent", border: "none", cursor: "pointer", borderBottom: "0.5px solid var(--border)", textAlign: "left" }}>
+            <div style={{ fontFamily: "var(--font-prose)", fontSize: 15, fontWeight: 500, color: "var(--ink)" }}>Edit profile</div>
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M3 1.5L7 5L3 8.5" stroke="#8A9A8A" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          </button>
+
+          {/* Sign out */}
+          <button onClick={onSignOut} style={{ padding: "16px 0", background: "transparent", border: "none", cursor: "pointer", fontFamily: "var(--font-prose)", fontSize: 15, fontWeight: 500, color: "var(--error)" }}>
+            Sign out
+          </button>
+        </div>
+      </div>
+    </main>
+  );
+}
+
+function ProfileSection({ title, onEdit, children }) {
+  return (
+    <div style={{ padding: "0 20px", borderTop: "0.5px solid var(--border)" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 0 10px" }}>
+        <div style={{ fontFamily: "var(--font-prose)", fontSize: 13, fontStyle: "italic", color: "var(--muted)" }}>{title}</div>
+        <button onClick={onEdit} style={{ fontFamily: "var(--font-data)", fontSize: 10, letterSpacing: "0.14em", fontWeight: 500, color: "var(--ink)", background: "transparent", border: "none", cursor: "pointer", padding: "6px 0", textTransform: "uppercase", display: "inline-flex", alignItems: "center", gap: 6 }}>
+          EDIT
+          <svg width="9" height="9" viewBox="0 0 9 9" fill="none"><path d="M2 1.5L6 4.5L2 7.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
+        </button>
+      </div>
+      <div style={{ paddingBottom: 18 }}>{children}</div>
+    </div>
+  );
+}
+
+function ProfileField({ label, children }) {
+  return (
+    <div style={{ padding: "12px 0" }}>
+      <div style={{ fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: "0.12em", color: "#8A9A8A", textTransform: "uppercase", marginBottom: 8 }}>{label}</div>
+      {children}
+    </div>
+  );
+}
+
+function TagList({ items }) {
+  if (!items?.length) return null;
+  return (
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+      {items.map(tag => (
+        <span key={tag} style={{ padding: "6px 12px", borderRadius: 20, background: "var(--cream)", border: "0.5px solid var(--border)", fontFamily: "var(--font-prose)", fontSize: 13, color: "var(--ink)" }}>{tag}</span>
+      ))}
+    </div>
   );
 }

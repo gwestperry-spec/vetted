@@ -85,12 +85,11 @@ if (typeof document !== "undefined" && !document.getElementById("vq-loading-keyf
 
 // ─── Weight label map — matches exportPdf.js ──────────────────────────────
 const WEIGHT_LABELS = {
-  0.5: "Minor",
-  1.0: "Standard",
-  1.2: "Relevant",
-  1.3: "Important",
-  1.5: "Critical",
-  2.0: "Critical+",
+  1.0: "Not Important",
+  1.5: "Slightly Important",
+  2.0: "Important",
+  2.5: "Very Important",
+  3.0: "Critical",
 };
 function weightLabel(w) {
   return WEIGHT_LABELS[w] ?? (w !== undefined ? `${Number(w).toFixed(1)}×` : null);

@@ -13,6 +13,7 @@ import MarketPulseCard from "../MarketPulse.jsx";
 import { ScoringProgress as ScoringProgressComponent } from "../VQLoadingScreen.jsx";
 import { ENDPOINTS } from "../../config.js";
 import CoachMark from "../CoachMark.jsx";
+import { VQAdvocateCard } from "../VQAdvocate.jsx";
 
 // ── URL helpers (mirrors Dashboard.jsx) ────────────────────────────────────
 const MAX_JD  = 12000;
@@ -153,6 +154,9 @@ export default function RoleWorkspace({
   behavioralInsight,
   onDismissInsight,
   onActedOnInsight,
+  onOpenAdvocate,
+  // Header
+  onOpenMenu,
   // i18n
   t,
   lang,
@@ -172,6 +176,8 @@ export default function RoleWorkspace({
   ];
 
   // ── State ─────────────────────────────────────────────────────────────────
+  const [searchQuery,        setSearchQuery]        = useState("");
+  const [filterVerdict,      setFilterVerdict]      = useState("ALL");
   const [compareMode,        setCompareMode]        = useState(false);
   const [selectedForCompare, setSelectedForCompare] = useState(new Set());
   const [reminderTarget,     setReminderTarget]     = useState(null);
@@ -312,344 +318,181 @@ export default function RoleWorkspace({
     ));
   }
 
-  // ── Opportunities list for MarketPulse ────────────────────────────────────
-  const oppsList = workspaceRoles
-    .filter(r => r.vq_score != null)
-    .map(workspaceRoleToOpp);
+  // ── Derived data ─────────────────────────────────────────────────────────
+  const oppsList = workspaceRoles.filter(r => r.vq_score != null).map(workspaceRoleToOpp);
+  const firstName = (profile.name || authUser?.displayName || "").split(" ")[0];
+  const pursueRoles = workspaceRoles.filter(r =>
+    r.status !== "archived" && r.framework_snapshot?.recommendation === "pursue"
+  );
+  const totalScored = workspaceRoles.filter(r => r.vq_score != null && r.status !== "archived").length;
+  const headline = pursueRoles.length === 0
+    ? "Your workspace is ready."
+    : pursueRoles.length === 1
+    ? `You have 1 Pursue lead${firstName ? `, ${firstName}` : ""}.`
+    : `You have ${pursueRoles.length} Pursue leads${firstName ? `, ${firstName}` : ""}.`;
+
+  const now = Date.now();
+  const allVisible   = workspaceRoles.filter(r => r.status !== "archived");
+  const filteredRoles = allVisible.filter(r => {
+    const rec = (r.framework_snapshot?.recommendation || "").toLowerCase();
+    if (filterVerdict !== "ALL" && rec !== filterVerdict.toLowerCase()) return false;
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      if (!`${r.title || ""} ${r.company || ""}`.toLowerCase().includes(q)) return false;
+    }
+    return true;
+  });
+  const thisWeekRoles = filteredRoles.filter(r =>
+    r.created_at && (now - new Date(r.created_at).getTime()) < 7 * 24 * 3600 * 1000
+  );
+  const earlierRoles = filteredRoles.filter(r =>
+    !r.created_at || (now - new Date(r.created_at).getTime()) >= 7 * 24 * 3600 * 1000
+  );
+  const verdictCounts = {
+    ALL:     allVisible.length,
+    PURSUE:  allVisible.filter(r => r.framework_snapshot?.recommendation === "pursue").length,
+    MONITOR: allVisible.filter(r => r.framework_snapshot?.recommendation === "monitor").length,
+    PASS:    allVisible.filter(r => r.framework_snapshot?.recommendation === "pass").length,
+  };
 
   // ══════════════════════════════════════════════════════════════════════════
   return (
-    <main id="main-content" aria-label="Role workspace">
+    <main id="main-content" aria-label="Role workspace" style={{ background: "var(--paper)", minHeight: "100%" }}>
 
-      {/* ── Header bar ──────────────────────────────────────────────────── */}
-      <div style={{ background:"#FAFAF8", borderBottom:"0.5px solid #D8E8D8", padding:"14px 20px 10px" }}>
-        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-          {/* Wordmark */}
-          <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-            <span onClick={handleDevTap} style={{
-              fontFamily:"var(--font-data)", fontSize:13, fontWeight:500,
-              letterSpacing:".14em", color:"#1A2E1A", userSelect:"none", cursor:"default",
-            }}>VETTED</span>
-            {devTierOverride && (
-              <span style={{
-                fontFamily:"var(--font-data)", fontSize:10, fontWeight:700,
-                letterSpacing:".1em", textTransform:"uppercase",
-                background:"#e74c3c", color:"#fff", padding:"1px 6px", borderRadius:20,
-              }}>DEV</span>
-            )}
-          </div>
-          <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-            <span style={{
-              fontFamily:"var(--font-data)", fontSize:9, letterSpacing:".08em",
-              color:"#1A2E1A", textTransform:"uppercase",
-            }}>{formatWorkspaceDate()}</span>
-            <button onClick={openGuide} aria-label="Open guide" style={{
-              width:28, height:28, borderRadius:"50%",
-              background:"#F0F4F0", border:"1px solid #D8E8D8",
-              color:"#1A2E1A", fontSize:12, fontWeight:600,
-              cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center",
-            }}>?</button>
-            {setLang && <LangSwitcher lang={lang} setLang={setLang} compact={true} />}
-            {isVantage && (
-              <button
-                onClick={() => setCompareMode(x => !x)}
-                aria-pressed={compareMode}
-                style={{
-                  fontFamily:"var(--font-data)", fontSize:9, letterSpacing:".1em",
-                  textTransform:"uppercase", color:"#1A2E1A",
-                  background: compareMode ? "#D8E8D8" : "transparent",
-                  border:"1px solid #D8E8D8", borderRadius:20,
-                  padding:"4px 10px", cursor:"pointer", minHeight:28,
-                }}
-              >{compareMode ? (t?.wsComparing || "Comparing") : (t?.wsCompare || "Compare")}</button>
-            )}
-          </div>
-        </div>
-
-        {/* Stats + CTA */}
-        <div style={{ marginTop:10, marginBottom:2, display:"flex", alignItems:"flex-end", justifyContent:"space-between" }}>
-          <div>
-            <p style={{ fontFamily:"var(--font-prose)", fontSize:18, fontWeight:700, color:"#1A2E1A", marginBottom:2 }}>
-              {workspaceRoles.filter(r => r.status !== "archived").length > 0
-                ? (t?.workspaceTitle || "Your Workspace")
-                : (t?.workspaceStart || "Start your search")}
-            </p>
-            {/* Stats band */}
-            <div style={{ display:"flex", gap:12, flexWrap:"wrap", alignItems:"center" }}>
-              <span style={{ fontFamily:"var(--font-data)", fontSize:10, color:"#1A2E1A" }}>
-                {activeRoles.length + appliedRoles.length} {t?.wsActive || "active"}
-              </span>
-              {appliedRoles.length > 0 && (
-                <span style={{ fontFamily:"var(--font-data)", fontSize:10, color:"#27500A" }}>
-                  · {appliedRoles.length} applied
-                </span>
-              )}
-              <span style={{ fontFamily:"var(--font-data)", fontSize:10, color:"#1A2E1A" }}>
-                · {archivedRoles.length} {t?.wsArchived || "archived"}
-              </span>
-              <span style={{ fontFamily:"var(--font-data)", fontSize:10, color:"#D8E8D8" }}>·</span>
-              <button
-                onClick={() => onEditProfile?.()}
-                style={{
-                  background:"none", border:"none", padding:0, cursor:"pointer",
-                  fontFamily:"var(--font-data)", fontSize:10, color:"#4A6A4A",
-                  letterSpacing:".04em", textDecoration:"underline", textDecorationColor:"#C8DDB8",
-                  minHeight:0,
-                }}
-              >Profile</button>
-              <button
-                onClick={() => onEditFilters?.()}
-                style={{
-                  background:"none", border:"none", padding:0, cursor:"pointer",
-                  fontFamily:"var(--font-data)", fontSize:10, color:"#4A6A4A",
-                  letterSpacing:".04em", textDecoration:"underline", textDecorationColor:"#C8DDB8",
-                  minHeight:0,
-                }}
-              >Filters</button>
-            </div>
-          </div>
-          <button
-            onClick={() => setShowScoringPanel(x => !x)}
-            aria-label={showScoringPanel ? "Close scoring panel" : "Score a new role"}
-            style={{
-              fontFamily:"var(--font-prose)", fontSize:13, fontWeight:600,
-              color: showScoringPanel ? "#1A2E1A" : "#E8F0E8",
-              background: showScoringPanel ? "#F0F4F0" : "#1A2E1A",
-              border: showScoringPanel ? "1px solid #D8E8D8" : "none",
-              borderRadius:6, padding:"8px 14px", cursor:"pointer",
-              minHeight:44, textAlign:"center", lineHeight:1.2,
-              maxWidth:160,
-            }}
-          >
-            {showScoringPanel ? "✕ Close" : (t?.workspaceScoreBtn || "+ Score a Role")}
-          </button>
-        </div>
-      </div>
-
-      {/* ── Scoring input panel (collapsible) ────────────────────────────── */}
-      {showScoringPanel && (
-        <div style={{
-          background:"#F0F4F0", borderBottom:"1px solid #D8E8D8",
-          padding:"16px 20px",
-        }}>
-          {loading && <ScoringProgressComponent phase={scoringPhase} />}
-          {!loading && (
-            <>
-              <CoachMark
-                storageKey="vetted_cm_workspace"
-                title={t?.cmWorkspaceTitle}
-                body={t?.cmWorkspaceBody}
-                dir={t?.dir}
-              />
-              <textarea
-                value={inputVal}
-                onChange={e => { setInputVal(e.target.value); setFetchError(""); setUrlCleaned(false); }}
-                placeholder={t?.scorePlaceholder || "Paste a job description or drop a URL — Vetted handles both."}
-                maxLength={MAX_JD}
-                rows={4}
-                autoFocus
-                style={{
-                  width:"100%", padding:"10px 12px",
-                  borderRadius:8, border:"0.5px solid #D8E8D8",
-                  background:"#fff", color:"#1A2E1A",
-                  WebkitTextFillColor:"#1A2E1A",
-                  fontSize:16, fontFamily:"var(--font-prose)",
-                  lineHeight:1.5, resize:"none", outline:"none",
-                  boxSizing:"border-box", display:"block",
-                }}
-              />
-
-              {urlCleaned && !fetching && (
-                <div role="status" style={{
-                  background:"#F0FDF4", border:"1px solid #BBF7D0",
-                  borderRadius:6, padding:"8px 12px", marginTop:8,
-                  display:"flex", alignItems:"center", justifyContent:"space-between", gap:8,
-                }}>
-                  <span style={{ fontSize:12, color:"#166534", lineHeight:1.4 }}>✓ Tracking params removed — fetching the clean URL</span>
-                  <button onClick={() => setUrlCleaned(false)} aria-label="Dismiss" style={{ background:"none", border:"none", cursor:"pointer", color:"#86EFAC", fontSize:16, lineHeight:1, padding:0 }}>×</button>
-                </div>
-              )}
-
-              {linkedInGuide && (
-                <div role="alert" style={{ background:"#EFF6FF", border:"1px solid #BFDBFE", borderRadius:8, padding:"14px 16px", marginTop:10 }}>
-                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:10 }}>
-                    <p style={{ fontSize:13, fontWeight:700, color:"#1E40AF", margin:0 }}>LinkedIn blocks automated access — paste the JD text instead:</p>
-                    <button onClick={() => setLinkedInGuide(false)} aria-label="Dismiss" style={{ background:"none", border:"none", cursor:"pointer", color:"#93C5FD", fontSize:18, lineHeight:1, padding:"0 0 0 8px" }}>×</button>
-                  </div>
-                  <ol style={{ margin:0, padding:"0 0 0 18px", display:"flex", flexDirection:"column", gap:6 }}>
-                    <li style={{ fontSize:13, color:"#1E3A8A", lineHeight:1.5 }}>Open the LinkedIn job posting in your browser</li>
-                    <li style={{ fontSize:13, color:"#1E3A8A", lineHeight:1.5 }}>Expand "About the job" and copy the full description</li>
-                    <li style={{ fontSize:13, color:"#1E3A8A", lineHeight:1.5 }}>Paste it here and hit Score</li>
-                  </ol>
-                </div>
-              )}
-
-              {fetchError && (
-                <div role="alert" style={{ background:"#FEF2F2", border:"1px solid #FECACA", borderRadius:6, padding:"10px 14px", marginTop:8 }}>
-                  {isJsGatedAts(inputVal) ? (
-                    <>
-                      <p style={{ fontSize:13, color:"#C05050", margin:"0 0 6px", fontWeight:600 }}>This portal uses JavaScript — copy the JD text and paste it here.</p>
-                    </>
-                  ) : (
-                    <p style={{ fontSize:13, color:"#C05050", margin:0, fontWeight:600 }}>Couldn't fetch this page. Copy the JD text and paste it instead.</p>
-                  )}
-                </div>
-              )}
-
-              {error && (
-                <div role="alert" style={{ background:"#FEF2F2", color:"#C05050", fontSize:13, borderRadius:6, padding:"8px 12px", marginTop:8 }}>{error}</div>
-              )}
-
-              <p style={{ fontSize:11, color:"#6A8A6A", marginTop:8, marginBottom:0, lineHeight:1.5 }}>
-                {t?.langScoringHint || "VQ insights appear in English — select your language before scoring for translated analysis."}
-              </p>
-
-              <button
-                className="btn btn-primary"
-                onClick={handleAnalyze}
-                disabled={!inputVal.trim() || fetching}
-                aria-busy={fetching}
-                style={{ marginTop:10, width:"100%", fontFamily:"var(--font-data)", letterSpacing:".08em" }}
-              >
-                {fetching ? "Fetching…" : isUrl(inputVal) && !isLinkedIn(inputVal) ? "FETCH & ANALYZE" : (t?.btnScore || "SCORE")}
-              </button>
-            </>
+      {/* ── HEADER ──────────────────────────────────────────────────────── */}
+      <header style={{
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        padding: "14px 8px 6px 20px",
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span
+            onClick={handleDevTap}
+            style={{ fontFamily: "var(--font-data)", fontSize: 11, letterSpacing: "0.18em", color: "var(--ink)", textTransform: "uppercase", userSelect: "none", cursor: "default" }}
+          >VETTED</span>
+          {devTierOverride && (
+            <span style={{ fontFamily: "var(--font-data)", fontSize: 9, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase", background: "#e74c3c", color: "#fff", padding: "1px 5px", borderRadius: 20 }}>DEV</span>
           )}
         </div>
-      )}
-
-      {/* ── Main content ────────────────────────────────────────────────── */}
-      <div style={{ padding:"16px 20px 80px" }}>
-
-        {/* ── TOP MATCHES carousel ── */}
-        {scoredRoles.length > 0 && (
-          <section aria-labelledby="carousel-heading" style={{ marginBottom:24 }}>
-            <h2 className="sr-only" id="carousel-heading">Top Matches</h2>
-            <SectionLabel>{t?.sectionTopMatches || "Top Matches"}</SectionLabel>
-            <div
-              style={{ overflow:"hidden", borderRadius:12, cursor:"grab", userSelect:"none" }}
-              onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}
-              onMouseDown={onMouseDown} onMouseUp={onMouseUp}
-              aria-roledescription="carousel"
-            >
-              <div style={{ display:"flex", transform:`translateX(-${carouselIdx * 100}%)`, transition:"transform 0.3s ease" }}>
-                {scoredRoles.map((role, idx) => {
-                  const isHero = idx === 0;
-                  const vp = verdictPill(role.framework_snapshot?.recommendation || role.status, isHero);
-                  const sc = scoreColor(role.vq_score, isHero);
-                  const isApplied = role.status === "applied";
-                  return (
-                    <div key={role.role_id} style={{
-                      minWidth:"100%", flexShrink:0,
-                      background: isHero ? "#1A2E1A" : "#F0F4F0",
-                      border: isHero ? "none" : "0.5px solid #D8E8D8",
-                      borderRadius:12, padding:"16px 18px",
-                    }}>
-                      <button
-                        onClick={() => handleResume(role)}
-                        aria-label={`${role.title} at ${role.company}. Score ${Number(role.vq_score).toFixed(1)}.`}
-                        style={{ display:"block", width:"100%", textAlign:"left", background:"none", border:"none", padding:0, cursor:"pointer" }}
-                      >
-                        <div style={{
-                          fontFamily:"var(--font-data)", fontSize:9, letterSpacing:".12em",
-                          color: isHero ? "#8AB89A" : "#1A2E1A", marginBottom:5, textTransform:"uppercase",
-                        }}>
-                          {(role.framework_snapshot?.recommendation || role.status)?.toUpperCase()} · {role.company?.toUpperCase()}
-                        </div>
-                        <div style={{
-                          fontFamily:"var(--font-prose)", fontSize: isHero ? 16 : 15,
-                          fontWeight:500, color: isHero ? "#E8F0E8" : "#1A2E1A",
-                          lineHeight:1.2, marginBottom:3,
-                        }}>{role.title}</div>
-                        <div style={{
-                          fontFamily:"var(--font-data)", fontSize:11,
-                          color: isHero ? "#8AB89A" : "#1A2E1A", marginBottom:14,
-                        }}>{role.company}</div>
-                        <div style={{ display:"flex", alignItems:"flex-end", justifyContent:"space-between" }}>
-                          <span style={{
-                            fontFamily:"var(--font-data)", fontSize: isHero ? 36 : 32,
-                            fontWeight:500, color: isHero ? "#E8F0E8" : sc, lineHeight:1,
-                          }}>{Number(role.vq_score).toFixed(1)}</span>
-                          <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:5 }}>
-                            <span style={{
-                              fontFamily:"var(--font-data)", fontSize:10, fontWeight:500,
-                              letterSpacing:".1em", textTransform:"uppercase",
-                              background:vp.bg, color:vp.color,
-                              padding:"4px 14px", borderRadius:20,
-                            }}>{(role.framework_snapshot?.recommendation || role.status)?.toUpperCase()}</span>
-                            {isApplied && (
-                              <span style={{
-                                fontFamily:"var(--font-data)", fontSize:9,
-                                background: isHero ? "#253C25" : "#DFF0DF",
-                                color: isHero ? "#8AB89A" : "#27500A",
-                                padding:"2px 10px", borderRadius:20,
-                              }}>{t?.wsApplied || "Applied"}</span>
-                            )}
-                          </div>
-                        </div>
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-            {CAROUSEL_MAX > 1 && (
-              <div style={{ display:"flex", justifyContent:"center", gap:5, marginTop:8 }}>
-                {scoredRoles.map((_, i) => (
-                  <button key={i} onClick={() => setCarouselIdx(i)} aria-label={`Go to match ${i+1}`} style={{
-                    width: i===carouselIdx ? 20 : 6, height:6, borderRadius:3,
-                    background: i===carouselIdx ? "#3A7A3A" : "#D8E8D8",
-                    border:"none", cursor:"pointer", padding:0, transition:"all 0.25s ease",
-                  }} />
-                ))}
-              </div>
-            )}
-          </section>
+        {onOpenMenu && (
+          <button onClick={onOpenMenu} aria-label="Open menu" style={{ width: 44, height: 44, display: "inline-flex", alignItems: "center", justifyContent: "center", background: "transparent", border: "none", cursor: "pointer", color: "var(--ink)", WebkitTapHighlightColor: "transparent" }}>
+            <svg width="20" height="20" viewBox="0 0 22 22" fill="none">
+              <line x1="3.5" y1="7"  x2="18.5" y2="7"  stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+              <line x1="3.5" y1="11" x2="18.5" y2="11" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+              <line x1="3.5" y1="15" x2="18.5" y2="15" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+            </svg>
+          </button>
         )}
+      </header>
 
-        {/* ── MARKET PULSE (Vantage) ── */}
-        <MarketPulseCard
-          t={t}
+      {/* ── Scrollable body ──────────────────────────────────────────────── */}
+      <div style={{ paddingBottom: 100 }}>
+
+        {/* Title block */}
+        <div style={{ padding: "14px 20px 18px" }}>
+          <p style={{ fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--muted)", marginBottom: 10 }}>
+            WORKSPACE{firstName ? ` · ${firstName.toUpperCase()}` : ""}
+          </p>
+          <h1 style={{ fontFamily: "var(--font-prose)", fontSize: 26, fontWeight: 500, color: "var(--ink)", lineHeight: 1.18, margin: 0, letterSpacing: "-0.005em" }}>
+            {headline}
+          </h1>
+        </div>
+
+        {/* Stat strip */}
+        <div style={{ padding: "0 20px 18px", display: "flex", gap: 6 }}>
+          <WsKpiTile value={String(pursueRoles.length)} label="PURSUE" color="var(--accent)" />
+          <WsKpiTile value={String(totalScored)} label="SCORED" />
+          <WsKpiTile value={profile.threshold ? String(profile.threshold) : "—"} label="THRESHOLD" color="var(--gold)" />
+        </div>
+
+        {/* VQ Advocate card */}
+        <VQAdvocateCard
+          opportunities={workspaceRoles}
           profile={profile}
-          authUser={authUser}
-          userTier={effectiveTier}
-          opportunities={oppsList}
+          onOpen={() => onOpenAdvocate?.()}
         />
 
-        {/* ── INTELLIGENCE strip ── */}
-        {behavioralInsight && (
-          <div style={{
-            marginBottom:20,
-            background:"#fff",
-            border:"1px solid #D8E8D8",
-            borderLeft:"3px solid #3A7A3A",
-            borderRadius:"0 10px 10px 0",
-            padding:"14px 16px",
-          }}>
-            <div style={{
-              fontFamily:"var(--font-data)", fontSize:9, fontWeight:700,
-              color:"#1A2E1A", letterSpacing:".15em", textTransform:"uppercase", marginBottom:8,
-            }}>INTELLIGENCE</div>
-            <p style={{ fontFamily:"var(--font-prose)", fontSize:13, color:"#1A2E1A", lineHeight:1.65, marginBottom:12 }}>
-              {behavioralInsight.insight_text}
-            </p>
-            <div style={{ display:"flex", gap:8 }}>
-              <button onClick={() => onDismissInsight?.(behavioralInsight.id)} style={{
-                fontFamily:"var(--font-data)", fontSize:11, color:"#1A2E1A",
-                background:"transparent", border:"1px solid #D8E8D8",
-                borderRadius:20, padding:"5px 14px", cursor:"pointer",
-              }}>Dismiss</button>
-              <button onClick={() => onActedOnInsight?.(behavioralInsight.id)} style={{
-                fontFamily:"var(--font-data)", fontSize:11, color:"#1A2E1A",
-                background:"#E0F0E0", border:"1px solid #C8E0C8",
-                borderRadius:20, padding:"5px 14px", cursor:"pointer",
-              }}>Got it</button>
+        {/* Hero card — top match */}
+        {scoredRoles[0] && (
+          <div style={{ padding: "0 20px 22px" }}>
+            <p style={{ fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase", color: "#8A9A8A", marginBottom: 8 }}>TOP MATCH</p>
+            <div
+              onClick={() => handleResume(scoredRoles[0])}
+              style={{ background: "var(--ink)", borderRadius: 12, padding: "16px 18px 18px", cursor: "pointer" }}
+            >
+              <div style={{ display: "flex", justifyContent: "center", marginBottom: 10 }}>
+                <div style={{ width: "66%", textAlign: "center", paddingBottom: 8, borderBottom: "0.5px solid rgba(168,192,168,0.35)", fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: "0.14em", color: "#A8C0A8", textTransform: "uppercase" }}>
+                  TOP MATCH · {(scoredRoles[0].company || "").toUpperCase()} · {wsAgoLabel(scoredRoles[0].created_at)}
+                </div>
+              </div>
+              <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 12 }}>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <div style={{ fontFamily: "var(--font-prose)", fontSize: 22, fontWeight: 500, color: "#F4F8F0", lineHeight: 1.18, letterSpacing: "-0.01em" }}>{scoredRoles[0].title}</div>
+                  <div style={{ fontFamily: "var(--font-data)", fontSize: 11, color: "#C4D8C0", marginTop: 6, letterSpacing: "0.04em" }}>{scoredRoles[0].company}</div>
+                </div>
+                <div style={{ fontFamily: "var(--font-prose)", fontSize: 56, fontWeight: 500, color: "#F4F8F0", lineHeight: 0.92, letterSpacing: "-0.02em", flexShrink: 0 }}>
+                  {Number(scoredRoles[0].vq_score).toFixed(1)}
+                </div>
+              </div>
             </div>
           </div>
         )}
 
+        {/* Score history header */}
+        <div style={{ padding: "0 20px 8px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <p style={{ fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--muted)", margin: 0 }}>
+            SCORE HISTORY · {allVisible.length}
+          </p>
+          {isVantage && (
+            <button
+              onClick={() => setCompareMode(x => !x)}
+              style={{ fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: "0.10em", textTransform: "uppercase", color: compareMode ? "var(--accent)" : "var(--muted)", background: "transparent", border: "none", cursor: "pointer", padding: 0 }}
+            >{compareMode ? "DONE" : "COMPARE"}</button>
+          )}
+        </div>
 
-        {/* ── CompareQueue tray ── */}
+        {/* Search + filter bar */}
+        <div style={{ padding: "4px 20px 12px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, background: "#fff", border: "0.5px solid var(--border)", borderRadius: 999, padding: "0 14px", height: 36, marginBottom: 10 }}>
+            <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+              <circle cx="6" cy="6" r="4.4" stroke="#8A9A8A" strokeWidth="1.3"/>
+              <path d="M9.4 9.4L12 12" stroke="#8A9A8A" strokeWidth="1.3" strokeLinecap="round"/>
+            </svg>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              placeholder="Search roles…"
+              style={{ flex: 1, border: "none", outline: "none", background: "transparent", fontFamily: "var(--font-prose)", fontSize: 14, color: "var(--ink)", padding: 0 }}
+            />
+            {searchQuery && (
+              <button onClick={() => setSearchQuery("")} aria-label="Clear" style={{ border: "none", background: "transparent", cursor: "pointer", padding: 0, lineHeight: 0 }}>
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6.5" fill="var(--border)"/><path d="M4.5 4.5l5 5M9.5 4.5l-5 5" stroke="#fff" strokeWidth="1.4" strokeLinecap="round"/></svg>
+              </button>
+            )}
+          </div>
+          <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 2 }}>
+            {[
+              { id: "ALL", label: "ALL" },
+              { id: "pursue", label: "PURSUE" },
+              { id: "monitor", label: "MONITOR" },
+              { id: "pass", label: "PASS" },
+            ].map(chip => {
+              const active = filterVerdict === chip.id;
+              const count  = verdictCounts[chip.id === "ALL" ? "ALL" : chip.id];
+              return (
+                <button key={chip.id} onClick={() => setFilterVerdict(chip.id)} style={{ flex: "0 0 auto", padding: "6px 12px", borderRadius: 999, background: active ? "var(--ink)" : "transparent", color: active ? "#F4F8F0" : "var(--ink)", border: `0.5px solid ${active ? "var(--ink)" : "var(--border)"}`, fontFamily: "var(--font-data)", fontSize: 10, fontWeight: 500, letterSpacing: "0.12em", textTransform: "uppercase", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6, whiteSpace: "nowrap" }}>
+                  {chip.label}
+                  <span style={{ fontFamily: "var(--font-data)", fontSize: 9, color: active ? "#A8C0A8" : "var(--muted)" }}>{count}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Hairline */}
+        <div style={{ height: "0.5px", background: "var(--border)", margin: "0 20px" }} />
+
+        {/* CompareQueue tray */}
         <CompareQueue
           selected={selectedForCompare}
           workspaceRoles={workspaceRoles}
@@ -661,107 +504,44 @@ export default function RoleWorkspace({
           t={t}
         />
 
-        {/* ── TODAY section ── */}
-        {todayRoles.length > 0 && (
-          <section aria-label="Today's roles" style={{ marginBottom:8 }}>
-            <SectionLabel count={todayRoles.length}>{t?.wsToday || "Today"}</SectionLabel>
-            {renderCards(todayRoles)}
-          </section>
+        {/* THIS WEEK */}
+        {thisWeekRoles.length > 0 && (
+          <>
+            <WsSubHeader label="THIS WEEK" count={thisWeekRoles.length} />
+            <WsOppsList roles={thisWeekRoles} onResume={handleResume} compareMode={compareMode} onToggleCompare={toggleCompare} selectedForCompare={selectedForCompare} t={t} />
+          </>
         )}
 
-        {/* ── IN PROGRESS (applied) section ── */}
-        {appliedRoles.length > 0 && (
-          <section aria-labelledby="applied-heading" style={{ marginBottom:8 }}>
-            <h2 className="sr-only" id="applied-heading">In Progress</h2>
-            <SectionLabel count={appliedRoles.length}>{t?.sectionInProgress || "In Progress"}</SectionLabel>
-            <div style={{ background:"#F0F4F0", borderRadius:10, overflow:"hidden" }}>
-              {appliedRoles.map((role, i) => {
-                const sc = scoreColor(role.vq_score || 0);
-                const isEditing = editingStatusId === role.role_id;
-                return (
-                  <div key={role.role_id} style={{ borderBottom: i < appliedRoles.length-1 ? "0.5px solid #D8E8D8" : "none" }}>
-                    <div style={{ display:"flex", alignItems:"center", gap:10, padding:"10px 14px" }}>
-                      <div style={{ flex:1, minWidth:0 }}>
-                        <button onClick={() => handleResume(role)} style={{ background:"none", border:"none", padding:0, cursor:"pointer", textAlign:"left", width:"100%" }}>
-                          <div style={{ fontFamily:"var(--font-prose)", fontSize:13, fontWeight:500, color:"#1A2E1A", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{role.title}</div>
-                          <div style={{ fontFamily:"var(--font-data)", fontSize:10, color:"#1A2E1A", marginTop:1, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{role.company}</div>
-                        </button>
-                      </div>
-                      <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:3, flexShrink:0 }}>
-                        <span style={{
-                          fontFamily:"var(--font-data)", fontSize:9, fontWeight:500,
-                          letterSpacing:".08em", textTransform:"uppercase",
-                          background:"#DFF0DF", color:"#27500A",
-                          borderRadius:20, padding:"3px 10px",
-                        }}>{t?.wsApplied || "Applied"}</span>
-                        {role.vq_score != null && (
-                          <span style={{ fontFamily:"var(--font-data)", fontSize:11, color:sc }}>{Number(role.vq_score).toFixed(1)}</span>
-                        )}
-                      </div>
-                      <button
-                        onClick={() => setEditingStatusId(isEditing ? null : role.role_id)}
-                        aria-label={isEditing ? "Close" : "Update status"}
-                        style={{ background:"none", border:"none", cursor:"pointer", color:"#1A2E1A", fontSize:14, minWidth:36, minHeight:36, display:"flex", alignItems:"center", justifyContent:"center" }}
-                      >{isEditing ? "✕" : "✎"}</button>
-                    </div>
-                    {isEditing && (
-                      <div style={{ padding:"0 14px 12px" }}>
-                        <div style={{ background:"#fff", borderRadius:8, padding:"10px 12px", border:"0.5px solid #D8E8D8" }}>
-                          <div style={{ fontFamily:"var(--font-data)", fontSize:9, color:"#1A2E1A", letterSpacing:".12em", textTransform:"uppercase", marginBottom:8 }}>{t?.labelActions || "Actions"}</div>
-                          <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
-                            <button onClick={() => { onUnmarkApplied(role.role_id); setEditingStatusId(null); }} style={{
-                              fontFamily:"var(--font-data)", fontSize:11, letterSpacing:".06em",
-                              background:"#F8ECEC", color:"#C05050", border:"1px solid #E8D0D0",
-                              borderRadius:20, padding:"4px 12px", cursor:"pointer", minHeight:36,
-                            }}>{t?.wsRemoveFromProgress || "Remove from In Progress"}</button>
-                            <button onClick={() => { onArchive(role.role_id); setEditingStatusId(null); }} style={{
-                              fontFamily:"var(--font-data)", fontSize:11, letterSpacing:".06em",
-                              background:"transparent", color:"#1A2E1A", border:"0.5px solid #D8E8D8",
-                              borderRadius:20, padding:"4px 12px", cursor:"pointer", minHeight:36,
-                            }}>Archive</button>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </section>
+        {/* EARLIER */}
+        {earlierRoles.length > 0 && (
+          <>
+            <WsSubHeader label="EARLIER" count={earlierRoles.length} />
+            <WsOppsList roles={earlierRoles} onResume={handleResume} faded compareMode={compareMode} onToggleCompare={toggleCompare} selectedForCompare={selectedForCompare} t={t} />
+          </>
         )}
 
-        {/* ── ACTIVE section ── */}
-        <section aria-label="Active roles" style={{ marginBottom:8 }}>
-          <SectionLabel count={activeRoles.length}>{t?.wsSectionActive || "Active"}</SectionLabel>
-          {activeRoles.length === 0 && appliedRoles.length === 0
-            ? <WorkspaceEmptyState section="active" onScoreNewRole={() => setShowScoringPanel(true)} t={t} />
-            : renderCards(activeRoles)
-          }
-        </section>
+        {/* Empty state */}
+        {allVisible.length === 0 && (
+          <WorkspaceEmptyState section="active" onScoreNewRole={() => {}} t={t} />
+        )}
+        {filteredRoles.length === 0 && allVisible.length > 0 && (
+          <div style={{ padding: "32px 24px", textAlign: "center" }}>
+            <p style={{ fontFamily: "var(--font-prose)", fontSize: 15, color: "var(--ink)", marginBottom: 14 }}>No matches found.</p>
+            <button onClick={() => { setSearchQuery(""); setFilterVerdict("ALL"); }} style={{ padding: "8px 16px", borderRadius: 999, background: "transparent", border: "0.5px solid var(--border)", color: "var(--ink)", cursor: "pointer", fontFamily: "var(--font-data)", fontSize: 10, fontWeight: 500, letterSpacing: "0.14em", textTransform: "uppercase" }}>CLEAR FILTERS</button>
+          </div>
+        )}
 
-        {/* ── ARCHIVED section ── */}
+        {/* Archived (collapsible) */}
         {archivedRoles.length > 0 && (
-          <section aria-label="Archived roles">
-            <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:10 }}>
-              <button
-                onClick={() => setShowArchived(x => !x)}
-                aria-expanded={showArchived}
-                style={{
-                  display:"flex", alignItems:"center", gap:6,
-                  fontFamily:"var(--font-data)", fontSize:9, letterSpacing:".12em",
-                  textTransform:"uppercase", color:"#1A2E1A",
-                  background:"none", border:"none", cursor:"pointer", padding:0, minHeight:28,
-                }}
-              >
-                <span>{showArchived ? "▼" : "▶"}</span>
-                {t?.wsSectionArchived || "Archived"}
-              </button>
-              <div style={{ flex:1, height:0.5, background:"#D8E8D8" }} />
-              <span style={{ fontFamily:"var(--font-data)", fontSize:9, color:"#1A2E1A" }}>{archivedRoles.length}</span>
-            </div>
-            {showArchived && <div id="archived-roles-list">{renderCards(archivedRoles)}</div>}
-          </section>
+          <div style={{ borderTop: "0.5px solid var(--border)", margin: "20px 20px 0", paddingTop: 14 }}>
+            <button onClick={() => setShowArchived(x => !x)} aria-expanded={showArchived} style={{ display: "flex", alignItems: "center", gap: 8, background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--muted)" }}>
+              <span>{showArchived ? "▼" : "▶"}</span>
+              {t?.wsSectionArchived || "Archived"} · {archivedRoles.length}
+            </button>
+            {showArchived && <div style={{ marginTop: 12 }}>{renderCards(archivedRoles)}</div>}
+          </div>
         )}
+
       </div>
 
       {/* ── Reminder modal ── */}
@@ -780,47 +560,120 @@ export default function RoleWorkspace({
         const slide = GUIDE_SLIDES[guideStep];
         const isLast = guideStep === GUIDE_SLIDES.length - 1;
         return (
-          <div role="dialog" aria-modal="true" aria-label="Workspace guide" style={{
-            position:"fixed", inset:0, zIndex:1000,
-            background:"rgba(10,20,10,0.7)",
-            display:"flex", alignItems:"flex-end", justifyContent:"center",
-            padding:"0 0 env(safe-area-inset-bottom, 0)",
-          }} onClick={e => { if (e.target === e.currentTarget) closeGuide(); }}>
-            <div style={{
-              background:"#FAFAF8", borderRadius:"16px 16px 0 0",
-              width:"100%", maxWidth:480, padding:"28px 24px 36px",
-              boxShadow:"0 -4px 32px rgba(0,0,0,0.18)",
-            }}>
-              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:24 }}>
-                <span style={{ fontFamily:"var(--font-data)", fontSize:11, letterSpacing:".18em", textTransform:"uppercase", color:"#1A2E1A" }}>{guideStep+1} of {GUIDE_SLIDES.length}</span>
-                <button onClick={closeGuide} aria-label="Close guide" style={{ background:"none", border:"none", cursor:"pointer", color:"#1A2E1A", fontSize:20, lineHeight:1, padding:4 }}>✕</button>
+          <div role="dialog" aria-modal="true" aria-label="Workspace guide" style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(10,20,10,0.7)", display: "flex", alignItems: "flex-end", justifyContent: "center" }} onClick={e => { if (e.target === e.currentTarget) closeGuide(); }}>
+            <div style={{ background: "var(--paper)", borderRadius: "16px 16px 0 0", width: "100%", maxWidth: 480, padding: "28px 24px 36px", boxShadow: "0 -4px 32px rgba(0,0,0,0.18)" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+                <span style={{ fontFamily: "var(--font-data)", fontSize: 11, letterSpacing: ".18em", textTransform: "uppercase", color: "var(--ink)" }}>{guideStep + 1} of {GUIDE_SLIDES.length}</span>
+                <button onClick={closeGuide} aria-label="Close guide" style={{ background: "none", border: "none", cursor: "pointer", color: "var(--ink)", fontSize: 20, lineHeight: 1, padding: 4 }}>✕</button>
               </div>
-              <div style={{ textAlign:"center", marginBottom:32 }}>
-                <div style={{ fontFamily: slide.mono ? "var(--font-data)" : "var(--font-prose)", fontSize: slide.mono ? 36 : 40, fontWeight:700, color:"#1A2E1A", marginBottom:16, lineHeight:1 }}>{slide.icon}</div>
-                <h3 style={{ fontFamily:"var(--font-prose)", fontSize:20, fontWeight:700, color:"#1A2E1A", marginBottom:12 }}>{slide.title}</h3>
-                <p style={{ fontFamily:"var(--font-prose)", fontSize:15, color:"#1A2E1A", lineHeight:1.7, maxWidth:320, margin:"0 auto" }}>{slide.body}</p>
+              <div style={{ textAlign: "center", marginBottom: 32 }}>
+                <div style={{ fontFamily: slide.mono ? "var(--font-data)" : "var(--font-prose)", fontSize: slide.mono ? 36 : 40, fontWeight: 700, color: "var(--ink)", marginBottom: 16, lineHeight: 1 }}>{slide.icon}</div>
+                <h3 style={{ fontFamily: "var(--font-prose)", fontSize: 20, fontWeight: 700, color: "var(--ink)", marginBottom: 12 }}>{slide.title}</h3>
+                <p style={{ fontFamily: "var(--font-prose)", fontSize: 15, color: "var(--ink)", lineHeight: 1.7, maxWidth: 320, margin: "0 auto" }}>{slide.body}</p>
               </div>
-              <div style={{ display:"flex", justifyContent:"center", gap:6, marginBottom:24 }}>
-                {GUIDE_SLIDES.map((_, i) => (
-                  <button key={i} onClick={() => setGuideStep(i)} aria-label={`Slide ${i+1}`} style={{
-                    width: i===guideStep ? 20 : 8, height:8, borderRadius:4,
-                    background: i===guideStep ? "#1A2E1A" : "#D8E8D8",
-                    border:"none", cursor:"pointer", padding:0, transition:"all 0.25s ease",
-                  }} />
-                ))}
+              <div style={{ display: "flex", justifyContent: "center", gap: 6, marginBottom: 24 }}>
+                {GUIDE_SLIDES.map((_, i) => (<button key={i} onClick={() => setGuideStep(i)} aria-label={`Slide ${i + 1}`} style={{ width: i === guideStep ? 20 : 8, height: 8, borderRadius: 4, background: i === guideStep ? "var(--ink)" : "var(--border)", border: "none", cursor: "pointer", padding: 0, transition: "all 0.25s ease" }} />))}
               </div>
-              <div style={{ display:"flex", gap:10 }}>
-                {guideStep > 0 && (
-                  <button onClick={guidePrev} style={{ flex:1, minHeight:48, borderRadius:10, background:"#F0F4F0", color:"#1A2E1A", border:"1px solid #D8E8D8", fontSize:15, fontFamily:"var(--font-prose)", cursor:"pointer" }}>← Back</button>
-                )}
-                <button onClick={guideNext} style={{ flex:2, minHeight:48, borderRadius:10, background:"#1A2E1A", color:"#E8F0E8", border:"none", fontSize:15, fontFamily:"var(--font-prose)", cursor:"pointer" }}>
-                  {isLast ? "Got it" : "Next →"}
-                </button>
+              <div style={{ display: "flex", gap: 10 }}>
+                {guideStep > 0 && (<button onClick={guidePrev} style={{ flex: 1, minHeight: 48, borderRadius: 10, background: "var(--cream)", color: "var(--ink)", border: "0.5px solid var(--border)", fontSize: 15, fontFamily: "var(--font-prose)", cursor: "pointer" }}>← Back</button>)}
+                <button onClick={guideNext} style={{ flex: 2, minHeight: 48, borderRadius: 10, background: "var(--ink)", color: "#F4F8F0", border: "none", fontSize: 15, fontFamily: "var(--font-prose)", cursor: "pointer" }}>{isLast ? "Got it" : "Next →"}</button>
               </div>
             </div>
           </div>
         );
       })()}
     </main>
+  );
+}
+
+// ── Workspace sub-components ──────────────────────────────────────────────
+
+function WsKpiTile({ value, label, color }) {
+  return (
+    <div style={{ flex: 1, padding: "12px 12px 10px", background: "var(--cream)", borderRadius: 10, border: "0.5px solid var(--border)" }}>
+      <div style={{ fontFamily: "var(--font-prose)", fontSize: 24, fontWeight: 500, color: color || "var(--ink)", lineHeight: 1, letterSpacing: "-0.01em", marginBottom: 6 }}>{value}</div>
+      <div style={{ fontFamily: "var(--font-data)", fontSize: 8.5, letterSpacing: "0.14em", color: "#8A9A8A", textTransform: "uppercase" }}>{label}</div>
+    </div>
+  );
+}
+
+function WsSubHeader({ label, count }) {
+  return (
+    <div style={{ padding: "14px 20px 6px", display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
+      <div style={{ fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: "0.16em", color: "#8A9A8A", textTransform: "uppercase", fontWeight: 500 }}>{label}</div>
+      <div style={{ fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: "0.10em", color: "#A8B8A8", textTransform: "uppercase" }}>{count}</div>
+    </div>
+  );
+}
+
+function wsScoreColor(score) {
+  if (score >= 4.0) return "#3A7A3A";
+  if (score >= 3.0) return "#8A6A10";
+  return "#5A6A5A";
+}
+
+function wsAgoLabel(dateStr) {
+  if (!dateStr) return "";
+  const days = Math.floor((Date.now() - new Date(dateStr).getTime()) / (24 * 3600 * 1000));
+  if (days < 1)  return "TODAY";
+  if (days < 7)  return `${days}D AGO`;
+  if (days < 14) return "1W AGO";
+  if (days < 30) return `${Math.round(days / 7)}W AGO`;
+  if (days < 60) return "1MO AGO";
+  return `${Math.round(days / 30)}MO AGO`;
+}
+
+function WsVerdictPill({ rec }) {
+  const r = (rec || "").toLowerCase();
+  const s = r === "pursue"
+    ? { bg: "#EAF3DE", color: "#27500A" }
+    : r === "monitor"
+    ? { bg: "#FAEEDA", color: "#633806" }
+    : { bg: "#F4F4F0", color: "#5A6A5A" };
+  const label = r === "pursue" ? "PURSUE" : r === "monitor" ? "MONITOR" : r ? "PASS" : "—";
+  return (
+    <span style={{ flexShrink: 0, fontFamily: "var(--font-data)", fontSize: 9, fontWeight: 500, letterSpacing: "0.10em", textTransform: "uppercase", background: s.bg, color: s.color, padding: "4px 10px", borderRadius: 999 }}>{label}</span>
+  );
+}
+
+function WsOppsList({ roles, onResume, faded = false, compareMode, onToggleCompare, selectedForCompare, t }) {
+  const queuedRole = roles.find(r => r.status === "queued" && r.vq_score == null);
+  return (
+    <ul style={{ listStyle: "none", margin: 0, padding: "0 20px" }}>
+      {roles.map((role, i) => {
+        const isQueued   = role.status === "queued" && role.vq_score == null;
+        const isSelected = selectedForCompare?.has(role.role_id);
+        const rec        = role.framework_snapshot?.recommendation || "";
+        return (
+          <li key={role.role_id}
+            role={isQueued ? undefined : "button"}
+            tabIndex={isQueued ? undefined : 0}
+            style={{ padding: "14px 0", borderBottom: i === roles.length - 1 ? "none" : "0.5px solid var(--border)", display: "flex", alignItems: "center", gap: 14, cursor: isQueued ? "default" : "pointer", opacity: faded ? 0.66 : 1, WebkitTapHighlightColor: "transparent" }}
+            onClick={isQueued ? undefined : () => onResume(role)}
+            onKeyDown={isQueued ? undefined : (e) => { if (e.key === "Enter" || e.key === " ") onResume(role); }}>
+            {/* Compare checkbox */}
+            {compareMode && !isQueued && (
+              <button onClick={e => { e.stopPropagation(); onToggleCompare(role.role_id); }} style={{ width: 20, height: 20, borderRadius: 4, border: `1.5px solid ${isSelected ? "var(--accent)" : "var(--border)"}`, background: isSelected ? "var(--accent)" : "transparent", display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0, cursor: "pointer" }}>
+                {isSelected && <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+              </button>
+            )}
+            {/* Score */}
+            <div style={{ width: 44, textAlign: "right", flexShrink: 0, fontFamily: "var(--font-prose)", fontSize: 22, fontWeight: 500, color: isQueued ? "var(--border)" : wsScoreColor(role.vq_score || 0), lineHeight: 1, letterSpacing: "-0.01em" }}>
+              {isQueued ? <span className="spinner" style={{ width: 14, height: 14, borderWidth: 2, display: "inline-block" }} /> : Number(role.vq_score).toFixed(1)}
+            </div>
+            {/* Title + company */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontFamily: "var(--font-prose)", fontSize: 15, fontWeight: 500, color: "var(--ink)", lineHeight: 1.2, marginBottom: 3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{role.title || "Scoring…"}</div>
+              <div style={{ fontFamily: "var(--font-data)", fontSize: 10, color: "#8A9A8A", letterSpacing: "0.06em", textTransform: "uppercase" }}>
+                {(role.company || "").toUpperCase()}{role.created_at ? ` · ${wsAgoLabel(role.created_at)}` : ""}
+                {role.status === "applied" && <span style={{ marginLeft: 6, background: "#DFF0DF", color: "#27500A", padding: "1px 7px", borderRadius: 999, fontSize: 8, letterSpacing: "0.08em" }}>APPLIED</span>}
+              </div>
+            </div>
+            {/* Verdict pill */}
+            {!isQueued && <WsVerdictPill rec={rec} />}
+          </li>
+        );
+      })}
+    </ul>
   );
 }

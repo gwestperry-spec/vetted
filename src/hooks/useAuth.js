@@ -109,7 +109,7 @@ export function useAuth({ setProfile, setLang, setFilters, setOpportunities, set
         localStorage.removeItem("vetted_user");
         setAuthUser(null);
         setAuthError("Session expired — please sign in again.");
-        setStep("region");
+        setStep("onboard");
       } else {
         // Network/server error — drop to onboarding, user can still use app
         setStep("onboard");
@@ -378,7 +378,7 @@ export function useAuth({ setProfile, setLang, setFilters, setOpportunities, set
     localStorage.removeItem("vetted_session_token");
     sessionStorage.removeItem("vetted_session_token");
     setAuthUser(null);
-    setStep("region");
+    setStep("onboard");
     setOpportunities([]);
     setProfile({
       name: "", currentTitle: "", background: "", targetRoles: [], targetIndustries: [],

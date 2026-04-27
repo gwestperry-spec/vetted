@@ -1,6 +1,7 @@
 const LANG_OPTIONS = [
   { code: "en", label: "English" },
   { code: "es", label: "Español" },
+  { code: "pt", label: "Português" },
   { code: "zh", label: "中文" },
   { code: "fr", label: "Français" },
   { code: "ar", label: "العربية" },
