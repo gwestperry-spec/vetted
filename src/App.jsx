@@ -184,6 +184,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState("workspace");
   const [menuOpen, setMenuOpen] = useState(false);
   const [editingProfile, setEditingProfile] = useState(false);
+  const [editProfileStep, setEditProfileStep] = useState(null);
   const [profile, setProfile] = useState({
     name: "", currentTitle: "", background: "", targetRoles: [], targetIndustries: [],
     compensationMin: "", compensationTarget: "", locationPrefs: [], hardConstraints: "",
@@ -853,6 +854,7 @@ export default function App() {
             onUpgrade={(copy) => { setPaywallContext(copy || null); setShowPaywall(true); }}
             authUser={authUser}
             isEditing={editingProfile}
+            initialStep={editProfileStep}
             onDone={() => {
               setEditingProfile(false);
               setStep("workspace");
@@ -943,7 +945,7 @@ export default function App() {
                 onMarkApplied={handleMarkWorkspaceApplied}
                 onUnmarkApplied={handleUnmarkWorkspaceApplied}
                 onOpenAdvocate={() => setShowAdvocate(true)}
-                onEditProfile={() => { setEditingProfile(true); setStep("onboard"); }}
+                onEditProfile={(stepId) => { setEditingProfile(true); setEditProfileStep(stepId || null); setStep("onboard"); }}
                 onEditFilters={() => { setActiveTab("filters"); }}
                 onScore={scoreOpportunity}
                 loading={loading}
@@ -1005,7 +1007,7 @@ export default function App() {
                 profile={profile} setProfile={setProfile}
                 authUser={authUser} userTier={devTierOverride || userTier}
                 onSignOut={handleSignOut}
-                onEditProfile={() => { setEditingProfile(true); setStep("onboard"); }}
+                onEditProfile={(stepId) => { setEditingProfile(true); setEditProfileStep(stepId || null); setStep("onboard"); }}
                 onUpgrade={() => { setShowPaywall(true); }}
               />
             )}
@@ -1218,20 +1220,32 @@ function ProfileTab({ t, lang, setLang, profile, authUser, userTier, onSignOut, 
 
       {/* Identity block */}
       <div style={{ padding: "14px 20px 20px", borderBottom: "0.5px solid var(--border)" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-          <span style={{ fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--muted)" }}>
-            PROFILE ·
-          </span>
-          <button onClick={!isVantage && !isSignal ? onUpgrade : undefined} style={{ background: "transparent", border: "none", padding: 0, cursor: !isVantage && !isSignal ? "pointer" : "default", fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase", color: tierColor, fontWeight: 500 }}>
-            {tierLabel}{!isVantage ? " · UPGRADE →" : ""}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--muted)" }}>
+              PROFILE ·
+            </span>
+            <button onClick={!isVantage && !isSignal ? onUpgrade : undefined} style={{ background: "transparent", border: "none", padding: 0, cursor: !isVantage && !isSignal ? "pointer" : "default", fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase", color: tierColor, fontWeight: 500 }}>
+              {tierLabel}{!isVantage ? " · UPGRADE →" : ""}
+            </button>
+          </div>
+          <button onClick={() => onEditProfile("name")} style={{ background: "transparent", border: "none", cursor: "pointer", fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: "0.12em", color: "var(--ink)", textTransform: "uppercase", padding: "2px 0", display: "inline-flex", alignItems: "center", gap: 4 }}>
+            EDIT
+            <svg width="8" height="8" viewBox="0 0 8 8" fill="none"><path d="M1.5 1.5L5 4L1.5 6.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
           </button>
         </div>
         <h1 style={{ fontFamily: "var(--font-prose)", fontSize: 32, fontWeight: 500, color: "var(--ink)", lineHeight: 1.1, margin: 0, letterSpacing: "-0.015em" }}>
           {name}
         </h1>
         {title && (
-          <div style={{ fontFamily: "var(--font-prose)", fontSize: 17, color: "var(--muted)", marginTop: 6, lineHeight: 1.35, fontStyle: "italic" }}>
-            {title}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 6 }}>
+            <div style={{ fontFamily: "var(--font-prose)", fontSize: 17, color: "var(--muted)", lineHeight: 1.35, fontStyle: "italic" }}>
+              {title}
+            </div>
+            <button onClick={() => onEditProfile("currentTitle")} style={{ background: "transparent", border: "none", cursor: "pointer", fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: "0.12em", color: "var(--ink)", textTransform: "uppercase", padding: "2px 0", display: "inline-flex", alignItems: "center", gap: 4, flexShrink: 0, marginLeft: 8 }}>
+              EDIT
+              <svg width="8" height="8" viewBox="0 0 8 8" fill="none"><path d="M1.5 1.5L5 4L1.5 6.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </button>
           </div>
         )}
         {authUser?.email && (
@@ -1245,31 +1259,31 @@ function ProfileTab({ t, lang, setLang, profile, authUser, userTier, onSignOut, 
       <div style={{ paddingBottom: 110 }}>
 
         {/* Goals & Background */}
-        <ProfileSection title="Goals & Background" onEdit={onEditProfile}>
+        <ProfileSection title="Goals & Background" onEdit={() => onEditProfile("careerGoal")}>
           {profile.careerGoal && (
-            <ProfileField label="OPTIMIZING FOR">
+            <ProfileField label="OPTIMIZING FOR" onEdit={() => onEditProfile("careerGoal")}>
               <p style={{ margin: 0, fontFamily: "var(--font-prose)", fontSize: 15, lineHeight: 1.55, color: "var(--ink)" }}>{profile.careerGoal}</p>
             </ProfileField>
           )}
           {profile.background && (
-            <ProfileField label="EXPERIENCE">
+            <ProfileField label="EXPERIENCE" onEdit={() => onEditProfile("background")}>
               <p style={{ margin: 0, fontFamily: "var(--font-prose)", fontSize: 14, lineHeight: 1.55, color: "var(--ink)", display: "-webkit-box", WebkitLineClamp: 4, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{profile.background}</p>
             </ProfileField>
           )}
           {profile.targetRoles?.length > 0 && (
-            <ProfileField label="TARGET ROLES">
+            <ProfileField label="TARGET ROLES" onEdit={() => onEditProfile("targetRoles")}>
               <TagList items={profile.targetRoles} />
             </ProfileField>
           )}
           {profile.targetIndustries?.length > 0 && (
-            <ProfileField label="INDUSTRIES">
+            <ProfileField label="INDUSTRIES" onEdit={() => onEditProfile("targetIndustries")}>
               <TagList items={profile.targetIndustries} />
             </ProfileField>
           )}
           {profile.timeline && (() => {
             const opt = t?.timelineOptions?.find(o => o.value === profile.timeline);
             return (
-              <ProfileField label="LANDING WINDOW">
+              <ProfileField label="LANDING WINDOW" onEdit={() => onEditProfile("timeline")}>
                 <p style={{ margin: 0, fontFamily: "var(--font-prose)", fontSize: 15, color: "var(--ink)" }}>
                   {opt?.label || profile.timeline}
                 </p>
@@ -1280,22 +1294,24 @@ function ProfileTab({ t, lang, setLang, profile, authUser, userTier, onSignOut, 
 
         {/* Compensation */}
         {(profile.compensationMin || profile.compensationTarget) && (
-          <ProfileSection title="Compensation" onEdit={onEditProfile}>
-            <div style={{ display: "flex", gap: 32, padding: "4px 0" }}>
+          <ProfileSection title="Compensation" onEdit={() => onEditProfile("compensationMin")}>
+            <div style={{ display: "flex", gap: 0 }}>
               {profile.compensationMin && (
-                <div>
-                  <div style={{ fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: "0.12em", color: "#8A9A8A", textTransform: "uppercase", marginBottom: 6 }}>FLOOR</div>
-                  <div style={{ fontFamily: "var(--font-prose)", fontSize: 28, fontWeight: 500, color: "var(--ink)", lineHeight: 1, letterSpacing: "-0.015em" }}>
-                    ${profile.compensationMin}<span style={{ fontSize: 16, color: "#8A9A8A" }}>k</span>
-                  </div>
+                <div style={{ flex: 1 }}>
+                  <ProfileField label="FLOOR" onEdit={() => onEditProfile("compensationMin")}>
+                    <div style={{ fontFamily: "var(--font-prose)", fontSize: 28, fontWeight: 500, color: "var(--ink)", lineHeight: 1, letterSpacing: "-0.015em" }}>
+                      ${profile.compensationMin}<span style={{ fontSize: 16, color: "#8A9A8A" }}>k</span>
+                    </div>
+                  </ProfileField>
                 </div>
               )}
               {profile.compensationTarget && (
-                <div>
-                  <div style={{ fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: "0.12em", color: "#8A9A8A", textTransform: "uppercase", marginBottom: 6 }}>TARGET</div>
-                  <div style={{ fontFamily: "var(--font-prose)", fontSize: 28, fontWeight: 500, color: "var(--accent)", lineHeight: 1, letterSpacing: "-0.015em" }}>
-                    ${profile.compensationTarget}<span style={{ fontSize: 16, color: "#8A9A8A" }}>k</span>
-                  </div>
+                <div style={{ flex: 1 }}>
+                  <ProfileField label="TARGET" onEdit={() => onEditProfile("compensationTarget")}>
+                    <div style={{ fontFamily: "var(--font-prose)", fontSize: 28, fontWeight: 500, color: "var(--accent)", lineHeight: 1, letterSpacing: "-0.015em" }}>
+                      ${profile.compensationTarget}<span style={{ fontSize: 16, color: "#8A9A8A" }}>k</span>
+                    </div>
+                  </ProfileField>
                 </div>
               )}
             </div>
@@ -1303,11 +1319,11 @@ function ProfileTab({ t, lang, setLang, profile, authUser, userTier, onSignOut, 
         )}
 
         {/* Preferences — threshold, location, constraints, country */}
-        <ProfileSection title="Preferences" onEdit={onEditProfile}>
+        <ProfileSection title="Preferences" onEdit={() => onEditProfile("threshold")}>
           {profile.threshold && (() => {
             const opt = t?.thresholdOptions?.find(o => o.value === profile.threshold);
             return (
-              <ProfileField label="VQ FLOOR">
+              <ProfileField label="VQ FLOOR" onEdit={() => onEditProfile("threshold")}>
                 <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
                   <span style={{ fontFamily: "var(--font-prose)", fontSize: 26, fontWeight: 500, color: "var(--ink)", letterSpacing: "-0.015em", lineHeight: 1 }}>
                     {profile.threshold}
@@ -1322,19 +1338,19 @@ function ProfileTab({ t, lang, setLang, profile, authUser, userTier, onSignOut, 
             );
           })()}
           {profile.locationPrefs?.length > 0 && (
-            <ProfileField label="LOCATION">
+            <ProfileField label="LOCATION" onEdit={() => onEditProfile("locationPrefs")}>
               <TagList items={profile.locationPrefs} />
             </ProfileField>
           )}
           {profile.hardConstraints && (
-            <ProfileField label="HARD NOs">
+            <ProfileField label="HARD NOs" onEdit={() => onEditProfile("hardConstraints")}>
               <p style={{ margin: 0, fontFamily: "var(--font-prose)", fontSize: 14, lineHeight: 1.55, color: "var(--ink)" }}>{profile.hardConstraints}</p>
             </ProfileField>
           )}
           {profile.country && (() => {
             const c = COUNTRY_MAP[profile.country];
             return (
-              <ProfileField label="COUNTRY">
+              <ProfileField label="COUNTRY" onEdit={() => onEditProfile("country")}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                   {c?.flag && <span style={{ fontSize: 22, lineHeight: 1 }}>{c.flag}</span>}
                   <div>
@@ -1389,10 +1405,18 @@ function ProfileSection({ title, onEdit, children }) {
   );
 }
 
-function ProfileField({ label, children }) {
+function ProfileField({ label, children, onEdit }) {
   return (
     <div style={{ padding: "12px 0" }}>
-      <div style={{ fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: "0.12em", color: "#8A9A8A", textTransform: "uppercase", marginBottom: 8 }}>{label}</div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+        <div style={{ fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: "0.12em", color: "#8A9A8A", textTransform: "uppercase" }}>{label}</div>
+        {onEdit && (
+          <button onClick={onEdit} style={{ background: "transparent", border: "none", cursor: "pointer", fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: "0.12em", color: "var(--ink)", textTransform: "uppercase", padding: "2px 0", display: "inline-flex", alignItems: "center", gap: 4 }}>
+            EDIT
+            <svg width="8" height="8" viewBox="0 0 8 8" fill="none"><path d="M1.5 1.5L5 4L1.5 6.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          </button>
+        )}
+      </div>
       {children}
     </div>
   );
