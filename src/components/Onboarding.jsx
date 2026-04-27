@@ -231,6 +231,7 @@ export function OnboardStep({ t, profile, setProfile, onNext, userTier, onUpgrad
           onSubmit={() => isFilled && goNext()}
           direction={direction}
           t={t}
+          currency={currency}
         />
       </div>
 
@@ -286,7 +287,7 @@ export function OnboardStep({ t, profile, setProfile, onNext, userTier, onUpgrad
 }
 
 // ─── Animated field card ──────────────────────────────────────────────────
-function FieldCard({ step, value, onChange, onSubmit, direction, t }) {
+function FieldCard({ step, value, onChange, onSubmit, direction, t, currency }) {
   const ref = useRef();
 
   useEffect(() => {
