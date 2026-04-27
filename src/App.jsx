@@ -1300,7 +1300,7 @@ function ProfileTab({ t, lang, setLang, profile, authUser, userTier, onSignOut, 
                 <div style={{ flex: 1 }}>
                   <ProfileField label="FLOOR" onEdit={() => onEditProfile("compensationMin")}>
                     <div style={{ fontFamily: "var(--font-prose)", fontSize: 28, fontWeight: 500, color: "var(--ink)", lineHeight: 1, letterSpacing: "-0.015em" }}>
-                      ${profile.compensationMin}<span style={{ fontSize: 16, color: "#8A9A8A" }}>k</span>
+                      {fmtComp(profile.compensationMin)}
                     </div>
                   </ProfileField>
                 </div>
@@ -1309,7 +1309,7 @@ function ProfileTab({ t, lang, setLang, profile, authUser, userTier, onSignOut, 
                 <div style={{ flex: 1 }}>
                   <ProfileField label="TARGET" onEdit={() => onEditProfile("compensationTarget")}>
                     <div style={{ fontFamily: "var(--font-prose)", fontSize: 28, fontWeight: 500, color: "var(--accent)", lineHeight: 1, letterSpacing: "-0.015em" }}>
-                      ${profile.compensationTarget}<span style={{ fontSize: 16, color: "#8A9A8A" }}>k</span>
+                      {fmtComp(profile.compensationTarget)}
                     </div>
                   </ProfileField>
                 </div>
@@ -1420,6 +1420,15 @@ function ProfileField({ label, children, onEdit }) {
       {children}
     </div>
   );
+}
+
+// Format a compensation value stored in full dollars (e.g. 350000) → "$350K"
+// Falls back gracefully if user entered thousands (e.g. 350 → "$350K")
+function fmtComp(v) {
+  const n = parseFloat(v);
+  if (!n || n <= 0) return "";
+  const k = n >= 1000 ? Math.round(n / 1000) : Math.round(n);
+  return `$${k}K`;
 }
 
 function TagList({ items }) {

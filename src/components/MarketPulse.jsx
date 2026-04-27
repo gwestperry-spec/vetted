@@ -208,10 +208,11 @@ function MpJoyplot({ salaryCache, opportunities, profile, currency, displayCurre
 
   if (groups.length === 0) return null;
 
-  // profile.compensationTarget is in profile.currency k — convert to display currency
+  // profile.compensationTarget is stored in full dollars (e.g. 350000 = $350K)
+  // Divide by 1000 first to match the K-based axis used for salary data
   const profileCurrency = profile.currency || "USD";
-  const targetUSD_k = parseFloat(profile.compensationTarget) * (FX_RATES[profileCurrency] ? 1 / FX_RATES[profileCurrency] : 1) || null;
-  const targetK = targetUSD_k ? convertK(targetUSD_k, cur) : null;
+  const targetUSD_k = (parseFloat(profile.compensationTarget) / 1000) * (FX_RATES[profileCurrency] ? 1 / FX_RATES[profileCurrency] : 1) || null;
+  const targetK = (targetUSD_k && targetUSD_k > 0) ? convertK(targetUSD_k, cur) : null;
 
   const all = groups.flatMap(g => [g.instances[0].minK, g.instances[0].maxK]);
   if (targetK && targetK > 0) all.push(targetK);
