@@ -1155,7 +1155,8 @@ function ProfileTab({ t, lang, setLang, profile, authUser, userTier, onSignOut, 
   const tierLabel = isVantage ? "VANTAGE" : isSignal ? "SIGNAL" : "FREE";
   const tierColor = isVantage ? "var(--gold)" : isSignal ? "var(--accent)" : "var(--muted)";
 
-  const name  = authUser?.displayName || profile.name || "You";
+  const rawDisplayName = authUser?.displayName;
+  const name = (rawDisplayName && rawDisplayName !== "User") ? rawDisplayName : (profile.name || rawDisplayName || "You");
   const title = profile.currentTitle || "";
 
   const LANG_NAMES = {

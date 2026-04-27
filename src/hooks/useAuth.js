@@ -74,6 +74,16 @@ export function useAuth({ setProfile, setLang, setFilters, setOpportunities, set
         });
         if (savedProfile.lang) setLang(savedProfile.lang);
         if (savedProfile.tier) setUserTier(savedProfile.tier);
+        // Propagate real display name to authUser if Apple only returned "User"
+        if (savedProfile.display_name && savedProfile.display_name !== "User") {
+          setAuthUser(prev => {
+            if (!prev) return prev;
+            const updated = { ...prev, displayName: savedProfile.display_name };
+            const { sessionToken: _st, ...toStore } = updated;
+            localStorage.setItem("vetted_user", JSON.stringify(toStore));
+            return updated;
+          });
+        }
       }
 
       if (savedFilters?.length) {
