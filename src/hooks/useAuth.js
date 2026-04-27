@@ -68,6 +68,9 @@ export function useAuth({ setProfile, setLang, setFilters, setOpportunities, set
           locationPrefs: savedProfile.location_prefs || [],
           hardConstraints: savedProfile.hard_constraints || "",
           threshold: savedProfile.threshold || 3.5,
+          timeline: savedProfile.timeline || "",
+          country: savedProfile.country || "us",
+          currency: savedProfile.currency || "USD",
         });
         if (savedProfile.lang) setLang(savedProfile.lang);
         if (savedProfile.tier) setUserTier(savedProfile.tier);
@@ -218,10 +221,14 @@ export function useAuth({ setProfile, setLang, setFilters, setOpportunities, set
                   currentTitle: p.current_title || prev.currentTitle,
                   targetRoles: p.target_roles || prev.targetRoles,
                   targetIndustries: p.target_industries || prev.targetIndustries,
-                  location: p.location_prefs?.[0] || prev.location,
-                  compMin: p.compensation_min?.toString() || prev.compMin,
-                  compMax: p.compensation_target?.toString() || prev.compMax,
+                  locationPrefs: p.location_prefs || prev.locationPrefs,
+                  hardConstraints: p.hard_constraints || prev.hardConstraints,
+                  compensationMin: p.compensation_min?.toString() || prev.compensationMin,
+                  compensationTarget: p.compensation_target?.toString() || prev.compensationTarget,
                   threshold: p.threshold || prev.threshold,
+                  timeline: p.timeline || prev.timeline,
+                  country: p.country || prev.country,
+                  currency: p.currency || prev.currency,
                 }));
                 if (p.tier) setUserTier(p.tier);
               }

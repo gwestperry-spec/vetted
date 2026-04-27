@@ -108,6 +108,9 @@ async function saveProfile(appleId, profileData) {
     threshold:           typeof profileData.threshold === "number" && profileData.threshold >= 1 && profileData.threshold <= 5
                            ? profileData.threshold : 3.5,
     lang:                VALID_LANGS.has(profileData.lang) ? profileData.lang : "en",
+    timeline:            profileData.timeline ? sanitizePromptField(profileData.timeline, 32) : null,
+    country:             profileData.country  ? sanitizePromptField(profileData.country, 8)   : null,
+    currency:            profileData.currency ? sanitizePromptField(profileData.currency, 8)  : null,
   };
 
   return supabaseRequest(
