@@ -1,6 +1,6 @@
 # Vetted: Career Intelligence — Error Report & Fix Log
 **Compiled:** April 6, 2026 — last updated April 28, 2026
-**Versions covered:** v1.0 through v2.1.5 (post-build 27)
+**Versions covered:** v1.0 through v2.1.5 (build 25)
 **Source:** Full development chat history
 
 ---
@@ -1044,7 +1044,7 @@ LOCATION SCORING RULE: If the role is remote, fully remote, or remote-first, tre
 | v2.1.4 | 25 | Pending submission | "Remove This Role" fix (3 stacked bugs); Delete button for archived cards; comprehensive UI translation; Export PDF translation + RTL; Market Pulse → Perplexity Sonar (live web data + citations); language scoring hint; **Security hardening sprint**: sanitizeTitle.js + sanitizePromptField.js shared modules; all AI prompt inputs sanitized server-side (profile, filters, background, resume, JD delimiter); IP rate limiting on market-pulse; max_tokens server cap; stored injection closed at DB write time in supabase.js |
 | v2.1.4 | post-25 | Live (Apr 27) | Profile restore key mismatch fix (Errors 77–78); Market Pulse joyplot target comp scale fix; display name "User" fix; per-field EDIT buttons on profile tab; timeline/country/currency now persisted to Supabase; fmtComp() helper for full-dollar comp display; session restore completeness audit |
 | v2.1.4 | post-26 | Live (Apr 27) | Full i18n pass — translations wired across ProfileTab, ScoreEntry, HamburgerSheet, SettingsTab (Errors 81–83); loading screen weight-label + filter-match fixes (Errors 84–85); hamburger share export wired end-to-end (Error 86); web export popup-blocker fix via `<a download>` (Error 87); iOS export silent failure surfaced with alert (Error 88); remote-role location scoring rule injected into prompt (Error 89) |
-| v2.1.5 | post-27 | Pending (Apr 28) | Terms of Service hosted at tryvettedai.com/terms (public/terms.html); privacy ↔ terms cross-links; ENDPOINTS.terms updated; workspace title + headline translated (Errors 90–91); "User" name sentinel excluded from display fallback (Error 92); VQ Advocate fully translated — all 7 languages, ~60 keys each, fmt() interpolation helper, t prop wired throughout VQAdvocate.jsx |
+| v2.1.5 | 25 | Pending submission (Apr 28) | Terms of Service hosted at tryvettedai.com/terms (public/terms.html); privacy ↔ terms cross-links; ENDPOINTS.terms updated; workspace title + headline translated (Errors 90–91); "User" name sentinel excluded from display fallback (Error 92); VQ Advocate fully translated — all 7 languages, ~60 keys each, fmt() interpolation helper, t prop wired throughout VQAdvocate.jsx; LinkedIn guide translated all 7 languages; hamburger About pane trimmed to Privacy + Terms; copyright year corrected to 2026; Terms link fixes across SignInGate + config.js; /terms Netlify redirect added (Errors 93–97) |
 
 ---
 
