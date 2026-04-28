@@ -306,7 +306,7 @@ function FieldCard({ step, value, onChange, onSubmit, direction, t, currency }) 
   return (
     <div ref={ref} style={{ willChange: "transform, opacity" }}>
       <h1 style={{
-        fontFamily: "var(--font-prose)", fontSize: 28, fontWeight: 500,
+        fontFamily: "var(--font-display)", fontSize: 28, fontWeight: 700,
         color: "var(--ink)", lineHeight: 1.18, margin: 0, letterSpacing: "-0.01em",
       }}>
         {step.prompt}
@@ -352,7 +352,7 @@ function FieldInput({ step, value, onChange, onSubmit, t, currency }) {
     case "money":
       return (
         <div style={{ display: "flex", alignItems: "baseline", gap: 8, borderBottom: "1.5px solid var(--border)", paddingBottom: 4 }}>
-          <span style={{ fontFamily: "var(--font-prose)", fontSize: 32, color: "#8A9A8A" }}>$</span>
+          <span style={{ fontFamily: "var(--font-display)", fontSize: 32, color: "#8A9A8A" }}>$</span>
           <input
             autoFocus
             inputMode="numeric"
@@ -362,7 +362,7 @@ function FieldInput({ step, value, onChange, onSubmit, t, currency }) {
             placeholder={step.placeholder}
             style={{
               flex: 1, border: "none", outline: "none", background: "transparent",
-              fontFamily: "var(--font-prose)", fontSize: 36, fontWeight: 500,
+              fontFamily: "var(--font-display)", fontSize: 36, fontWeight: 700,
               color: "var(--ink)", letterSpacing: "-0.02em", padding: 0,
             }}
           />
@@ -383,7 +383,7 @@ function FieldInput({ step, value, onChange, onSubmit, t, currency }) {
                 background: value === o.value ? "var(--ink)" : "var(--cream)",
                 border: `1px solid ${value === o.value ? "var(--ink)" : "var(--border)"}`,
                 color: value === o.value ? "#F4F8F0" : "var(--ink)",
-                fontFamily: "var(--font-prose)", fontSize: 15, cursor: "pointer",
+                fontFamily: "var(--font-display)", fontSize: 15, cursor: "pointer",
                 transition: "all 150ms ease",
               }}
             >{o.label}</button>
@@ -402,7 +402,7 @@ function FieldInput({ step, value, onChange, onSubmit, t, currency }) {
                 background: value === o.value ? "var(--ink)" : "var(--cream)",
                 border: `1px solid ${value === o.value ? "var(--ink)" : "var(--border)"}`,
                 color: value === o.value ? "#F4F8F0" : "var(--ink)",
-                fontFamily: "var(--font-prose)", fontSize: 15, cursor: "pointer",
+                fontFamily: "var(--font-display)", fontSize: 15, cursor: "pointer",
                 transition: "all 150ms ease",
               }}
             >{o.label}</button>
@@ -419,7 +419,7 @@ function FieldInput({ step, value, onChange, onSubmit, t, currency }) {
 function bigInputStyle() {
   return {
     width: "100%", border: "none", outline: "none", background: "transparent",
-    fontFamily: "var(--font-prose)", fontSize: 22, fontWeight: 400,
+    fontFamily: "var(--font-display)", fontSize: 22, fontWeight: 400,
     color: "var(--ink)", letterSpacing: "-0.01em",
     padding: "8px 0", borderBottom: "1.5px solid var(--border)",
     boxSizing: "border-box",
@@ -520,7 +520,7 @@ function CountryPickerField({ value, onChange, onSelect }) {
         }}
       >
         <span style={{ fontSize: 22, lineHeight: 1, flexShrink: 0 }}>{country.flag}</span>
-        <span style={{ flex: 1, fontFamily: "var(--font-prose)", fontSize: 15, color: "var(--ink)", lineHeight: 1.3 }}>
+        <span style={{ flex: 1, fontFamily: "var(--font-display)", fontSize: 15, color: "var(--ink)", lineHeight: 1.3 }}>
           {country.name}
         </span>
         <span style={{ fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: "0.08em", color: "#8A9A8A", textTransform: "uppercase", flexShrink: 0 }}>

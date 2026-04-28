@@ -87,7 +87,7 @@ export default function SignInGate({ t, lang, setLang, onSignIn, onGitHubSignIn,
     }}>
       {/* ── Brand name ── */}
       <h1 style={{
-        fontFamily: "var(--font-prose)",
+        fontFamily: "var(--font-display)",
         fontSize: 32,
         fontWeight: 700,
         color: "#1A2E1A",

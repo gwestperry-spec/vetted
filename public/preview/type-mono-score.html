@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Type — Score &amp; Verdict</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --paper:        #FAFAF8;
+      --ink:          #1A2E1A;
+      --muted-soft:   #8A9A8A;
+      --score-high:   #1A2E1A;
+      --score-mid:    #8A6A10;
+      --score-pass:   #5A6A5A;
+      --pursue-bg:    #EAF3DE;
+      --pursue-fg:    #27500A;
+      --monitor-bg:   #FAEEDA;
+      --monitor-fg:   #633806;
+      --font-serif:   'Libre Baskerville', Georgia, serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 40px;
+      background: var(--paper);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .row {
+      display: flex;
+      gap: 48px;
+      align-items: flex-end;
+    }
+
+    .col {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      align-items: flex-start;
+    }
+
+    .label {
+      font-family: var(--font-serif);
+      font-size: 9px;
+      color: var(--muted-soft);
+      letter-spacing: .16em;
+      text-transform: uppercase;
+    }
+
+    .num {
+      font-family: var(--font-serif);
+      font-size: 72px;
+      font-weight: 700;
+      line-height: 1;
+      letter-spacing: -0.02em;
+    }
+
+    .verdict {
+      display: inline-flex;
+      align-items: center;
+      padding: 5px 14px;
+      border-radius: 20px;
+      font-family: var(--font-serif);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+    }
+
+    .pursue  { background: var(--pursue-bg);  color: var(--pursue-fg); }
+    .monitor { background: var(--monitor-bg); color: var(--monitor-fg); }
+    .pass    { background: #EDEFEA;           color: #5A6A5A; }
+
+    .hex {
+      font-family: var(--font-serif);
+      font-size: 9px;
+      color: var(--muted-soft);
+      letter-spacing: .10em;
+      text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+  <div class="row">
+    <div class="col">
+      <div class="label">PURSUE · ≥ 4.0</div>
+      <div class="num" style="color:var(--score-high);">4.2</div>
+      <span class="verdict pursue">PURSUE</span>
+      <div class="hex">#1A2E1A · 13.86 : 1</div>
+    </div>
+    <div class="col">
+      <div class="label">MONITOR · 3.0–3.9</div>
+      <div class="num" style="color:var(--score-mid);">3.4</div>
+      <span class="verdict monitor">MONITOR</span>
+      <div class="hex">#8A6A10 · 4.84 : 1</div>
+    </div>
+    <div class="col">
+      <div class="label">PASS · &lt; 3.0</div>
+      <div class="num" style="color:var(--score-pass);">2.1</div>
+      <span class="verdict pass">PASS</span>
+      <div class="hex">#5A6A5A · 5.51 : 1</div>
+    </div>
+  </div>
+</body>
+</html>

@@ -94,7 +94,7 @@ function RootPane({ items, onItem }) {
             )}
             <div style={{ minWidth: 0 }}>
               <div style={{
-                fontFamily: "var(--font-prose)", fontSize: 15, fontWeight: 500,
+                fontFamily: "var(--font-display)", fontSize: 15, fontWeight: 500,
                 color: item.danger ? "var(--error)" : "var(--ink)",
                 lineHeight: 1.2,
               }}>
@@ -139,14 +139,14 @@ function AboutPane({ onBack }) {
           </svg>
         </button>
         <div>
-          <div style={{ fontFamily: "var(--font-prose)", fontSize: 14, fontWeight: 500, color: "var(--ink)", lineHeight: 1.1 }}>About & Privacy</div>
+          <div style={{ fontFamily: "var(--font-display)", fontSize: 14, fontWeight: 500, color: "var(--ink)", lineHeight: 1.1 }}>About & Privacy</div>
           <div style={{ fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: "0.10em", color: "#8A9A8A", marginTop: 2, textTransform: "uppercase" }}>VETTED · VERSION {APP_VERSION}</div>
         </div>
       </div>
 
       {links.map((l, i) => (
         <button key={l.label} onClick={() => window.open(l.url, "_blank", "noopener")} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "14px 16px", minHeight: 52, background: "transparent", border: "none", cursor: "pointer", borderTop: i === 0 ? "none" : "0.5px solid var(--border)", textAlign: "left", WebkitTapHighlightColor: "transparent" }}>
-          <span style={{ fontFamily: "var(--font-prose)", fontSize: 15, color: "var(--ink)" }}>{l.label}</span>
+          <span style={{ fontFamily: "var(--font-display)", fontSize: 15, color: "var(--ink)" }}>{l.label}</span>
           <IconExternal/>
         </button>
       ))}
@@ -192,7 +192,7 @@ function SharePane({ roles, onBack, onPick }) {
           </svg>
         </button>
         <div>
-          <div style={{ fontFamily: "var(--font-prose)", fontSize: 14, fontWeight: 500, color: "var(--ink)", lineHeight: 1.1 }}>
+          <div style={{ fontFamily: "var(--font-display)", fontSize: 14, fontWeight: 500, color: "var(--ink)", lineHeight: 1.1 }}>
             Share scorecard
           </div>
           <div style={{ fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: "0.10em", color: "#8A9A8A", marginTop: 2, textTransform: "uppercase" }}>
@@ -230,7 +230,7 @@ function SharePane({ roles, onBack, onPick }) {
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{
-                fontFamily: "var(--font-prose)", fontSize: 13.5, fontWeight: 500,
+                fontFamily: "var(--font-display)", fontSize: 13.5, fontWeight: 500,
                 color: "var(--ink)", lineHeight: 1.2,
                 whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
               }}>

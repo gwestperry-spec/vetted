@@ -79,7 +79,7 @@ export default function ScoreEntry({
             textTransform: "uppercase", color: "var(--muted)", marginBottom: 10,
           }}>SCORE · NEW OPPORTUNITY</p>
           <h1 style={{
-            fontFamily: "var(--font-prose)", fontSize: 24, fontWeight: 500,
+            fontFamily: "var(--font-display)", fontSize: 24, fontWeight: 700,
             color: "var(--ink)", lineHeight: 1.2, margin: 0,
             letterSpacing: "-0.005em",
           }}>{t.scoreTitle || "Run a role through your filter framework."}</h1>
@@ -250,12 +250,12 @@ export default function ScoreEntry({
                   }}>
                     <div style={{
                       width: 38, flexShrink: 0, textAlign: "right",
-                      fontFamily: "var(--font-prose)", fontSize: 20, fontWeight: 500,
+                      fontFamily: "var(--font-display)", fontSize: 20, fontWeight: 700,
                       color: "var(--score-high)", lineHeight: 1, letterSpacing: "-0.01em",
                     }}>{Number(r.vq_score).toFixed(1)}</div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{
-                        fontFamily: "var(--font-prose)", fontSize: 14, fontWeight: 500,
+                        fontFamily: "var(--font-display)", fontSize: 14, fontWeight: 500,
                         color: "var(--ink)", lineHeight: 1.2,
                         whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
                       }}>{r.title || "Untitled"}</div>
@@ -287,7 +287,7 @@ function KpiTile({ big, delta, label }) {
     }}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 6 }}>
         <div style={{
-          fontFamily: "var(--font-prose)", fontSize: 24, fontWeight: 500,
+          fontFamily: "var(--font-display)", fontSize: 24, fontWeight: 700,
           color: "var(--ink)", lineHeight: 1, letterSpacing: "-0.01em",
         }}>{big}</div>
         {delta && (

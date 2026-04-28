@@ -1213,12 +1213,12 @@ function ProfileTab({ t, lang, setLang, profile, authUser, userTier, onSignOut, 
             <svg width="8" height="8" viewBox="0 0 8 8" fill="none"><path d="M1.5 1.5L5 4L1.5 6.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
           </button>
         </div>
-        <h1 style={{ fontFamily: "var(--font-prose)", fontSize: 32, fontWeight: 500, color: "var(--ink)", lineHeight: 1.1, margin: 0, letterSpacing: "-0.015em" }}>
+        <h1 style={{ fontFamily: "var(--font-display)", fontSize: 32, fontWeight: 700, color: "var(--ink)", lineHeight: 1.1, margin: 0, letterSpacing: "-0.015em" }}>
           {name}
         </h1>
         {title && (
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 6 }}>
-            <div style={{ fontFamily: "var(--font-prose)", fontSize: 17, color: "var(--muted)", lineHeight: 1.35, fontStyle: "italic" }}>
+            <div style={{ fontFamily: "var(--font-display)", fontSize: 17, color: "var(--muted)", lineHeight: 1.35, fontStyle: "italic" }}>
               {title}
             </div>
             <button onClick={() => onEditProfile("currentTitle")} style={{ background: "transparent", border: "none", cursor: "pointer", fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: "0.12em", color: "var(--ink)", textTransform: "uppercase", padding: "2px 0", display: "inline-flex", alignItems: "center", gap: 4, flexShrink: 0, marginLeft: 8 }}>
@@ -1263,7 +1263,7 @@ function ProfileTab({ t, lang, setLang, profile, authUser, userTier, onSignOut, 
             const opt = t?.timelineOptions?.find(o => o.value === profile.timeline);
             return (
               <ProfileField label={t.profileFieldTimeline || "LANDING WINDOW"} onEdit={() => onEditProfile("timeline")}>
-                <p style={{ margin: 0, fontFamily: "var(--font-prose)", fontSize: 15, color: "var(--ink)" }}>
+                <p style={{ margin: 0, fontFamily: "var(--font-display)", fontSize: 15, color: "var(--ink)" }}>
                   {opt?.label || profile.timeline}
                 </p>
               </ProfileField>
@@ -1278,7 +1278,7 @@ function ProfileTab({ t, lang, setLang, profile, authUser, userTier, onSignOut, 
               {profile.compensationMin && (
                 <div style={{ flex: 1 }}>
                   <ProfileField label={t.profileFieldCompMin || "FLOOR"} onEdit={() => onEditProfile("compensationMin")}>
-                    <div style={{ fontFamily: "var(--font-prose)", fontSize: 28, fontWeight: 500, color: "var(--ink)", lineHeight: 1, letterSpacing: "-0.015em" }}>
+                    <div style={{ fontFamily: "var(--font-display)", fontSize: 28, fontWeight: 700, color: "var(--ink)", lineHeight: 1, letterSpacing: "-0.015em" }}>
                       {fmtComp(profile.compensationMin)}
                     </div>
                   </ProfileField>
@@ -1287,7 +1287,7 @@ function ProfileTab({ t, lang, setLang, profile, authUser, userTier, onSignOut, 
               {profile.compensationTarget && (
                 <div style={{ flex: 1 }}>
                   <ProfileField label={t.profileFieldCompTarget || "TARGET"} onEdit={() => onEditProfile("compensationTarget")}>
-                    <div style={{ fontFamily: "var(--font-prose)", fontSize: 28, fontWeight: 500, color: "var(--accent)", lineHeight: 1, letterSpacing: "-0.015em" }}>
+                    <div style={{ fontFamily: "var(--font-display)", fontSize: 28, fontWeight: 700, color: "var(--accent)", lineHeight: 1, letterSpacing: "-0.015em" }}>
                       {fmtComp(profile.compensationTarget)}
                     </div>
                   </ProfileField>
@@ -1304,11 +1304,11 @@ function ProfileTab({ t, lang, setLang, profile, authUser, userTier, onSignOut, 
             return (
               <ProfileField label={t.profileFieldThreshold || "VQ FLOOR"} onEdit={() => onEditProfile("threshold")}>
                 <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-                  <span style={{ fontFamily: "var(--font-prose)", fontSize: 26, fontWeight: 500, color: "var(--ink)", letterSpacing: "-0.015em", lineHeight: 1 }}>
+                  <span style={{ fontFamily: "var(--font-display)", fontSize: 26, fontWeight: 700, color: "var(--ink)", letterSpacing: "-0.015em", lineHeight: 1 }}>
                     {profile.threshold}
                   </span>
                   {opt && (
-                    <span style={{ fontFamily: "var(--font-prose)", fontSize: 13, fontStyle: "italic", color: "var(--muted)" }}>
+                    <span style={{ fontFamily: "var(--font-display)", fontSize: 13, fontStyle: "italic", color: "var(--muted)" }}>
                       {opt.label}
                     </span>
                   )}
@@ -1333,7 +1333,7 @@ function ProfileTab({ t, lang, setLang, profile, authUser, userTier, onSignOut, 
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                   {c?.flag && <span style={{ fontSize: 22, lineHeight: 1 }}>{c.flag}</span>}
                   <div>
-                    <div style={{ fontFamily: "var(--font-prose)", fontSize: 15, color: "var(--ink)" }}>{c?.name || profile.country.toUpperCase()}</div>
+                    <div style={{ fontFamily: "var(--font-display)", fontSize: 15, color: "var(--ink)" }}>{c?.name || profile.country.toUpperCase()}</div>
                     <div style={{ fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: "0.08em", color: "#8A9A8A", textTransform: "uppercase", marginTop: 2 }}>{profile.currency}</div>
                   </div>
                 </div>
@@ -1374,10 +1374,10 @@ function SettingsTab({ t, lang, onLangChange, onSignOut }) {
             <div style={{ fontFamily: "var(--font-data)", fontSize: 11, letterSpacing: "0.18em", color: "var(--ink)", textTransform: "uppercase" }}>LANGUAGE</div>
           </header>
           <div style={{ padding: "20px 20px 12px" }}>
-            <h1 style={{ fontFamily: "var(--font-prose)", fontSize: 24, fontWeight: 500, color: "var(--ink)", margin: 0, lineHeight: 1.2, letterSpacing: "-0.005em" }}>
+            <h1 style={{ fontFamily: "var(--font-display)", fontSize: 24, fontWeight: 700, color: "var(--ink)", margin: 0, lineHeight: 1.2, letterSpacing: "-0.005em" }}>
               Pick your language.
             </h1>
-            <p style={{ margin: "10px 0 0", fontFamily: "var(--font-prose)", fontSize: 14, fontStyle: "italic", color: "var(--muted)", lineHeight: 1.5 }}>
+            <p style={{ margin: "10px 0 0", fontFamily: "var(--font-display)", fontSize: 14, fontStyle: "italic", color: "var(--muted)", lineHeight: 1.5 }}>
               The whole app switches instantly. Past scorecards stay in the language they were generated.
             </p>
           </div>
@@ -1396,7 +1396,7 @@ function SettingsTab({ t, lang, onLangChange, onSignOut }) {
                 return (
                   <button key={code} onClick={() => { onLangChange(code); setShowLangPicker(false); }} dir="ltr" style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "16px 18px", minHeight: 64, background: "transparent", border: "none", cursor: "pointer", borderTop: i === 0 ? "none" : "0.5px solid var(--border)", textAlign: "left" }}>
                     <div style={{ minWidth: 0, flex: 1 }}>
-                      <div style={{ fontFamily: "var(--font-prose)", fontSize: 17, fontWeight: 500, color: "var(--ink)", lineHeight: 1.2, direction: rtl ? "rtl" : "ltr" }}>{native}</div>
+                      <div style={{ fontFamily: "var(--font-display)", fontSize: 17, fontWeight: 700, color: "var(--ink)", lineHeight: 1.2, direction: rtl ? "rtl" : "ltr" }}>{native}</div>
                       <div style={{ fontFamily: "var(--font-data)", fontSize: 9.5, letterSpacing: "0.12em", color: "#8A9A8A", textTransform: "uppercase", marginTop: 4 }}>{name}{rtl ? " · RTL" : ""}</div>
                     </div>
                     {active
@@ -1422,7 +1422,7 @@ function SettingsTab({ t, lang, onLangChange, onSignOut }) {
         <div style={{ borderTop: "0.5px solid var(--border)", padding: "0 20px" }}>
           <button onClick={() => setShowLangPicker(true)} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 0", background: "transparent", border: "none", cursor: "pointer", borderBottom: "0.5px solid var(--border)", textAlign: "left" }}>
             <div>
-              <div style={{ fontFamily: "var(--font-prose)", fontSize: 17, fontWeight: 500, color: "var(--ink)", lineHeight: 1.2 }}>{t.settingsLanguage || "Language"}</div>
+              <div style={{ fontFamily: "var(--font-display)", fontSize: 17, fontWeight: 500, color: "var(--ink)", lineHeight: 1.2 }}>{t.settingsLanguage || "Language"}</div>
               <div style={{ fontFamily: "var(--font-data)", fontSize: 10, letterSpacing: "0.08em", color: "#8A9A8A", textTransform: "uppercase", marginTop: 4 }}>{LANG_NAMES_LOCAL[lang] || lang}</div>
             </div>
             <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M3 1.5L7 5L3 8.5" stroke="#8A9A8A" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
@@ -1433,7 +1433,7 @@ function SettingsTab({ t, lang, onLangChange, onSignOut }) {
         <div style={{ padding: "0 20px" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 0", borderBottom: "0.5px solid var(--border)" }}>
             <div>
-              <div style={{ fontFamily: "var(--font-prose)", fontSize: 17, fontWeight: 500, color: "var(--ink)", lineHeight: 1.2 }}>{t.settingsNotifications || "Notifications"}</div>
+              <div style={{ fontFamily: "var(--font-display)", fontSize: 17, fontWeight: 500, color: "var(--ink)", lineHeight: 1.2 }}>{t.settingsNotifications || "Notifications"}</div>
               <div style={{ fontFamily: "var(--font-data)", fontSize: 10, letterSpacing: "0.08em", color: "#8A9A8A", textTransform: "uppercase", marginTop: 4 }}>{t.settingsNotificationsHint || "COMING SOON"}</div>
             </div>
           </div>
@@ -1442,15 +1442,15 @@ function SettingsTab({ t, lang, onLangChange, onSignOut }) {
         {/* Support */}
         <div style={{ padding: "0 20px" }}>
           <a href="mailto:support@tryvettedai.com" style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 0", background: "transparent", border: "none", cursor: "pointer", borderBottom: "0.5px solid var(--border)", textDecoration: "none" }}>
-            <div style={{ fontFamily: "var(--font-prose)", fontSize: 17, fontWeight: 500, color: "var(--ink)", lineHeight: 1.2 }}>{t.settingsContactSupport || "Contact Support"}</div>
+            <div style={{ fontFamily: "var(--font-display)", fontSize: 17, fontWeight: 500, color: "var(--ink)", lineHeight: 1.2 }}>{t.settingsContactSupport || "Contact Support"}</div>
             <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M3 1.5L7 5L3 8.5" stroke="#8A9A8A" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
           </a>
           <a href={ENDPOINTS.privacy} target="_blank" rel="noopener noreferrer" style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 0", background: "transparent", border: "none", cursor: "pointer", borderBottom: "0.5px solid var(--border)", textDecoration: "none" }}>
-            <div style={{ fontFamily: "var(--font-prose)", fontSize: 17, fontWeight: 500, color: "var(--ink)", lineHeight: 1.2 }}>{t.settingsPrivacy || "Privacy Policy"}</div>
+            <div style={{ fontFamily: "var(--font-display)", fontSize: 17, fontWeight: 500, color: "var(--ink)", lineHeight: 1.2 }}>{t.settingsPrivacy || "Privacy Policy"}</div>
             <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M3 1.5L7 5L3 8.5" stroke="#8A9A8A" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
           </a>
           <a href={ENDPOINTS.terms} target="_blank" rel="noopener noreferrer" style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 0", background: "transparent", border: "none", cursor: "pointer", textDecoration: "none" }}>
-            <div style={{ fontFamily: "var(--font-prose)", fontSize: 17, fontWeight: 500, color: "var(--ink)", lineHeight: 1.2 }}>{t.settingsTerms || "Terms of Service"}</div>
+            <div style={{ fontFamily: "var(--font-display)", fontSize: 17, fontWeight: 500, color: "var(--ink)", lineHeight: 1.2 }}>{t.settingsTerms || "Terms of Service"}</div>
             <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M3 1.5L7 5L3 8.5" stroke="#8A9A8A" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
           </a>
         </div>

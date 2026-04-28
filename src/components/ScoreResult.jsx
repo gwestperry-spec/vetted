@@ -677,21 +677,21 @@ export default function ScoreResult({ t, lang, opp, profile, onBack, onRemove, o
         {/* Big VQ score */}
         <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 14 }}>
           <span style={{
-            fontFamily: "var(--font-prose)", fontSize: 96, fontWeight: 500,
+            fontFamily: "var(--font-display)", fontSize: 96, fontWeight: 700,
             color: "var(--ink)", lineHeight: 0.9,
             letterSpacing: "-0.03em",
           }}>
             {score}
           </span>
           <span style={{
-            fontFamily: "var(--font-prose)", fontSize: 22, fontWeight: 400,
+            fontFamily: "var(--font-display)", fontSize: 22, fontWeight: 400,
             color: "#8A9A8A", fontStyle: "italic",
           }}>/ 5</span>
         </div>
 
         {/* Role title */}
         <h1 style={{
-          fontFamily: "var(--font-prose)", fontStyle: "normal", fontSize: 24, fontWeight: 500,
+          fontFamily: "var(--font-display)", fontStyle: "normal", fontSize: 24, fontWeight: 700,
           color: "var(--ink)", lineHeight: 1.18, margin: "0 0 6px 0",
           letterSpacing: "-0.005em",
         }}>
