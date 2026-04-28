@@ -1120,6 +1120,7 @@ export default function App() {
       {showAdvocate && (
         <VQAdvocateScreen
           onClose={() => setShowAdvocate(false)}
+          onNavigate={(tab) => { setShowAdvocate(false); if (tab !== "close") setActiveTab(tab); }}
           opportunities={workspaceRoles}
           profile={profile}
           t={t}

@@ -79,8 +79,8 @@ function computePatterns(opportunities, profile, t = {}) {
       })),
       suggestion: fmt(t.advPatBelowFloorSuggestion || "Your average VQ this period: {avg}. Consider lowering your floor to {newFloor} or tightening your filters.", { avg, newFloor }),
       actions: [
-        { label: t.advActionRevisitFloor  || "Revisit your floor" },
-        { label: t.advActionFilterWeights || "See full filter weights" },
+        { label: t.advActionRevisitFloor  || "Revisit your floor",       nav: "profile" },
+        { label: t.advActionFilterWeights || "See full filter weights",   nav: "filters" },
         { label: t.advActionDismiss14     || "Dismiss for 14 days", dismiss: true },
       ],
     });
@@ -104,9 +104,9 @@ function computePatterns(opportunities, profile, t = {}) {
         evidence: [],
         suggestion: t.advPatTrendDownSuggestion || "Your highest-scoring roles tend to share specific filter strengths. Consider tightening to what's working.",
         actions: [
-          { label: t.advActionReviewFilterWeights || "Review filter weights" },
-          { label: t.advActionTakeWeek            || "Take a week" },
-          { label: t.advActionDismiss             || "Dismiss", dismiss: true },
+          { label: t.advActionReviewFilterWeights || "Review filter weights", nav: "filters" },
+          { label: t.advActionTakeWeek            || "Take a week",           dismiss: true },
+          { label: t.advActionDismiss             || "Dismiss",               dismiss: true },
         ],
       });
     }
@@ -142,9 +142,9 @@ function computePatterns(opportunities, profile, t = {}) {
           ? fmt(t.advPatTimelineClosingTopRole || "Your top-scoring role: {title} at {company}. That's your strongest lead.", { title: topRole.role_title || "Untitled", company: topRole.company || "" })
           : (t.advPatTimelineClosingNoRoles || "You haven't scored any roles yet. Start with one — any signal is better than silence."),
         actions: [
-          { label: t.advActionSeeTopScores  || "See top scores" },
-          { label: t.advActionResetTimeline || "Reset timeline" },
-          { label: t.advActionDismiss       || "Dismiss", dismiss: true },
+          { label: t.advActionSeeTopScores  || "See top scores",   nav: "close" },
+          { label: t.advActionResetTimeline || "Reset timeline",   nav: "profile" },
+          { label: t.advActionDismiss       || "Dismiss",          dismiss: true },
         ],
       });
     } else if (progress >= 0.65) {
@@ -158,8 +158,8 @@ function computePatterns(opportunities, profile, t = {}) {
         evidence: [],
         suggestion: t.advPatTimelineLateSuggestion || "Consider narrowing to your top 3 roles rather than scoring new ones.",
         actions: [
-          { label: t.advActionSeeYourTopScores || "See your top scores" },
-          { label: t.advActionDismiss          || "Dismiss", dismiss: true },
+          { label: t.advActionSeeYourTopScores || "See your top scores", nav: "close" },
+          { label: t.advActionDismiss          || "Dismiss",             dismiss: true },
         ],
       });
     } else if (progress >= 0.40) {
@@ -175,8 +175,8 @@ function computePatterns(opportunities, profile, t = {}) {
           ? fmt(t.advPatTimelineMidSuggestion || "You've scored {n} roles with an average VQ of {avg}. Keep the quality standard.", { n: scored.length, avg: avgVq })
           : (t.advPatTimelineMidNoRoles || "You haven't scored any roles yet. Half your window is gone — time to start."),
         actions: [
-          { label: t.advActionReviewPipeline || "Review your pipeline" },
-          { label: t.advActionDismiss        || "Dismiss", dismiss: true },
+          { label: t.advActionReviewPipeline || "Review your pipeline", nav: "close" },
+          { label: t.advActionDismiss        || "Dismiss",              dismiss: true },
         ],
       });
     } else if (progress >= 0.20) {
@@ -190,8 +190,8 @@ function computePatterns(opportunities, profile, t = {}) {
         evidence: [],
         suggestion: t.advPatTimelineEarlySuggestion || "Check that your filters reflect what you've learned — early patterns often reveal misaligned weights.",
         actions: [
-          { label: t.advActionReviewFilterWeights || "Review filter weights" },
-          { label: t.advActionDismiss             || "Dismiss", dismiss: true },
+          { label: t.advActionReviewFilterWeights || "Review filter weights", nav: "filters" },
+          { label: t.advActionDismiss             || "Dismiss",               dismiss: true },
         ],
       });
     }
@@ -215,9 +215,9 @@ function computePatterns(opportunities, profile, t = {}) {
         ],
         suggestion: fmt(t.advPatBelowFloorDemoSuggestion || "Your average application this month: 3.1. Consider lowering your floor to 3.0 or tightening your filters.", { threshold: threshold0 }),
         actions: [
-          { label: t.advActionRevisitFloor  || "Revisit your floor" },
-          { label: t.advActionFilterWeights || "See full filter weights" },
-          { label: t.advActionDismiss14     || "Dismiss for 14 days", dismiss: true },
+          { label: t.advActionRevisitFloor  || "Revisit your floor",     nav: "profile" },
+          { label: t.advActionFilterWeights || "See full filter weights", nav: "filters" },
+          { label: t.advActionDismiss14     || "Dismiss for 14 days",    dismiss: true },
         ],
       },
       {
@@ -233,9 +233,9 @@ function computePatterns(opportunities, profile, t = {}) {
         ],
         suggestion: t.advPatHardNoSuggestion || 'Linear scored 4.3 despite the breach. Consider whether "Series B+" should be a soft filter, not a hard no.',
         actions: [
-          { label: t.advActionReviewHardNos || "Review hard nos" },
-          { label: t.advActionAdjustFilter  || "Adjust filter" },
-          { label: t.advActionDismiss       || "Dismiss", dismiss: true },
+          { label: t.advActionReviewHardNos || "Review hard nos", nav: "filters" },
+          { label: t.advActionAdjustFilter  || "Adjust filter",   nav: "filters" },
+          { label: t.advActionDismiss       || "Dismiss",         dismiss: true },
         ],
       },
       {
@@ -252,9 +252,9 @@ function computePatterns(opportunities, profile, t = {}) {
         ],
         suggestion: t.advPatCompSuggestion || "At your level, market median for senior ops roles is $295k. Your $300k floor is reasonable; the gap is in your application targeting.",
         actions: [
-          { label: t.advActionAdjustCompFloor || "Adjust comp floor" },
-          { label: t.advActionSeeMarketData   || "See market data" },
-          { label: t.advActionDismiss         || "Dismiss", dismiss: true },
+          { label: t.advActionAdjustCompFloor || "Adjust comp floor", nav: "profile" },
+          { label: t.advActionSeeMarketData   || "See market data",   nav: "market" },
+          { label: t.advActionDismiss         || "Dismiss",           dismiss: true },
         ],
       },
       {
@@ -267,8 +267,8 @@ function computePatterns(opportunities, profile, t = {}) {
         evidence: [],
         suggestion: t.advPatRemoteSuggestion || "Consider tightening your stated preference to remote-only — cleaner filters yield cleaner scores.",
         actions: [
-          { label: t.advActionUpdateLocationFilter || "Update location filter" },
-          { label: t.advActionKeepAsIs             || "Keep as-is" },
+          { label: t.advActionUpdateLocationFilter || "Update location filter", nav: "filters" },
+          { label: t.advActionKeepAsIs             || "Keep as-is",             dismiss: true },
         ],
       },
       {
@@ -281,9 +281,9 @@ function computePatterns(opportunities, profile, t = {}) {
         evidence: [],
         suggestion: t.advPatTrendDownDemoSuggestion || 'Your last 5 high-VQ scores all share "Financial Authority" as critical. Consider whether broader applications are worth the time.',
         actions: [
-          { label: t.advActionReviewFilterWeights || "Review filter weights" },
-          { label: t.advActionTakeWeek            || "Take a week" },
-          { label: t.advActionDismiss             || "Dismiss", dismiss: true },
+          { label: t.advActionReviewFilterWeights || "Review filter weights", nav: "filters" },
+          { label: t.advActionTakeWeek            || "Take a week",           dismiss: true },
+          { label: t.advActionDismiss             || "Dismiss",               dismiss: true },
         ],
       }
     );
@@ -335,7 +335,7 @@ function PatternRow({ pattern, active, onClick, t = {} }) {
 }
 
 // ─── PatternDetail ────────────────────────────────────────────────────────────
-function PatternDetail({ pattern, onDismiss, t = {} }) {
+function PatternDetail({ pattern, onDismiss, onNavigate, t = {} }) {
   const sev = sevMeta(pattern.severity, t);
   return (
     <div style={{
@@ -426,14 +426,18 @@ function PatternDetail({ pattern, onDismiss, t = {} }) {
         {pattern.actions.map((a, i) => (
           <button
             key={i}
-            onClick={a.dismiss ? onDismiss : undefined}
+            onClick={() => {
+              if (a.dismiss) { onDismiss(); return; }
+              if (a.nav === "close") { onNavigate?.("close"); return; }
+              if (a.nav) { onNavigate?.(a.nav); }
+            }}
             style={{
               padding: "12px 14px",
               background: i === 0 ? "var(--ink)" : "transparent",
               color: i === 0 ? "#F4F8F0" : "var(--ink)",
               border: i === 0 ? "none" : "0.5px solid var(--border)",
               borderRadius: 8, cursor: "pointer",
-              fontFamily: "var(--font-prose)", fontSize: 14, fontWeight: 500,
+              fontFamily: "var(--font-display)", fontSize: 14, fontWeight: 500,
               textAlign: "left", minHeight: 44,
               display: "flex", alignItems: "center", justifyContent: "space-between",
               WebkitTapHighlightColor: "transparent",
@@ -454,7 +458,7 @@ function PatternDetail({ pattern, onDismiss, t = {} }) {
 }
 
 // ─── VQAdvocateScreen ─────────────────────────────────────────────────────────
-export default function VQAdvocateScreen({ onClose, opportunities, profile, t = {} }) {
+export default function VQAdvocateScreen({ onClose, onNavigate, opportunities, profile, t = {} }) {
   const patterns = useMemo(
     () => computePatterns(opportunities, profile, t),
     [opportunities, profile, t]
@@ -559,6 +563,7 @@ export default function VQAdvocateScreen({ onClose, opportunities, profile, t = 
             <PatternDetail
               pattern={activePattern}
               onDismiss={() => dismiss(activePattern.id)}
+              onNavigate={onNavigate}
               t={t}
             />
           </div>
