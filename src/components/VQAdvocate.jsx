@@ -4,11 +4,17 @@
 
 import { useState, useMemo } from "react";
 
+// ─── String interpolation helper ─────────────────────────────────────────────
+function fmt(s, vars = {}) {
+  if (!s) return "";
+  return Object.entries(vars).reduce((acc, [k, v]) => acc.replace(new RegExp(`\\{${k}\\}`, "g"), String(v)), s);
+}
+
 // ─── Severity ────────────────────────────────────────────────────────────────
-function sevMeta(sev) {
-  if (sev === 3) return { dot: "#B86A2C", label: "WORTH PAUSING", sevLabel: "SEV 3" };
-  if (sev === 2) return { dot: "#C9A227", label: "NOTICED",       sevLabel: "SEV 2" };
-  return               { dot: "#6B8E6B", label: "OBSERVATION",   sevLabel: "SEV 1" };
+function sevMeta(sev, t = {}) {
+  if (sev === 3) return { dot: "#B86A2C", label: t.advocateSev3 || "WORTH PAUSING", sevLabel: "SEV 3" };
+  if (sev === 2) return { dot: "#C9A227", label: t.advocateSev2 || "NOTICED",       sevLabel: "SEV 2" };
+  return               { dot: "#6B8E6B", label: t.advocateSev1 || "OBSERVATION",   sevLabel: "SEV 1" };
 }
 
 function scoreColor(v) {
@@ -21,10 +27,17 @@ function scoreColor(v) {
 const WINDOW_DAYS = {
   asap: 14, "30days": 30, quarter: 90, "6months": 180, yearout: 365, yearplus: 548,
 };
-const WINDOW_LABEL = {
-  asap: "ASAP", "30days": "30-day", quarter: "quarter",
-  "6months": "6-month", yearout: "1-year", yearplus: "exploratory",
-};
+function getWindowLabel(key, t = {}) {
+  const map = {
+    asap:      t.advWindowAsap     || "ASAP",
+    "30days":  t.advWindow30days   || "30-day",
+    quarter:   t.advWindowQuarter  || "quarter",
+    "6months": t.advWindow6months  || "6-month",
+    yearout:   t.advWindowYearout  || "1-year",
+    yearplus:  t.advWindowYearplus || "exploratory",
+  };
+  return map[key] || "stated";
+}
 const SEARCH_START_KEY = "vetted_search_started";
 function getSearchStart(opps) {
   try {
@@ -38,25 +51,25 @@ function getSearchStart(opps) {
 }
 
 // ─── Pattern computation ──────────────────────────────────────────────────────
-// Derives live patterns from the user's real opportunities + profile data.
-function computePatterns(opportunities, profile) {
+function computePatterns(opportunities, profile, t = {}) {
   const scored = (opportunities || []).filter(o =>
     typeof o.overall_score === "number" && o.status !== "queued"
   );
   const threshold = parseFloat(profile?.threshold) || 3.5;
-  const compFloorK = parseFloat(profile?.compensationMin) || null;
 
   const patterns = [];
 
   // ── Below floor ────────────────────────────────────────────────────────────
   const belowFloor = scored.filter(o => o.overall_score < threshold);
   if (belowFloor.length >= 2) {
+    const avg = (scored.reduce((s, o) => s + o.overall_score, 0) / scored.length).toFixed(1);
+    const newFloor = Math.max(2.0, threshold - 0.5).toFixed(1);
     patterns.push({
       id: "below-floor",
       severity: 3,
-      headline: "You're applying below your floor.",
-      sub: `${belowFloor.length} of ${scored.length} scored roles are under your stated VQ floor of ${threshold}.`,
-      detail: "Either your floor is set too high, or the market is tighter than expected. Both are worth knowing.",
+      headline: t.advPatBelowFloorHeadline || "You're applying below your floor.",
+      sub: fmt(t.advPatBelowFloorSub || "{below} of {total} scored roles are under your stated VQ floor of {threshold}.", { below: belowFloor.length, total: scored.length, threshold }),
+      detail: t.advPatBelowFloorDetail || "Either your floor is set too high, or the market is tighter than expected. Both are worth knowing.",
       metric: { value: `${belowFloor.length} of ${scored.length}`, label: "BELOW FLOOR" },
       evidence: belowFloor.slice(0, 3).map(o => ({
         title: o.role_title || "Untitled",
@@ -64,8 +77,12 @@ function computePatterns(opportunities, profile) {
         score: o.overall_score,
         delta: parseFloat((o.overall_score - threshold).toFixed(1)),
       })),
-      suggestion: `Your average VQ this period: ${(scored.reduce((s, o) => s + o.overall_score, 0) / scored.length).toFixed(1)}. Consider lowering your floor to ${Math.max(2.0, threshold - 0.5).toFixed(1)} or tightening your filters.`,
-      actions: ["Revisit your floor", "See full filter weights", "Dismiss for 14 days"],
+      suggestion: fmt(t.advPatBelowFloorSuggestion || "Your average VQ this period: {avg}. Consider lowering your floor to {newFloor} or tightening your filters.", { avg, newFloor }),
+      actions: [
+        { label: t.advActionRevisitFloor  || "Revisit your floor" },
+        { label: t.advActionFilterWeights || "See full filter weights" },
+        { label: t.advActionDismiss14     || "Dismiss for 14 days", dismiss: true },
+      ],
     });
   }
 
@@ -80,13 +97,17 @@ function computePatterns(opportunities, profile) {
       patterns.push({
         id: "vq-trending-down",
         severity: 2,
-        headline: "Your scores are trending down.",
-        sub: `Recent average: ${recentAvg.toFixed(1)}. Earlier average: ${olderAvg.toFixed(1)}.`,
-        detail: "When score quality drops, it usually means filter widening, urgency, or fatigue. Worth a pause.",
+        headline: t.advPatTrendDownHeadline || "Your scores are trending down.",
+        sub: fmt(t.advPatTrendDownSub || "Recent average: {recent}. Earlier average: {earlier}.", { recent: recentAvg.toFixed(1), earlier: olderAvg.toFixed(1) }),
+        detail: t.advPatTrendDownDetail || "When score quality drops, it usually means filter widening, urgency, or fatigue. Worth a pause.",
         metric: { value: delta.toFixed(1), label: "VQ TREND" },
         evidence: [],
-        suggestion: "Your highest-scoring roles tend to share specific filter strengths. Consider tightening to what's working.",
-        actions: ["Review filter weights", "Take a week", "Dismiss"],
+        suggestion: t.advPatTrendDownSuggestion || "Your highest-scoring roles tend to share specific filter strengths. Consider tightening to what's working.",
+        actions: [
+          { label: t.advActionReviewFilterWeights || "Review filter weights" },
+          { label: t.advActionTakeWeek            || "Take a week" },
+          { label: t.advActionDismiss             || "Dismiss", dismiss: true },
+        ],
       });
     }
   }
@@ -94,7 +115,7 @@ function computePatterns(opportunities, profile) {
   // ── Timeline awareness ─────────────────────────────────────────────────────
   if (profile?.timeline && WINDOW_DAYS[profile.timeline]) {
     const windowDays  = WINDOW_DAYS[profile.timeline];
-    const windowLabel = WINDOW_LABEL[profile.timeline] || "stated";
+    const windowLabel = getWindowLabel(profile.timeline, t);
     const startDate   = getSearchStart(scored);
     const now         = new Date();
     const daysElapsed = Math.max(0, Math.floor((now - startDate) / 86400000));
@@ -112,125 +133,158 @@ function computePatterns(opportunities, profile) {
       patterns.push({
         id: `timeline-closing-w${weekNum}`,
         severity: 3,
-        headline: "Your search window is nearly closed.",
-        sub: `You set a ${windowLabel} window. About ${daysLeft} day${daysLeft !== 1 ? "s" : ""} remain.`,
-        detail: "This is the highest-leverage moment to act on your strongest opportunities — or reset your timeline with clear eyes.",
+        headline: t.advPatTimelineClosingHeadline || "Your search window is nearly closed.",
+        sub: fmt(t.advPatTimelineClosingSub || "You set a {window} window. About {days} days remain.", { window: windowLabel, days: daysLeft }),
+        detail: t.advPatTimelineClosingDetail || "This is the highest-leverage moment to act on your strongest opportunities — or reset your timeline with clear eyes.",
         metric: { value: `${daysLeft}d left`, label: "WINDOW CLOSING" },
         evidence: [],
         suggestion: topRole
-          ? `Your top-scoring role: ${topRole.role_title || "Untitled"} at ${topRole.company || ""}. That's your strongest lead.`
-          : "You haven't scored any roles yet. Start with one — any signal is better than silence.",
-        actions: ["See top scores", "Reset timeline", "Dismiss"],
+          ? fmt(t.advPatTimelineClosingTopRole || "Your top-scoring role: {title} at {company}. That's your strongest lead.", { title: topRole.role_title || "Untitled", company: topRole.company || "" })
+          : (t.advPatTimelineClosingNoRoles || "You haven't scored any roles yet. Start with one — any signal is better than silence."),
+        actions: [
+          { label: t.advActionSeeTopScores  || "See top scores" },
+          { label: t.advActionResetTimeline || "Reset timeline" },
+          { label: t.advActionDismiss       || "Dismiss", dismiss: true },
+        ],
       });
     } else if (progress >= 0.65) {
       patterns.push({
         id: `timeline-late-w${weekNum}`,
         severity: 2,
-        headline: "Three-quarters of your window is behind you.",
-        sub: `${daysLeft} day${daysLeft !== 1 ? "s" : ""} left in your ${windowLabel} window.`,
-        detail: "The last stretch is where searches accelerate or stall. Focus energy on your highest-VQ opportunities.",
+        headline: t.advPatTimelineLateHeadline || "Three-quarters of your window is behind you.",
+        sub: fmt(t.advPatTimelineLateSub || "{days} days left in your {window} window.", { days: daysLeft, window: windowLabel }),
+        detail: t.advPatTimelineLateDetail || "The last stretch is where searches accelerate or stall. Focus energy on your highest-VQ opportunities.",
         metric: { value: `${daysLeft}d left`, label: "WINDOW · LATE STAGE" },
         evidence: [],
-        suggestion: "Consider narrowing to your top 3 roles rather than scoring new ones.",
-        actions: ["See your top scores", "Dismiss"],
+        suggestion: t.advPatTimelineLateSuggestion || "Consider narrowing to your top 3 roles rather than scoring new ones.",
+        actions: [
+          { label: t.advActionSeeYourTopScores || "See your top scores" },
+          { label: t.advActionDismiss          || "Dismiss", dismiss: true },
+        ],
       });
     } else if (progress >= 0.40) {
       patterns.push({
         id: `timeline-mid-w${weekNum}`,
         severity: 1,
-        headline: "You're halfway through your window.",
-        sub: `${daysElapsed} days in, ${daysLeft} to go in your ${windowLabel} window.`,
-        detail: "The second half is where most searches accelerate or stall. If something feels off, now is the time to adjust — not the last quarter.",
+        headline: t.advPatTimelineMidHeadline || "You're halfway through your window.",
+        sub: fmt(t.advPatTimelineMidSub || "{elapsed} days in, {left} to go in your {window} window.", { elapsed: daysElapsed, left: daysLeft, window: windowLabel }),
+        detail: t.advPatTimelineMidDetail || "The second half is where most searches accelerate or stall. If something feels off, now is the time to adjust.",
         metric: { value: `${Math.round(progress * 100)}%`, label: "WINDOW COMPLETE" },
         evidence: [],
         suggestion: avgVq
-          ? `You've scored ${scored.length} role${scored.length !== 1 ? "s" : ""} with an average VQ of ${avgVq}. Keep the quality standard.`
-          : "You haven't scored any roles yet. Half your window is gone — time to start.",
-        actions: ["Review your pipeline", "Dismiss"],
+          ? fmt(t.advPatTimelineMidSuggestion || "You've scored {n} roles with an average VQ of {avg}. Keep the quality standard.", { n: scored.length, avg: avgVq })
+          : (t.advPatTimelineMidNoRoles || "You haven't scored any roles yet. Half your window is gone — time to start."),
+        actions: [
+          { label: t.advActionReviewPipeline || "Review your pipeline" },
+          { label: t.advActionDismiss        || "Dismiss", dismiss: true },
+        ],
       });
     } else if (progress >= 0.20) {
       patterns.push({
         id: `timeline-early-w${weekNum}`,
         severity: 1,
-        headline: "You're a quarter of the way through your window.",
-        sub: `${daysElapsed} days in. ${daysLeft} days left in your ${windowLabel} window.`,
-        detail: "Early enough to course-correct. Most strong candidates use this stage to tighten filters based on what they've seen so far.",
+        headline: t.advPatTimelineEarlyHeadline || "You're a quarter of the way through your window.",
+        sub: fmt(t.advPatTimelineEarlySub || "{elapsed} days in. {left} days left in your {window} window.", { elapsed: daysElapsed, left: daysLeft, window: windowLabel }),
+        detail: t.advPatTimelineEarlyDetail || "Early enough to course-correct. Most strong candidates use this stage to tighten filters based on what they've seen so far.",
         metric: { value: `${Math.round(progress * 100)}%`, label: "WINDOW COMPLETE" },
         evidence: [],
-        suggestion: "Check that your filters reflect what you've learned — early patterns often reveal misaligned weights.",
-        actions: ["Review filter weights", "Dismiss"],
+        suggestion: t.advPatTimelineEarlySuggestion || "Check that your filters reflect what you've learned — early patterns often reveal misaligned weights.",
+        actions: [
+          { label: t.advActionReviewFilterWeights || "Review filter weights" },
+          { label: t.advActionDismiss             || "Dismiss", dismiss: true },
+        ],
       });
     }
   }
 
-  // ── Static patterns (always shown in design; shown when no live data) ──────
+  // ── Demo patterns (shown when no live data) ────────────────────────────────
   if (patterns.length === 0) {
+    const threshold0 = parseFloat(profile?.threshold) || 3.5;
     patterns.push(
       {
         id: "below-floor-demo",
         severity: 3,
-        headline: "You're applying below your floor.",
-        sub: `Five sends, three under your stated VQ floor of ${threshold}.`,
-        detail: "Either your floor is wrong, or the market is tighter than you thought. Both are worth knowing.",
+        headline: t.advPatBelowFloorHeadline || "You're applying below your floor.",
+        sub: fmt(t.advPatBelowFloorDemoSub || "Five sends, three under your stated VQ floor of {threshold}.", { threshold: threshold0 }),
+        detail: t.advPatBelowFloorDetail || "Either your floor is wrong, or the market is tighter than you thought. Both are worth knowing.",
         metric: { value: "3 of 5", label: "BELOW FLOOR · 14 DAYS" },
         evidence: [
           { co: "Stripe",  title: "Director, Strategy",     score: 2.1, delta: -1.4 },
           { co: "Vercel",  title: "Head of RevOps",          score: 2.8, delta: -0.7 },
           { co: "Brex",    title: "VP, Revenue Operations",  score: 2.4, delta: -1.1 },
         ],
-        suggestion: `Your average application this month: 3.1. Consider lowering your floor to 3.0 or tightening your filters.`,
-        actions: ["Revisit your floor", "See full filter weights", "Dismiss for 14 days"],
+        suggestion: fmt(t.advPatBelowFloorDemoSuggestion || "Your average application this month: 3.1. Consider lowering your floor to 3.0 or tightening your filters.", { threshold: threshold0 }),
+        actions: [
+          { label: t.advActionRevisitFloor  || "Revisit your floor" },
+          { label: t.advActionFilterWeights || "See full filter weights" },
+          { label: t.advActionDismiss14     || "Dismiss for 14 days", dismiss: true },
+        ],
       },
       {
         id: "hard-no-violation",
         severity: 3,
-        headline: "Two roles broke a hard no.",
-        sub: "You said no to startups under Series B. You've applied to two.",
-        detail: "Hard nos are the rules you said you wouldn't break. The system flags every violation so you can decide if the rule still holds.",
+        headline: t.advPatHardNoHeadline || "Two roles broke a hard no.",
+        sub: t.advPatHardNoSub || "You said no to startups under Series B. You've applied to two.",
+        detail: t.advPatHardNoDetail || "Hard nos are the rules you said you wouldn't break. The system flags every violation so you can decide if the rule still holds.",
         metric: { value: "2", label: "HARD-NO BREACHES" },
         evidence: [
           { co: "Mercury", title: "VP Operations",          score: 3.6, flag: "Series A · 38 employees" },
           { co: "Linear",  title: "Director of Operations", score: 4.3, flag: "Series A · 72 employees" },
         ],
-        suggestion: 'Linear scored 4.3 despite the breach. Consider whether "Series B+" should be a soft filter, not a hard no.',
-        actions: ["Review hard nos", "Adjust filter", "Dismiss"],
+        suggestion: t.advPatHardNoSuggestion || 'Linear scored 4.3 despite the breach. Consider whether "Series B+" should be a soft filter, not a hard no.',
+        actions: [
+          { label: t.advActionReviewHardNos || "Review hard nos" },
+          { label: t.advActionAdjustFilter  || "Adjust filter" },
+          { label: t.advActionDismiss       || "Dismiss", dismiss: true },
+        ],
       },
       {
         id: "comp-aspirational",
         severity: 2,
-        headline: "Your comp floor may be aspirational.",
-        sub: "Median application: $278k. Your stated floor: $300k.",
-        detail: "Behavior reveals what filters can't. Either your floor needs to drop, or you're sending applications you don't actually want to win.",
+        headline: t.advPatCompHeadline || "Your comp floor may be aspirational.",
+        sub: t.advPatCompSub || "Median application: $278k. Your stated floor: $300k.",
+        detail: t.advPatCompDetail || "Behavior reveals what filters can't. Either your floor needs to drop, or you're sending applications you don't actually want to win.",
         metric: { value: "−$22k", label: "BELOW FLOOR · MEDIAN" },
         evidence: [
           { co: "Notion", title: "VP, Customer Success",       score: 3.4, flag: "$260k–$310k" },
           { co: "Figma",  title: "VP People",                  score: 3.7, flag: "$270k–$320k" },
           { co: "Gusto",  title: "Director, Strategic Finance", score: 3.2, flag: "$250k–$295k" },
         ],
-        suggestion: "At your level, market median for senior ops roles is $295k. Your $300k floor is reasonable; the gap is in your application targeting.",
-        actions: ["Adjust comp floor", "See market data", "Dismiss"],
+        suggestion: t.advPatCompSuggestion || "At your level, market median for senior ops roles is $295k. Your $300k floor is reasonable; the gap is in your application targeting.",
+        actions: [
+          { label: t.advActionAdjustCompFloor || "Adjust comp floor" },
+          { label: t.advActionSeeMarketData   || "See market data" },
+          { label: t.advActionDismiss         || "Dismiss", dismiss: true },
+        ],
       },
       {
         id: "remote-drift",
         severity: 1,
-        headline: "Hybrid openness isn't showing up.",
-        sub: "You said yes to hybrid. Every application this month was remote.",
-        detail: "Not necessarily a problem — just a tell about what you actually want.",
+        headline: t.advPatRemoteHeadline || "Hybrid openness isn't showing up.",
+        sub: t.advPatRemoteSub || "You said yes to hybrid. Every application this month was remote.",
+        detail: t.advPatRemoteDetail || "Not necessarily a problem — just a tell about what you actually want.",
         metric: { value: "0 of 7", label: "HYBRID APPLICATIONS" },
         evidence: [],
-        suggestion: "Consider tightening your stated preference to remote-only — cleaner filters yield cleaner scores.",
-        actions: ["Update location filter", "Keep as-is"],
+        suggestion: t.advPatRemoteSuggestion || "Consider tightening your stated preference to remote-only — cleaner filters yield cleaner scores.",
+        actions: [
+          { label: t.advActionUpdateLocationFilter || "Update location filter" },
+          { label: t.advActionKeepAsIs             || "Keep as-is" },
+        ],
       },
       {
         id: "vq-trending-down-demo",
         severity: 2,
-        headline: "Your scores are trending down.",
-        sub: "Average VQ this month: 3.1. Last month: 3.7.",
-        detail: "When score quality drops, it usually means filter widening, urgency, or burnout. Worth a pause.",
+        headline: t.advPatTrendDownHeadline || "Your scores are trending down.",
+        sub: t.advPatTrendDownDemoSub || "Average VQ this month: 3.1. Last month: 3.7.",
+        detail: t.advPatTrendDownDetail || "When score quality drops, it usually means filter widening, urgency, or burnout. Worth a pause.",
         metric: { value: "−0.6", label: "VQ TREND · 30D" },
         evidence: [],
-        suggestion: 'Your last 5 high-VQ scores all share "Financial Authority" as critical. Consider whether broader applications are worth the time.',
-        actions: ["Review filter weights", "Take a week", "Dismiss"],
+        suggestion: t.advPatTrendDownDemoSuggestion || 'Your last 5 high-VQ scores all share "Financial Authority" as critical. Consider whether broader applications are worth the time.',
+        actions: [
+          { label: t.advActionReviewFilterWeights || "Review filter weights" },
+          { label: t.advActionTakeWeek            || "Take a week" },
+          { label: t.advActionDismiss             || "Dismiss", dismiss: true },
+        ],
       }
     );
   }
@@ -245,8 +299,8 @@ const HISTORY = [
 ];
 
 // ─── PatternRow ───────────────────────────────────────────────────────────────
-function PatternRow({ pattern, active, onClick }) {
-  const sev = sevMeta(pattern.severity);
+function PatternRow({ pattern, active, onClick, t = {} }) {
+  const sev = sevMeta(pattern.severity, t);
   return (
     <button
       onClick={onClick}
@@ -281,8 +335,8 @@ function PatternRow({ pattern, active, onClick }) {
 }
 
 // ─── PatternDetail ────────────────────────────────────────────────────────────
-function PatternDetail({ pattern, onDismiss }) {
-  const sev = sevMeta(pattern.severity);
+function PatternDetail({ pattern, onDismiss, t = {} }) {
+  const sev = sevMeta(pattern.severity, t);
   return (
     <div style={{
       background: "var(--paper)",
@@ -322,7 +376,7 @@ function PatternDetail({ pattern, onDismiss }) {
           <div style={{
             fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: "0.14em",
             color: "#8A9A8A", textTransform: "uppercase", marginBottom: 6,
-          }}>EVIDENCE</div>
+          }}>{(t.advocateEvidence || "EVIDENCE").toUpperCase()}</div>
           {pattern.evidence.map((e, i) => (
             <div key={i} style={{
               padding: "10px 0",
@@ -360,7 +414,7 @@ function PatternDetail({ pattern, onDismiss }) {
           <div style={{
             fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: "0.14em",
             color: "#8A9A8A", textTransform: "uppercase", marginBottom: 4,
-          }}>WHAT TO DO</div>
+          }}>{(t.advocateWhatToDo || "WHAT TO DO").toUpperCase()}</div>
           <div style={{ fontFamily: "var(--font-prose)", fontSize: 13, color: "var(--ink)", lineHeight: 1.5 }}>
             {pattern.suggestion}
           </div>
@@ -372,7 +426,7 @@ function PatternDetail({ pattern, onDismiss }) {
         {pattern.actions.map((a, i) => (
           <button
             key={i}
-            onClick={a.toLowerCase().includes("dismiss") ? onDismiss : undefined}
+            onClick={a.dismiss ? onDismiss : undefined}
             style={{
               padding: "12px 14px",
               background: i === 0 ? "var(--ink)" : "transparent",
@@ -385,7 +439,7 @@ function PatternDetail({ pattern, onDismiss }) {
               WebkitTapHighlightColor: "transparent",
             }}
           >
-            <span>{a}</span>
+            <span>{a.label}</span>
             {i === 0 && (
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                 <path d="M5 3L9 7L5 11" stroke="#F4F8F0" strokeWidth="1.4"
@@ -400,10 +454,10 @@ function PatternDetail({ pattern, onDismiss }) {
 }
 
 // ─── VQAdvocateScreen ─────────────────────────────────────────────────────────
-export default function VQAdvocateScreen({ onClose, opportunities, profile }) {
+export default function VQAdvocateScreen({ onClose, opportunities, profile, t = {} }) {
   const patterns = useMemo(
-    () => computePatterns(opportunities, profile),
-    [opportunities, profile]
+    () => computePatterns(opportunities, profile, t),
+    [opportunities, profile, t]
   );
 
   const [dismissed, setDismissed] = useState([]);
@@ -417,6 +471,10 @@ export default function VQAdvocateScreen({ onClose, opportunities, profile }) {
     const next = active.find(p => p.id !== id);
     setActiveId(next?.id);
   }
+
+  const activeCountStr = active.length === 1
+    ? fmt(t.advocateActivePatterns1 || "{n} active pattern in the last 30 days.", { n: active.length })
+    : fmt(t.advocateActivePatterns  || "{n} active patterns in the last 30 days.", { n: active.length });
 
   return (
     <div style={{
@@ -449,7 +507,7 @@ export default function VQAdvocateScreen({ onClose, opportunities, profile }) {
         <div style={{
           fontFamily: "var(--font-data)", fontSize: 11, letterSpacing: "0.18em",
           color: "var(--ink)", textTransform: "uppercase",
-        }}>VQ ADVOCATE</div>
+        }}>{t.advocateTitle || "VQ ADVOCATE"}</div>
         <div style={{ width: 44 }} />
       </header>
 
@@ -459,16 +517,16 @@ export default function VQAdvocateScreen({ onClose, opportunities, profile }) {
           <p style={{
             fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: "0.14em",
             textTransform: "uppercase", color: "var(--accent)", marginBottom: 10,
-          }}>WHAT THE BEHAVIOR SHOWS</p>
+          }}>{(t.advocateEyebrow || "WHAT THE BEHAVIOR SHOWS").toUpperCase()}</p>
           <h1 style={{
             fontFamily: "var(--font-prose)", fontSize: 26, fontWeight: 500,
             color: "var(--ink)", lineHeight: 1.18, margin: 0, letterSpacing: "-0.005em",
-          }}>{active.length} active {active.length === 1 ? "pattern" : "patterns"} in the last 30 days.</h1>
+          }}>{activeCountStr}</h1>
           <p style={{
             fontFamily: "var(--font-prose)", fontSize: 14, color: "var(--muted)",
             lineHeight: 1.5, margin: "10px 0 0",
           }}>
-            We measure your behavior against the filters you set. When they don't match, we tell you.
+            {t.advocateDesc || "We measure your behavior against the filters you set. When they don't match, we tell you."}
           </p>
         </div>
 
@@ -477,19 +535,20 @@ export default function VQAdvocateScreen({ onClose, opportunities, profile }) {
           <p style={{
             fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: "0.14em",
             textTransform: "uppercase", color: "var(--muted)", marginBottom: 8,
-          }}>ACTIVE</p>
+          }}>{(t.advocateActive || "ACTIVE").toUpperCase()}</p>
           {active.length === 0 ? (
             <div style={{
               padding: "20px 0",
               fontFamily: "var(--font-prose)", fontSize: 14, color: "var(--muted)",
               textAlign: "center",
-            }}>No active patterns right now. Keep going.</div>
+            }}>{t.advocateEmpty || "No active patterns right now. Keep going."}</div>
           ) : active.map(p => (
             <PatternRow
               key={p.id}
               pattern={p}
               active={p.id === activeId}
               onClick={() => setActiveId(p.id)}
+              t={t}
             />
           ))}
         </div>
@@ -500,6 +559,7 @@ export default function VQAdvocateScreen({ onClose, opportunities, profile }) {
             <PatternDetail
               pattern={activePattern}
               onDismiss={() => dismiss(activePattern.id)}
+              t={t}
             />
           </div>
         )}
@@ -509,7 +569,7 @@ export default function VQAdvocateScreen({ onClose, opportunities, profile }) {
           <p style={{
             fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: "0.14em",
             textTransform: "uppercase", color: "var(--muted)", marginBottom: 8,
-          }}>HISTORY · 30 DAYS</p>
+          }}>{(t.advocateHistory || "HISTORY · 30 DAYS").toUpperCase()}</p>
           <div style={{ borderTop: "0.5px solid var(--border)" }}>
             {HISTORY.map(h => (
               <div key={h.id} style={{
@@ -551,11 +611,11 @@ export default function VQAdvocateScreen({ onClose, opportunities, profile }) {
             <div style={{ textAlign: "left" }}>
               <div style={{
                 fontFamily: "var(--font-prose)", fontSize: 14, fontWeight: 500, color: "var(--ink)",
-              }}>Notify me about new patterns</div>
+              }}>{t.advocateNotify || "Notify me about new patterns"}</div>
               <div style={{
                 fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: "0.10em",
                 color: "#8A9A8A", marginTop: 3, textTransform: "uppercase",
-              }}>WORTH-PAUSING ONLY</div>
+              }}>{(t.advocateNotifyHint || "WORTH-PAUSING ONLY").toUpperCase()}</div>
             </div>
             {/* Toggle pill */}
             <div style={{
@@ -588,10 +648,10 @@ function writeDismissed(ids) {
   try { localStorage.setItem(DISMISSED_KEY, JSON.stringify(ids)); } catch {}
 }
 
-export function VQAdvocateCard({ opportunities, profile, onOpen }) {
+export function VQAdvocateCard({ opportunities, profile, onOpen, t = {} }) {
   const patterns = useMemo(
-    () => computePatterns(opportunities, profile),
-    [opportunities, profile]
+    () => computePatterns(opportunities, profile, t),
+    [opportunities, profile, t]
   );
   const [dismissed, setDismissed] = useState(readDismissed);
   const active = patterns.filter(p => !dismissed.includes(p.id)).slice(0, 1);
@@ -599,7 +659,7 @@ export function VQAdvocateCard({ opportunities, profile, onOpen }) {
   if (active.length === 0) return null;
 
   const p   = active[0];
-  const sev = sevMeta(p.severity);
+  const sev = sevMeta(p.severity, t);
   const remaining = patterns.filter(q => !dismissed.includes(q.id)).length - 1;
 
   return (
@@ -624,7 +684,7 @@ export function VQAdvocateCard({ opportunities, profile, onOpen }) {
             <span style={{
               fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: "0.16em",
               color: "var(--ink)", textTransform: "uppercase", fontWeight: 500,
-            }}>VQ ADVOCATE</span>
+            }}>{t.advocateTitle || "VQ ADVOCATE"}</span>
             <span style={{
               fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: "0.10em",
               color: "#8A9A8A", textTransform: "uppercase",

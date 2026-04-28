@@ -325,11 +325,15 @@ export default function RoleWorkspace({
     r.status !== "archived" && r.framework_snapshot?.recommendation === "pursue"
   );
   const totalScored = workspaceRoles.filter(r => r.vq_score != null && r.status !== "archived").length;
-  const headline = pursueRoles.length === 0
-    ? "Your workspace is ready."
-    : pursueRoles.length === 1
-    ? `You have 1 Pursue lead${firstName ? `, ${firstName}` : ""}.`
-    : `You have ${pursueRoles.length} Pursue leads${firstName ? `, ${firstName}` : ""}.`;
+  const pursueN = pursueRoles.length;
+  const headlineBase = pursueN === 0
+    ? (t?.wsHeadlineReady || "Your workspace is ready.")
+    : pursueN === 1
+    ? (t?.wsHeadlinePursue1 || "You have 1 Pursue lead.")
+    : (t?.wsHeadlinePursueN || "You have {n} Pursue leads.").replace("{n}", String(pursueN));
+  const headline = firstName && pursueN > 0
+    ? headlineBase.replace(/\.$/, "") + `, ${firstName}.`
+    : headlineBase;
 
   const now = Date.now();
   const allVisible   = workspaceRoles.filter(r => r.status !== "archived");
@@ -390,7 +394,7 @@ export default function RoleWorkspace({
         {/* Title block */}
         <div style={{ padding: "14px 20px 18px" }}>
           <p style={{ fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--muted)", marginBottom: 10 }}>
-            WORKSPACE{firstName ? ` · ${firstName.toUpperCase()}` : ""}
+            {(t?.workspaceTitle || "Workspace").toUpperCase()}{firstName ? ` · ${firstName.toUpperCase()}` : ""}
           </p>
           <h1 style={{ fontFamily: "var(--font-prose)", fontSize: 26, fontWeight: 500, color: "var(--ink)", lineHeight: 1.18, margin: 0, letterSpacing: "-0.005em" }}>
             {headline}
@@ -409,6 +413,7 @@ export default function RoleWorkspace({
           opportunities={workspaceRoles}
           profile={profile}
           onOpen={() => onOpenAdvocate?.()}
+          t={t}
         />
 
         {/* Hero card — top match */}

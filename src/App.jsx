@@ -1068,7 +1068,7 @@ export default function App() {
             {authUser && (
               <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 12, marginBottom: 8, marginTop: 4 }}>
                 <span style={{ fontSize: 12, color: "var(--muted)", fontFamily: "var(--font-data)" }}>
-                  {authUser.displayName || authUser.email || "Signed in"}
+                  {(authUser.displayName && authUser.displayName !== "User" ? authUser.displayName : null) || authUser.email || "Signed in"}
                 </span>
                 <button className="btn btn-secondary btn-sm" onClick={handleSignOut} style={{ fontSize: 11, padding: "4px 12px", minHeight: 30 }}>
                   Sign Out
@@ -1122,6 +1122,7 @@ export default function App() {
           onClose={() => setShowAdvocate(false)}
           opportunities={workspaceRoles}
           profile={profile}
+          t={t}
         />
       )}
 
@@ -1185,7 +1186,7 @@ function ProfileTab({ t, lang, setLang, profile, authUser, userTier, onSignOut, 
   const tierColor = isVantage ? "var(--gold)" : isSignal ? "var(--accent)" : "var(--muted)";
 
   const rawDisplayName = authUser?.displayName;
-  const name = (rawDisplayName && rawDisplayName !== "User") ? rawDisplayName : (profile.name || rawDisplayName || "You");
+  const name = (rawDisplayName && rawDisplayName !== "User") ? rawDisplayName : (profile.name || "You");
   const title = profile.currentTitle || "";
 
   return (

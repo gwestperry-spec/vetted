@@ -1,6 +1,6 @@
 # Vetted: Career Intelligence — Error Report & Fix Log
-**Compiled:** April 6, 2026 — last updated April 27, 2026
-**Versions covered:** v1.0 through v2.1.4 (post-build 25)
+**Compiled:** April 6, 2026 — last updated April 28, 2026
+**Versions covered:** v1.0 through v2.1.5 (post-build 27)
 **Source:** Full development chat history
 
 ---
@@ -844,6 +844,156 @@ Claude / Perplexity            → Structured prompt with "raw content" instruct
 
 ---
 
+---
+
+## Error 81 — UI strings not translating: ProfileTab, ScoreEntry, HamburgerSheet hardcoded English
+**Build:** post-build 25 — identified April 27, 2026
+**Symptom:** Changing language in Settings had no effect on ProfileTab field labels, section headings, ScoreEntry title/placeholder/KPI labels, or hamburger menu item labels — all remained English regardless of selected language.
+**Root cause:** Each component received the `t` prop (translation object) but used hardcoded English string literals throughout. `ProfileTab` had 13 field labels and 3 section headers hardcoded. `ScoreEntry` had 4 hardcoded strings (`scoreTitle`, `scorePlaceholder`, `scoreThisWeek`, `scorePursueCohort`). `HamburgerSheet` did not accept `t` at all — its `items` array was built with string literals.
+**Fix:**
+  - `translations.js`: Added ~35 new keys to all 7 language blocks (en, es, zh, fr, ar, vi, pt) covering profile section/field labels, score tab strings, settings tab strings, and hamburger menu labels + hints.
+  - `ScoreEntry.jsx`: Replaced hardcoded strings with `t.scoreTitle || "..."`, `t.scorePlaceholder || "..."`, `t.scoreThisWeek || "..."`, `t.scorePursueCohort || "..."`.
+  - `HamburgerSheet.jsx`: Added `t = {}` to props signature; all 7 menu items and their hints now use `t.menuXxx || "English fallback"`.
+  - `App.jsx ProfileTab`: All 13 `ProfileField` labels and 3 `ProfileSection` titles use `t.profileFieldXxx || "..."` and `t.profileSectionXxx || "..."`.
+  - `App.jsx`: `t={t}` passed to `HamburgerSheet`.
+**Files:** `src/i18n/translations.js`, `src/components/ScoreEntry.jsx`, `src/components/HamburgerSheet.jsx`, `src/App.jsx`
+**Deployed:** Post-build 26 — git push + cap sync ios.
+
+---
+
+## Error 82 — Language preference resets to English on every cold start
+**Build:** post-build 25 — identified April 27, 2026
+**Symptom:** User selects a language (e.g. Spanish), uses the app. On next cold launch the app reverts to English even though the language was saved to the DB correctly.
+**Root cause:** `restoreSession()` in `useAuth.js` loaded the saved profile from localStorage and called `setProfile()` and `setUserTier()`, but never called `setLang()`. The `lang` state variable kept its `useState("en")` initial value on every cold start, overriding whatever was saved.
+**Fix:** Added `if (p.lang) setLang(p.lang);` inside the `if (saved?.profile)` block in `restoreSession`, immediately after the `setUserTier` call.
+**Files:** `src/hooks/useAuth.js`
+**Deployed:** Post-build 26 — git push + cap sync ios.
+
+---
+
+## Error 83 — Language changes from Settings not persisted to DB
+**Build:** post-build 25 — identified April 27, 2026
+**Symptom:** Related to Error 82. Changing language in the new Settings tab updated the UI for the current session, but on next cold start the old language (from DB) would be restored. Effectively, language changes were lost after app restart.
+**Root cause:** The Settings tab called `onLangChange(code)` which only called `setLang(code)` — no `saveProfile` DB call was made. On next session restore, `p.lang` from the DB still held the previous value.
+**Fix:** Added `handleLangChange` function in `App.jsx` that calls both `setLang(code)` and `dbCall("saveProfile", { ..., profile: { ...profile, lang: code, ... } })`. `SettingsTab` calls `onLangChange={handleLangChange}`.
+**Files:** `src/App.jsx`
+**Deployed:** Post-build 26 — git push + cap sync ios.
+
+---
+
+## Error 84 — Loading screen filter weight badges show raw numeric fallback (e.g. "2.0×")
+**Build:** post-build 25 — identified April 27, 2026
+**Symptom:** During scoring, the VQ loading screen showed filter weight badges as "2.0×" or "2.5×" instead of human labels ("Important", "High Signal") for some filters.
+**Root cause:** `WEIGHT_LABELS` is defined with numeric keys: `{ 2.0: "Important", 1.5: "Helpful", ... }`. When JavaScript coerces these, the key `2.0` is stored as the string `"2"`. If the DB returns a filter weight as the string `"2.0"`, the lookup `WEIGHT_LABELS["2.0"]` returns `undefined`, and the fallback renders `"2.0×"` instead of the label.
+**Fix:** Replaced the direct string-key lookup with `parseFloat(w)` before the lookup:
+```js
+function weightLabel(w) {
+  const n = parseFloat(w);
+  if (isNaN(n)) return null;
+  return WEIGHT_LABELS[n] ?? `${n.toFixed(1)}×`;
+}
+```
+**Files:** `src/components/VQLoadingScreen.jsx`
+**Deployed:** Post-build 26 — git push.
+
+---
+
+## Error 85 — Loading screen filter completion animation broken for non-English users
+**Build:** post-build 25 — identified April 27, 2026
+**Symptom:** In non-English languages, the streaming filter-completion animation on VQLoadingScreen never triggered — filters never turned green and showed a checkmark. English users were unaffected.
+**Root cause:** The scoring API always returns filter names in English (the prompt is authored in English and Claude uses those English names in its structured output). `VQLoadingScreen` tried to match streamed `filter_name` values against the display-language filter names from the user's profile. For non-English users the names never matched (e.g. streamed `"Location Preference"` vs. stored `"Preferencia de ubicación"`).
+**Fix:** Changed the match logic to compare against the English filter name first (extracted from `f.name.en` if `f.name` is a localized object, otherwise `f.name`), with the localized display name as a secondary fallback:
+```js
+const filterNameEn = typeof f.name === "object"
+  ? (f.name.en || Object.values(f.name)[0])
+  : (f.name || "");
+const streamed = streamingFilters.find(sf => {
+  const sfLower = sf.filter_name?.toLowerCase() || "";
+  return sfLower === filterNameEn.toLowerCase() || sfLower === filterName.toLowerCase();
+});
+```
+**Files:** `src/components/VQLoadingScreen.jsx`
+**Deployed:** Post-build 26 — git push.
+
+---
+
+## Error 86 — Hamburger "Share scorecard" export does nothing
+**Build:** post-build 25 — identified April 27, 2026
+**Symptom:** Tapping "Share scorecard" in the hamburger menu opened the role picker, user selected a role, the sheet dismissed — but no PDF or share sheet appeared. Silent failure with no error.
+**Root cause:** `handleMenuAction(id)` in `App.jsx` had no branch for `id === "share"`. When `SharePane` called `onItem("share", role)`, the second argument `role` was passed to `handleMenuAction` but the function signature only declared `id`, so `payload` was always `undefined`. Even if the branch existed, the payload would have been lost.
+**Fix:**
+  1. Added `payload` parameter to `handleMenuAction(id, payload)`.
+  2. Added share branch that flattens `framework_snapshot` into the `opp` object and calls `exportOpportunityPdf`:
+```js
+if (id === "share" && payload) {
+  const opp = {
+    role_title: payload.title,
+    company:    payload.company,
+    overall_score: payload.vq_score,
+    ...payload.framework_snapshot,
+  };
+  exportOpportunityPdf(opp, profile, t);
+}
+```
+**Files:** `src/App.jsx`
+**Deployed:** Post-build 26 — git push + cap sync ios.
+
+---
+
+## Error 87 — Web export blocked by browser popup blocker
+**Build:** post-build 25 — identified April 27, 2026
+**Symptom:** On web (non-iOS), tapping "Share scorecard" triggered the export function but nothing happened in Safari and Chrome. No error shown. DevTools console showed the popup was blocked.
+**Root cause:** `exportOpportunityPdf` in `exportPdf.js` called `window.open(url, "_blank")` to open the generated HTML blob. `window.open` is blocked by popup blockers when not called synchronously from a direct user gesture — even in a button click handler, async calls (Blob construction, URL creation) can delay execution past the user-gesture window.
+**Fix:** Replaced `window.open` with a programmatic `<a download>` click — browsers never block download link clicks:
+```js
+const blob = new Blob([html], { type: "text/html" });
+const url = URL.createObjectURL(blob);
+const a = document.createElement("a");
+a.href = url;
+a.download = `VQ-Report-${(opp.role_title||"Role").replace(/[^a-zA-Z0-9]/g,"-")}-${(opp.company||"").replace(/[^a-zA-Z0-9]/g,"-")}.html`;
+document.body.appendChild(a); a.click(); document.body.removeChild(a);
+setTimeout(() => URL.revokeObjectURL(url), 1000);
+```
+**Files:** `src/utils/exportPdf.js`
+**Deployed:** Post-build 26 — git push.
+
+---
+
+## Error 88 — iOS export silently fails with no user feedback
+**Build:** post-build 25 — identified April 27, 2026
+**Symptom:** On iOS, tapping "Share scorecard" appeared to do nothing. No share sheet appeared, no error shown. The app continued normally as if export was never triggered.
+**Root cause:** `exportOpportunityPdf` detected the iOS `PrintPlugin` via `window.Capacitor?.Plugins?.PrintPlugin`. If the plugin was absent, it only called `console.warn("PrintPlugin not available")` and returned silently. If the `PrintPlugin.printHTML` call threw, the catch block only called `console.warn` — again silent to the user.
+**Fix:** Added user-facing alerts on both failure paths:
+```js
+if (!PrintPlugin) {
+  alert("Export is not available in this version of the app. Please update to the latest version.");
+  return;
+}
+try {
+  await PrintPlugin.printHTML({ html, jobName: `VQ Report – ${opp.role_title || "Role"}` });
+} catch (err) {
+  console.warn("PrintPlugin error:", err);
+  alert("Export failed. Please try again.");
+}
+```
+**Files:** `src/utils/exportPdf.js`
+**Deployed:** Post-build 26 — git push + cap sync ios.
+
+---
+
+## Error 89 — Remote roles incorrectly penalized on location preference filters
+**Build:** post-build 25 — identified April 27, 2026
+**Symptom:** VQ analysis scored remote and fully-remote roles negatively when a user had a city-based location preference. A role that was "Remote (San Francisco preferred)" or "Fully Remote" received a low location score, treating remoteness as a location mismatch.
+**Root cause:** The scoring prompt contained filter definitions and a job description but no guidance on how to interpret remote work relative to location preferences. Claude defaulted to treating any non-city role as a mismatch if the user's preference named a specific city — even though a remote role lets the candidate work from their preferred city.
+**Fix:** Added `remoteNote` rule injected into the scoring prompt between the filter definitions and the `<job_description>` delimiter:
+```
+LOCATION SCORING RULE: If the role is remote, fully remote, or remote-first, treat this as NEUTRAL-TO-POSITIVE for any location preference filter — a remote role lets the candidate work from their preferred location. Only penalize location if the role explicitly requires on-site presence at a location that conflicts with the candidate's stated preferences. Never score a remote role negatively on location grounds alone.
+```
+**Files:** `src/App.jsx` (scoring prompt construction)
+**Deployed:** Post-build 26 — git push (server-side scoring prompt; no binary change required).
+
+---
+
 ## Open Items (updated April 27, 2026)
 
 | Issue | Priority | Target Build |
@@ -865,7 +1015,7 @@ Claude / Perplexity            → Structured prompt with "raw content" instruct
 
 ---
 
-## Build History Summary (updated April 26, 2026)
+## Build History Summary (updated April 27, 2026)
 
 | Version | Build | Status | Key Changes |
 |---|---|---|---|
@@ -893,3 +1043,47 @@ Claude / Perplexity            → Structured prompt with "raw content" instruct
 | v2.1.3 | 24 | In Review (Apr 26) | All build 23 UI changes + persistence bug fix (server-side Supabase upsert header); no binary delta required for server fix |
 | v2.1.4 | 25 | Pending submission | "Remove This Role" fix (3 stacked bugs); Delete button for archived cards; comprehensive UI translation; Export PDF translation + RTL; Market Pulse → Perplexity Sonar (live web data + citations); language scoring hint; **Security hardening sprint**: sanitizeTitle.js + sanitizePromptField.js shared modules; all AI prompt inputs sanitized server-side (profile, filters, background, resume, JD delimiter); IP rate limiting on market-pulse; max_tokens server cap; stored injection closed at DB write time in supabase.js |
 | v2.1.4 | post-25 | Live (Apr 27) | Profile restore key mismatch fix (Errors 77–78); Market Pulse joyplot target comp scale fix; display name "User" fix; per-field EDIT buttons on profile tab; timeline/country/currency now persisted to Supabase; fmtComp() helper for full-dollar comp display; session restore completeness audit |
+| v2.1.4 | post-26 | Live (Apr 27) | Full i18n pass — translations wired across ProfileTab, ScoreEntry, HamburgerSheet, SettingsTab (Errors 81–83); loading screen weight-label + filter-match fixes (Errors 84–85); hamburger share export wired end-to-end (Error 86); web export popup-blocker fix via `<a download>` (Error 87); iOS export silent failure surfaced with alert (Error 88); remote-role location scoring rule injected into prompt (Error 89) |
+| v2.1.5 | post-27 | Pending (Apr 28) | Terms of Service hosted at tryvettedai.com/terms (public/terms.html); privacy ↔ terms cross-links; ENDPOINTS.terms updated; workspace title + headline translated (Errors 90–91); "User" name sentinel excluded from display fallback (Error 92); VQ Advocate fully translated — all 7 languages, ~60 keys each, fmt() interpolation helper, t prop wired throughout VQAdvocate.jsx |
+
+---
+
+## Error 90 — Workspace title eyebrow not translating
+**Build:** v2.1.5 development
+**Symptom:** The "WORKSPACE · FIRSTNAME" eyebrow label in RoleWorkspace always displayed in English regardless of selected language.
+**Root cause:** The eyebrow label was hardcoded as the string `"WORKSPACE"` rather than using the existing `workspaceTitle` translation key.
+**Fix:** Changed eyebrow to `{(t?.workspaceTitle || "Workspace").toUpperCase()}` in RoleWorkspace.jsx.
+**File:** `src/components/workspace/RoleWorkspace.jsx`
+
+---
+
+## Error 91 — Workspace headline not translating
+**Build:** v2.1.5 development
+**Symptom:** The workspace h1 headline ("Your workspace is ready." / "You have N Pursue leads.") was hardcoded English.
+**Root cause:** Hardcoded template literals in RoleWorkspace.jsx; no translation keys existed.
+**Fix:** Added `wsHeadlineReady`, `wsHeadlinePursue1`, `wsHeadlinePursueN` keys to all 7 language blocks in translations.js. Updated headline computation in RoleWorkspace.jsx to use `t?.wsHeadlineXxx` with `{n}` replacement.
+**Files:** `src/i18n/translations.js`, `src/components/workspace/RoleWorkspace.jsx`
+
+---
+
+## Error 92 — Display name shows "User" on every Xcode build
+**Build:** v2.1.5 development
+**Symptom:** Every new Xcode build showed "User" as the name in the profile tab header and result screen instead of the user's actual name.
+**Root cause:** Apple Sign In only returns `givenName` on the very first authentication. Subsequent logins return no name; the auth hook sets `authUser.displayName = "User"` as a sentinel. The name display fallback chain was `profile.name || rawDisplayName || "You"` — when `profile.name = ""` (not yet loaded) and `rawDisplayName = "User"`, it returned "User" as a real name.
+**Fix:** Removed `rawDisplayName` from the fallback chain entirely: `profile.name || "You"`. The "User" sentinel can no longer surface as a displayed name. Also filtered "User" at the result-screen display site.
+**Files:** `src/App.jsx`
+
+---
+
+## Error 93 — VQ Advocate displayed only in English regardless of language setting
+**Build:** v2.1.5 development
+**Symptom:** All pattern text, severity labels, window names, action buttons, and UI chrome in VQ Advocate remained in English when any other language was selected.
+**Root cause:** `VQAdvocateScreen` and `VQAdvocateCard` had no `t` prop. `computePatterns()` used hardcoded English string literals for ~50 pattern strings. `sevMeta()` returned hardcoded English severity labels. `WINDOW_LABEL` constant was hardcoded English.
+**Fix:**
+- Added ~60 translation keys (patterns, actions, severity labels, window names, UI chrome) to all 7 language blocks in translations.js.
+- Added `fmt(s, vars)` interpolation helper to VQAdvocate.jsx.
+- Changed `sevMeta(sev, t)`, `getWindowLabel(key, t)`, `computePatterns(opportunities, profile, t)` to accept and use `t`.
+- Pattern `actions` changed from string arrays to `{ label, dismiss }` objects — dismiss detection no longer relies on English text matching.
+- `PatternDetail`, `VQAdvocateScreen`, `VQAdvocateCard` all accept `t = {}`.
+- Passed `t={t}` at both call sites: App.jsx (VQAdvocateScreen) and RoleWorkspace.jsx (VQAdvocateCard).
+**Files:** `src/i18n/translations.js`, `src/components/VQAdvocate.jsx`, `src/App.jsx`, `src/components/workspace/RoleWorkspace.jsx`
