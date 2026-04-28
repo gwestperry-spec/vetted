@@ -318,14 +318,14 @@ function PatternRow({ pattern, active, onClick, t = {} }) {
       <span style={{ width: 6, height: 6, borderRadius: "50%", background: sev.dot, flexShrink: 0 }} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{
-          fontFamily: "var(--font-prose)", fontSize: 14, fontWeight: 500,
+          fontFamily: "var(--font-display)", fontSize: 14, fontWeight: 500,
           color: active ? "#F4F8F0" : "var(--ink)", lineHeight: 1.3,
           whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
         }}>{pattern.headline}</div>
       </div>
       {pattern.metric && (
         <div style={{
-          fontFamily: "var(--font-prose)", fontSize: 13, fontWeight: 500,
+          fontFamily: "var(--font-display)", fontSize: 13, fontWeight: 500,
           color: active ? "#A8C0A8" : "var(--muted)",
           letterSpacing: "-0.005em", flexShrink: 0,
         }}>{pattern.metric.value}</div>
@@ -356,7 +356,7 @@ function PatternDetail({ pattern, onDismiss, t = {} }) {
 
       {/* Headline + sub */}
       <div style={{
-        fontFamily: "var(--font-prose)", fontSize: 18, fontWeight: 500, color: "var(--ink)",
+        fontFamily: "var(--font-display)", fontSize: 18, fontWeight: 700, color: "var(--ink)",
         lineHeight: 1.25, letterSpacing: "-0.005em", marginBottom: 6,
       }}>{pattern.headline}</div>
       <div style={{ fontFamily: "var(--font-prose)", fontSize: 14, color: "var(--muted)", lineHeight: 1.45 }}>
@@ -390,7 +390,7 @@ function PatternDetail({ pattern, onDismiss, t = {} }) {
               }}>{e.score.toFixed(1)}</div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{
-                  fontFamily: "var(--font-prose)", fontSize: 13, color: "var(--ink)", lineHeight: 1.3,
+                  fontFamily: "var(--font-display)", fontSize: 13, color: "var(--ink)", lineHeight: 1.3,
                   whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
                 }}>{e.title}</div>
                 <div style={{
@@ -519,7 +519,7 @@ export default function VQAdvocateScreen({ onClose, opportunities, profile, t = 
             textTransform: "uppercase", color: "var(--accent)", marginBottom: 10,
           }}>{(t.advocateEyebrow || "WHAT THE BEHAVIOR SHOWS").toUpperCase()}</p>
           <h1 style={{
-            fontFamily: "var(--font-prose)", fontSize: 26, fontWeight: 500,
+            fontFamily: "var(--font-display)", fontSize: 26, fontWeight: 700,
             color: "var(--ink)", lineHeight: 1.18, margin: 0, letterSpacing: "-0.005em",
           }}>{activeCountStr}</h1>
           <p style={{
@@ -709,7 +709,7 @@ export function VQAdvocateCard({ opportunities, profile, onOpen, t = {} }) {
 
         {/* Headline */}
         <div style={{
-          fontFamily: "var(--font-prose)", fontSize: 16, fontWeight: 500, color: "var(--ink)",
+          fontFamily: "var(--font-display)", fontSize: 16, fontWeight: 700, color: "var(--ink)",
           lineHeight: 1.3, letterSpacing: "-0.005em",
         }}>{p.headline}</div>
 
