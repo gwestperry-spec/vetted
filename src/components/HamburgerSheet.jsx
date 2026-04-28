@@ -127,8 +127,7 @@ const APP_VERSION = "2.001.3";
 function AboutPane({ onBack }) {
   const links = [
     { label: "Privacy Policy",   url: "https://tryvettedai.com/privacy" },
-    { label: "Terms of Service", url: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/" },
-    { label: "Data Practices",   url: "https://tryvettedai.com/privacy#data" },
+    { label: "Terms of Service", url: "https://tryvettedai.com/terms" },
   ];
   return (
     <>
@@ -155,7 +154,7 @@ function AboutPane({ onBack }) {
         <div style={{ fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: "0.10em", color: "#8A9A8A", textTransform: "uppercase", lineHeight: 1.7 }}>
           <div>Vetted AI · Version {APP_VERSION}</div>
           <div>© 2024–{new Date().getFullYear()} Vetted AI. All rights reserved.</div>
-          <div style={{ marginTop: 6 }}>Career intelligence. Built for executives.</div>
+          <div style={{ marginTop: 6 }}>Vetted Career Intelligence: built for the executives of yesterday, tomorrow, forever.</div>
         </div>
       </div>
     </>

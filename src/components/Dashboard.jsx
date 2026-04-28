@@ -1002,7 +1002,7 @@ export default function Dashboard({
               }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
                   <p style={{ fontSize: 13, fontWeight: 700, color: "#1E40AF", margin: 0 }}>
-                    LinkedIn blocks automated access — here's how to paste in 30 seconds:
+                    {t?.liGuideTitle || "LinkedIn blocks automated access — here's how to paste in 30 seconds:"}
                   </p>
                   <button
                     onClick={() => setLinkedInGuide(false)}
@@ -1012,21 +1012,21 @@ export default function Dashboard({
                 </div>
                 <ol style={{ margin: 0, padding: "0 0 0 18px", display: "flex", flexDirection: "column", gap: 6 }}>
                   <li style={{ fontSize: 13, color: "#1E3A8A", lineHeight: 1.5 }}>
-                    Open the LinkedIn job posting in your browser or app
+                    {t?.liGuideStep1 || "Open the LinkedIn job posting in your browser or app"}
                   </li>
                   <li style={{ fontSize: 13, color: "#1E3A8A", lineHeight: 1.5 }}>
-                    Scroll to <strong>"About the job"</strong> and tap <strong>"...more"</strong> to expand the full description
+                    {t?.liGuideStep2 || "Scroll to \"About the job\" and tap \"...more\" to expand the full description"}
                   </li>
                   <li style={{ fontSize: 13, color: "#1E3A8A", lineHeight: 1.5 }}>
-                    <strong>iPhone/iPad:</strong> Long-press anywhere in the description until <strong>Copy | Share…</strong> appears — tap <strong>Copy</strong><br/>
-                    <strong>Mac/Windows:</strong> Highlight the description text, then <strong>Cmd+C</strong> (Mac) or <strong>Ctrl+C</strong> (Windows)
+                    {t?.liGuideStep3ios || "iPhone/iPad: Long-press anywhere in the description until Copy | Share… appears — tap Copy"}<br/>
+                    {t?.liGuideStep3desktop || "Mac/Windows: Highlight the description text, then Cmd+C (Mac) or Ctrl+C (Windows)"}
                   </li>
                   <li style={{ fontSize: 13, color: "#1E3A8A", lineHeight: 1.5 }}>
-                    Paste it here and hit Score
+                    {t?.liGuideStep4 || "Paste it here and hit Score"}
                   </li>
                 </ol>
                 <p style={{ fontSize: 12, color: "#1E3A8A", margin: "10px 0 0", lineHeight: 1.5 }}>
-                  <strong>External apply role?</strong> Copy the company's career page URL (remove <code style={{ fontSize: 11, background: "#DBEAFE", borderRadius: 3, padding: "1px 4px" }}>?utm_source=linkedin</code> and any tracking params) and paste that URL instead — Vetted can fetch it directly.
+                  {t?.liGuideExternal || "External apply role? Copy the company's career page URL (remove ?utm_source=linkedin and any tracking params) and paste that URL instead — Vetted can fetch it directly."}
                 </p>
                 <a
                   href={`https://tryvettedai.com/blog/how-to-score-a-linkedin-job-posting${lang && lang !== "en" ? `?hl=${lang}` : ""}`}
@@ -1034,7 +1034,7 @@ export default function Dashboard({
                   rel="noopener noreferrer"
                   style={{ display: "inline-block", marginTop: 8, fontSize: 12, color: "#2563EB", textDecoration: "underline" }}
                 >
-                  Full step-by-step guide →
+                  {t?.liGuideLink || "Full step-by-step guide →"}
                 </a>
               </div>
             )}

@@ -178,24 +178,23 @@ export default function ScoreEntry({
             <div style={{
               fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: "0.14em",
               color: "var(--gold)", textTransform: "uppercase", fontWeight: 500, marginBottom: 6,
-            }}>FROM LINKEDIN</div>
+            }}>{t.liFromLinkedIn || "FROM LINKEDIN"}</div>
             <div style={{
               fontFamily: "var(--font-prose)", fontSize: 13, fontStyle: "italic",
               color: "var(--ink)", lineHeight: 1.45, marginBottom: 8,
             }}>
-              LinkedIn blocks our reader, so the URL won't fetch. Easiest fix — long-press the job description, tap{" "}
-              <span style={{ fontStyle: "normal", fontWeight: 500 }}>Copy</span>, then paste here.
+              {t.liLinkedInNote || "LinkedIn blocks our reader, so the URL won't fetch. Easiest fix — long-press the job description, tap Copy, then paste here."}
             </div>
             <div style={{
               display: "flex", alignItems: "center", gap: 0, flexWrap: "wrap",
               fontFamily: "var(--font-data)", fontSize: 9.5, letterSpacing: "0.10em",
               color: "var(--muted)", textTransform: "uppercase", fontWeight: 500,
             }}>
-              <StepDot n="1"/><span>OPEN ON LINKEDIN</span>
+              <StepDot n="1"/><span>{t.liLinkedInStep1 || "OPEN ON LINKEDIN"}</span>
               <StepArrow/>
-              <StepDot n="2"/><span>LONG-PRESS · COPY</span>
+              <StepDot n="2"/><span>{t.liLinkedInStep2 || "LONG-PRESS · COPY"}</span>
               <StepArrow/>
-              <StepDot n="3"/><span>PASTE HERE</span>
+              <StepDot n="3"/><span>{t.liLinkedInStep3 || "PASTE HERE"}</span>
             </div>
           </div>
         </div>
