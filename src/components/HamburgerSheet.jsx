@@ -3,6 +3,7 @@
 // Backdrop dims content. Slide-in animation between panes.
 
 import { useState } from "react";
+import { ENDPOINTS } from "../config.js";
 
 // ─── Sub-icons ────────────────────────────────────────────────────────────────
 function IconChevronRight() {
@@ -126,8 +127,8 @@ const APP_VERSION = "2.001.3";
 
 function AboutPane({ onBack }) {
   const links = [
-    { label: "Privacy Policy",   url: "https://tryvettedai.com/privacy" },
-    { label: "Terms of Service", url: "https://tryvettedai.com/terms" },
+    { label: "Privacy Policy",   url: ENDPOINTS.privacy },
+    { label: "Terms of Service", url: ENDPOINTS.terms },
   ];
   return (
     <>
