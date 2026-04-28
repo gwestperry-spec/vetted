@@ -1445,11 +1445,11 @@ function SettingsTab({ t, lang, onLangChange, onSignOut }) {
             <div style={{ fontFamily: "var(--font-prose)", fontSize: 17, fontWeight: 500, color: "var(--ink)", lineHeight: 1.2 }}>{t.settingsContactSupport || "Contact Support"}</div>
             <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M3 1.5L7 5L3 8.5" stroke="#8A9A8A" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
           </a>
-          <a href="https://tryvettedai.com/privacy" target="_blank" rel="noopener noreferrer" style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 0", background: "transparent", border: "none", cursor: "pointer", borderBottom: "0.5px solid var(--border)", textDecoration: "none" }}>
+          <a href={ENDPOINTS.privacy} target="_blank" rel="noopener noreferrer" style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 0", background: "transparent", border: "none", cursor: "pointer", borderBottom: "0.5px solid var(--border)", textDecoration: "none" }}>
             <div style={{ fontFamily: "var(--font-prose)", fontSize: 17, fontWeight: 500, color: "var(--ink)", lineHeight: 1.2 }}>{t.settingsPrivacy || "Privacy Policy"}</div>
             <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M3 1.5L7 5L3 8.5" stroke="#8A9A8A" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
           </a>
-          <a href="https://tryvettedai.com/terms" target="_blank" rel="noopener noreferrer" style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 0", background: "transparent", border: "none", cursor: "pointer", textDecoration: "none" }}>
+          <a href={ENDPOINTS.terms} target="_blank" rel="noopener noreferrer" style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 0", background: "transparent", border: "none", cursor: "pointer", textDecoration: "none" }}>
             <div style={{ fontFamily: "var(--font-prose)", fontSize: 17, fontWeight: 500, color: "var(--ink)", lineHeight: 1.2 }}>{t.settingsTerms || "Terms of Service"}</div>
             <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M3 1.5L7 5L3 8.5" stroke="#8A9A8A" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
           </a>

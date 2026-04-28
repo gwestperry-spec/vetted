@@ -43,9 +43,10 @@ function buildSteps(t) {
 }
 
 // ─── OnboardStep ──────────────────────────────────────────────────────────
-export function OnboardStep({ t, profile, setProfile, onNext, userTier, onUpgrade, authUser, currency, isEditing, onDone }) {
+export function OnboardStep({ t, profile, setProfile, onNext, userTier, onUpgrade, authUser, currency, isEditing, onDone, initialStep }) {
   const steps = buildSteps(t);
-  const [idx, setIdx]             = useState(0);
+  const startIdx = initialStep ? Math.max(0, steps.findIndex(s => s.id === initialStep)) : 0;
+  const [idx, setIdx]             = useState(startIdx);
   const [direction, setDirection] = useState("next");
 
   const isVantageUser = userTier === "vantage" || userTier === "vantage_lifetime";
