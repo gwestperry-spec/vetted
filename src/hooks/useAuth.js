@@ -240,6 +240,7 @@ export function useAuth({ setProfile, setLang, setFilters, setOpportunities, set
                   country: p.country || prev.country,
                   currency: p.currency || prev.currency,
                 }));
+                if (p.lang) setLang(p.lang);
                 if (p.tier) setUserTier(p.tier);
               }
               if (saved?.filters?.length) {

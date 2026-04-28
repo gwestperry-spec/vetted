@@ -180,31 +180,31 @@ export async function exportOpportunityPdf(opp, profile, t) {
     // wired it to a UI action. PrintPlugin.swift bridges to UIMarkupTextPrintFormatter
     // + UIPrintInteractionController, which shows the native iOS share/print sheet.
     const PrintPlugin = window.Capacitor?.Plugins?.PrintPlugin;
-    if (PrintPlugin) {
-      try {
-        await PrintPlugin.printHTML({
-          html,
-          jobName: `${opp.role_title || "Role"} at ${opp.company || "Company"} — VQ Report`,
-        });
-      } catch (err) {
-        console.warn("PrintPlugin error:", err);
-      }
-    } else {
-      console.warn("PrintPlugin not available — check AppDelegate registration");
+    if (!PrintPlugin) {
+      alert("Export is not available in this version of the app. Please update to the latest version.");
+      return;
+    }
+    try {
+      await PrintPlugin.printHTML({
+        html,
+        jobName: `${opp.role_title || "Role"} at ${opp.company || "Company"} — VQ Report`,
+      });
+    } catch (err) {
+      console.warn("PrintPlugin error:", err);
+      alert("Export failed. Please try again.");
     }
 
   } else {
-    // Web: open in new tab, trigger print dialog after fonts load
+    // Web: <a download> is never blocked by popup blockers (unlike window.open)
     const blob = new Blob([html], { type: "text/html" });
     const url = URL.createObjectURL(blob);
-    const win = window.open(url, "_blank");
-    if (win) {
-      win.onload = () => {
-        setTimeout(() => {
-          win.print();
-          URL.revokeObjectURL(url);
-        }, 600);
-      };
-    }
+    const filename = `VQ-Report-${(opp.role_title || "Role").replace(/[^a-zA-Z0-9]/g, "-")}-${(opp.company || "").replace(/[^a-zA-Z0-9]/g, "-")}.html`;
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 }

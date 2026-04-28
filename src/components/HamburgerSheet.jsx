@@ -274,6 +274,7 @@ export default function HamburgerSheet({
   onItem = () => {},
   workspaceRoles = [],
   foundingSlotsLeft = 0,
+  t = {},
 }) {
   const [pane, setPane] = useState("root");
 
@@ -281,16 +282,16 @@ export default function HamburgerSheet({
 
   const upgradeHint = foundingSlotsLeft > 0
     ? `Founding · ${foundingSlotsLeft} lifetime spots left`
-    : "Signal · Vantage";
+    : (t.menuHintUpgrade || "Signal · Vantage");
 
   const items = [
-    { id: "upgrade",  label: "Upgrade",          hint: upgradeHint, accent: "gold", icon: <IconUpgrade/>, chevron: true },
-    { id: "advocate", label: "VQ Advocate",       hint: "Patterns · Coaching · Insights", chevron: true },
-    { id: "share",    label: "Share scorecard…",  hint: "Export role as PDF", icon: <IconShare/>, chevron: true },
-    { id: "blog",     label: "Blog",              hint: "tryvettedai.com/blog", external: true },
-    { id: "settings", label: "Settings",          hint: "Language · Notifications", chevron: true },
-    { id: "about",    label: "About & Privacy",   hint: "Terms · Data · Version", chevron: true },
-    { id: "signout",  label: "Sign out",          danger: true },
+    { id: "upgrade",  label: t.menuUpgrade  || "Upgrade",         hint: upgradeHint, accent: "gold", icon: <IconUpgrade/>, chevron: true },
+    { id: "advocate", label: t.menuAdvocate || "VQ Advocate",      hint: t.menuHintAdvocate || "Patterns · Coaching · Insights", chevron: true },
+    { id: "share",    label: t.menuShare    || "Share scorecard…", hint: t.menuHintShare || "Export role as PDF", icon: <IconShare/>, chevron: true },
+    { id: "blog",     label: t.menuBlog     || "Blog",             hint: "tryvettedai.com/blog", external: true },
+    { id: "settings", label: t.menuSettings || "Settings",         hint: t.menuHintSettings || "Language · Notifications", chevron: true },
+    { id: "about",    label: t.menuAbout    || "About & Privacy",  hint: t.menuHintAbout || "Terms · Data · Version", chevron: true },
+    { id: "signout",  label: t.menuSignOut  || "Sign out",         danger: true },
   ];
 
   function close() {

@@ -92,7 +92,9 @@ const WEIGHT_LABELS = {
   3.0: "Critical",
 };
 function weightLabel(w) {
-  return WEIGHT_LABELS[w] ?? (w !== undefined ? `${Number(w).toFixed(1)}×` : null);
+  const n = parseFloat(w);
+  if (isNaN(n)) return null;
+  return WEIGHT_LABELS[n] ?? `${n.toFixed(1)}×`;
 }
 
 // ─── Score color helper ────────────────────────────────────────────────────
@@ -215,13 +217,19 @@ export function VQLoadingScreen({ loadingMsg, streamingFilters = [], filters = [
   const displayPct     = Math.max(realPct, timePct);
 
   const filterRows = filters.map(f => {
-    // Resolve localized filter name: try current lang, fall back to en, then first available
+    // Display name: localized for current language
     const filterName = typeof f.name === "object"
       ? (f.name[lang] || f.name.en || Object.values(f.name)[0])
       : (f.name || "");
-    const streamed = streamingFilters.find(sf =>
-      sf.filter_name?.toLowerCase() === filterName?.toLowerCase()
-    );
+    // Match name: always try English first — the API prompt uses English names,
+    // so the streamed filter_name will be English regardless of display language.
+    const filterNameEn = typeof f.name === "object"
+      ? (f.name.en || Object.values(f.name)[0])
+      : (f.name || "");
+    const streamed = streamingFilters.find(sf => {
+      const sfLower = sf.filter_name?.toLowerCase() || "";
+      return sfLower === filterNameEn.toLowerCase() || sfLower === filterName.toLowerCase();
+    });
     return { name: filterName, weight: f.weight, isDone: streamed !== undefined, score: streamed?.score };
   });
 

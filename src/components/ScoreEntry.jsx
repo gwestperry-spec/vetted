@@ -82,7 +82,7 @@ export default function ScoreEntry({
             fontFamily: "var(--font-prose)", fontSize: 24, fontWeight: 500,
             color: "var(--ink)", lineHeight: 1.2, margin: 0,
             letterSpacing: "-0.005em",
-          }}>Run a role through your filter framework.</h1>
+          }}>{t.scoreTitle || "Run a role through your filter framework."}</h1>
         </div>
       </div>
 
@@ -101,7 +101,7 @@ export default function ScoreEntry({
               value={val}
               onChange={e => setVal(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Paste a job description, or drop a Greenhouse / LinkedIn URL…"
+              placeholder={t.scorePlaceholder || "Paste a job description, or drop a Greenhouse / LinkedIn URL…"}
               rows={6}
               style={{
                 width: "100%", boxSizing: "border-box",
@@ -209,7 +209,7 @@ export default function ScoreEntry({
           <div style={{
             fontFamily: "var(--font-data)", fontSize: 11, letterSpacing: "0.16em",
             color: "var(--ink)", textTransform: "uppercase", fontWeight: 500,
-          }}>THIS WEEK</div>
+          }}>{t.scoreThisWeek || "THIS WEEK"}</div>
           <div style={{
             fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: "0.12em",
             color: "#8A9A8A", textTransform: "uppercase",
@@ -233,7 +233,7 @@ export default function ScoreEntry({
               <div style={{
                 fontFamily: "var(--font-data)", fontSize: 11, letterSpacing: "0.16em",
                 color: "var(--ink)", textTransform: "uppercase", fontWeight: 500,
-              }}>PURSUE COHORT</div>
+              }}>{t.scorePursueCohort || "PURSUE COHORT"}</div>
               <div style={{
                 fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: "0.12em",
                 color: "#8A9A8A", textTransform: "uppercase",
