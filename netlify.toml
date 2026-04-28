@@ -112,6 +112,11 @@
   to = "/privacy.html"
   status = 200
 
+[[redirects]]
+  from = "/terms"
+  to = "/terms.html"
+  status = 200
+
 # ── favicon.ico → favicon.svg ──────────────────────────────────────────────────
 # Browsers auto-request /favicon.ico; we only ship favicon.svg.
 # Redirect instead of 404.
