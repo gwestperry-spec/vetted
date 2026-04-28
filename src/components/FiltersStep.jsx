@@ -59,7 +59,7 @@ export default function FiltersStep({ t, lang, filters, setFilters, onBack, onNe
         <p style={{ fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--muted)", marginBottom: 10 }}>
           {t.stepFilters?.toUpperCase() || "FILTERS"}
         </p>
-        <h1 style={{ fontFamily: "var(--font-prose)", fontSize: 26, fontWeight: 500, color: "var(--ink)", lineHeight: 1.18, margin: 0, letterSpacing: "-0.005em" }}>
+        <h1 style={{ fontFamily: "var(--font-display)", fontSize: 26, fontWeight: 700, color: "var(--ink)", lineHeight: 1.18, margin: 0, letterSpacing: "-0.005em" }}>
           {t.filtersTitle}
         </h1>
         <p style={{ margin: "12px 0 0", fontFamily: "var(--font-prose)", fontSize: 14, color: "var(--muted)", lineHeight: 1.55 }}>
@@ -232,7 +232,7 @@ function FfFilterCard({ f, fn, t, isLast, onWeight, removable, onRemove }) {
       <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <h2 style={{
-            fontFamily: "var(--font-prose)", fontSize: 17, fontWeight: 500,
+            fontFamily: "var(--font-display)", fontSize: 17, fontWeight: 500,
             color: "var(--ink)", margin: 0, lineHeight: 1.25, letterSpacing: "-0.005em",
           }}>{fn(f.name)}</h2>
           <p style={{
@@ -275,7 +275,7 @@ function FfFilterCard({ f, fn, t, isLast, onWeight, removable, onRemove }) {
           style={{
             background: "transparent", border: "none", cursor: "pointer",
             padding: "4px 0", minWidth: 110, textAlign: "right",
-            fontFamily: "var(--font-prose)", fontSize: 13, fontStyle: "italic",
+            fontFamily: "var(--font-display)", fontSize: 13, fontStyle: "italic",
             color: accentColor, letterSpacing: "-0.005em",
             fontWeight: wIdx >= 2 ? 500 : 400,
           }}
@@ -293,7 +293,7 @@ function FfUpgradeGate({ t, onUpgrade }) {
         color: "var(--gold)", textTransform: "uppercase", fontWeight: 500, marginBottom: 10,
       }}>SIGNAL+ FEATURE</p>
       <h3 style={{
-        fontFamily: "var(--font-prose)", fontSize: 19, fontWeight: 500,
+        fontFamily: "var(--font-display)", fontSize: 19, fontWeight: 700,
         color: "var(--ink)", margin: 0, lineHeight: 1.25, letterSpacing: "-0.005em",
       }}>
         {t.customFilterGate || "Add custom filters to sharpen your scores."}
