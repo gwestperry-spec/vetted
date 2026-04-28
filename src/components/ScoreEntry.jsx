@@ -101,7 +101,7 @@ export default function ScoreEntry({
               value={val}
               onChange={e => setVal(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder={t.scorePlaceholder || "Paste a job description, or drop a Greenhouse / Lever URL…"}
+              placeholder={t.scorePlaceholder || "Paste a job description or LinkedIn job description — or drop a Greenhouse / Lever URL…"}
               rows={6}
               style={{
                 width: "100%", boxSizing: "border-box",
