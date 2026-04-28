@@ -396,7 +396,7 @@ export default function RoleWorkspace({
           <p style={{ fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--muted)", marginBottom: 10 }}>
             {(t?.workspaceTitle || "Workspace").toUpperCase()}{firstName ? ` · ${firstName.toUpperCase()}` : ""}
           </p>
-          <h1 style={{ fontFamily: "var(--font-prose)", fontSize: 26, fontWeight: 500, color: "var(--ink)", lineHeight: 1.18, margin: 0, letterSpacing: "-0.005em" }}>
+          <h1 style={{ fontFamily: "var(--font-display)", fontSize: 26, fontWeight: 700, color: "var(--ink)", lineHeight: 1.18, margin: 0, letterSpacing: "-0.005em" }}>
             {headline}
           </h1>
         </div>
@@ -431,10 +431,10 @@ export default function RoleWorkspace({
               </div>
               <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 12 }}>
                 <div style={{ minWidth: 0, flex: 1 }}>
-                  <div style={{ fontFamily: "var(--font-prose)", fontSize: 22, fontWeight: 500, color: "#F4F8F0", lineHeight: 1.18, letterSpacing: "-0.01em" }}>{scoredRoles[0].title}</div>
+                  <div style={{ fontFamily: "var(--font-display)", fontSize: 22, fontWeight: 700, color: "#F4F8F0", lineHeight: 1.18, letterSpacing: "-0.01em" }}>{scoredRoles[0].title}</div>
                   <div style={{ fontFamily: "var(--font-data)", fontSize: 11, color: "#C4D8C0", marginTop: 6, letterSpacing: "0.04em" }}>{scoredRoles[0].company}</div>
                 </div>
-                <div style={{ fontFamily: "var(--font-prose)", fontSize: 56, fontWeight: 500, color: "#F4F8F0", lineHeight: 0.92, letterSpacing: "-0.02em", flexShrink: 0 }}>
+                <div style={{ fontFamily: "var(--font-display)", fontSize: 56, fontWeight: 700, color: "#F4F8F0", lineHeight: 0.92, letterSpacing: "-0.02em", flexShrink: 0 }}>
                   {Number(scoredRoles[0].vq_score).toFixed(1)}
                 </div>
               </div>
@@ -596,7 +596,7 @@ export default function RoleWorkspace({
 function WsKpiTile({ value, label, color }) {
   return (
     <div style={{ flex: 1, padding: "12px 12px 10px", background: "var(--cream)", borderRadius: 10, border: "0.5px solid var(--border)" }}>
-      <div style={{ fontFamily: "var(--font-prose)", fontSize: 24, fontWeight: 500, color: color || "var(--ink)", lineHeight: 1, letterSpacing: "-0.01em", marginBottom: 6 }}>{value}</div>
+      <div style={{ fontFamily: "var(--font-display)", fontSize: 24, fontWeight: 700, color: color || "var(--ink)", lineHeight: 1, letterSpacing: "-0.01em", marginBottom: 6 }}>{value}</div>
       <div style={{ fontFamily: "var(--font-data)", fontSize: 8.5, letterSpacing: "0.14em", color: "#8A9A8A", textTransform: "uppercase" }}>{label}</div>
     </div>
   );
@@ -663,12 +663,12 @@ function WsOppsList({ roles, onResume, faded = false, compareMode, onToggleCompa
               </button>
             )}
             {/* Score */}
-            <div style={{ width: 44, textAlign: "right", flexShrink: 0, fontFamily: "var(--font-prose)", fontSize: 22, fontWeight: 500, color: isQueued ? "var(--border)" : wsScoreColor(role.vq_score || 0), lineHeight: 1, letterSpacing: "-0.01em" }}>
+            <div style={{ width: 44, textAlign: "right", flexShrink: 0, fontFamily: "var(--font-display)", fontSize: 22, fontWeight: 700, color: isQueued ? "var(--border)" : wsScoreColor(role.vq_score || 0), lineHeight: 1, letterSpacing: "-0.01em" }}>
               {isQueued ? <span className="spinner" style={{ width: 14, height: 14, borderWidth: 2, display: "inline-block" }} /> : Number(role.vq_score).toFixed(1)}
             </div>
             {/* Title + company */}
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontFamily: "var(--font-prose)", fontSize: 15, fontWeight: 500, color: "var(--ink)", lineHeight: 1.2, marginBottom: 3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{role.title || "Scoring…"}</div>
+              <div style={{ fontFamily: "var(--font-display)", fontSize: 15, fontWeight: 500, color: "var(--ink)", lineHeight: 1.2, marginBottom: 3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{role.title || "Scoring…"}</div>
               <div style={{ fontFamily: "var(--font-data)", fontSize: 10, color: "#8A9A8A", letterSpacing: "0.06em", textTransform: "uppercase" }}>
                 {(role.company || "").toUpperCase()}{role.created_at ? ` · ${wsAgoLabel(role.created_at)}` : ""}
                 {role.status === "applied" && <span style={{ marginLeft: 6, background: "#DFF0DF", color: "#27500A", padding: "1px 7px", borderRadius: 999, fontSize: 8, letterSpacing: "0.08em" }}>APPLIED</span>}
