@@ -144,7 +144,7 @@ export default function ScoreEntry({
                   <span className="spinner" style={{ width: 12, height: 12, borderWidth: 2 }} aria-hidden="true" />
                 ) : (
                   <>
-                    SCORE
+                    GET MY VQ
                     <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                       <path d="M2.5 6H9" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
                       <path d="M6.5 3L9 6L6.5 9" stroke="currentColor" strokeWidth="1.4"
