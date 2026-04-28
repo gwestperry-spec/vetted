@@ -18,5 +18,5 @@ export const ENDPOINTS = {
   fetchJd:      `${API_BASE}/.netlify/functions/fetch-jd`,
   githubAuth:   `${API_BASE}/.netlify/functions/github-auth`,
   privacy:      `${API_BASE}/privacy`,
-  terms:        "https://tryvettedai.com/terms",
+  terms:        `${API_BASE}/terms`,
 };
