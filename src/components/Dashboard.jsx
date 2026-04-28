@@ -354,7 +354,7 @@ export default function Dashboard({
                 {profile.name ? `YOUR SEARCH · ${profile.name.split(" ")[0].toUpperCase()}` : "YOUR SEARCH"}
               </p>
               <h1 style={{
-                fontFamily: "var(--font-prose)", fontSize: 22, fontWeight: 500,
+                fontFamily: "var(--font-display)", fontSize: 22, fontWeight: 700,
                 color: "#1A2E1A", lineHeight: 1.15, marginBottom: 12,
               }}>
                 {topScore != null
@@ -371,7 +371,7 @@ export default function Dashboard({
                 {profile.name ? `WELCOME · ${profile.name.split(" ")[0].toUpperCase()}` : "WELCOME"}
               </p>
               <h1 style={{
-                fontFamily: "var(--font-prose)", fontSize: 22, fontWeight: 500,
+                fontFamily: "var(--font-display)", fontSize: 22, fontWeight: 700,
                 color: "#1A2E1A", lineHeight: 1.15, marginBottom: 12,
               }}>
                 Score your<br />first role.
@@ -572,7 +572,7 @@ export default function Dashboard({
                             {opp.recommendation?.toUpperCase()} · {opp.company?.toUpperCase()}
                           </div>
                           <div style={{
-                            fontFamily: "var(--font-prose)", fontSize: 16,
+                            fontFamily: "var(--font-display)", fontSize: 16,
                             fontWeight: 500, color: "#E8F0E8", lineHeight: 1.2, marginBottom: 3,
                           }}>{opp.role_title}</div>
                           <div style={{
@@ -634,7 +634,7 @@ export default function Dashboard({
                           {opp.recommendation?.toUpperCase()} · {opp.company?.toUpperCase()}
                         </div>
                         <div style={{
-                          fontFamily: "var(--font-prose)", fontSize: 15,
+                          fontFamily: "var(--font-display)", fontSize: 15,
                           fontWeight: 500, color: "#1A2E1A", lineHeight: 1.2, marginBottom: 3,
                         }}>{opp.role_title}</div>
                         <div style={{
@@ -731,7 +731,7 @@ export default function Dashboard({
                           style={{ background: "none", border: "none", padding: 0, cursor: "pointer", textAlign: "left", width: "100%" }}
                         >
                           <div style={{
-                            fontFamily: "var(--font-prose)", fontSize: 13, fontWeight: 500,
+                            fontFamily: "var(--font-display)", fontSize: 13, fontWeight: 500,
                             color: "#1A2E1A", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
                           }}>{opp.role_title}</div>
                           <div style={{
@@ -970,7 +970,7 @@ export default function Dashboard({
                 borderRadius: 8, border: "0.5px solid #D8E8D8",
                 background: "#fff", color: "#1A2E1A",
                 WebkitTextFillColor: "#1A2E1A",
-                fontSize: 16, fontFamily: "var(--font-prose)",
+                fontSize: 16, fontFamily: "var(--font-display)",
                 lineHeight: 1.5,
                 resize: "none", outline: "none",
                 boxSizing: "border-box", display: "block",

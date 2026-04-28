@@ -292,7 +292,7 @@ function MpJoyplot({ salaryCache, opportunities, profile, currency, displayCurre
                 alignItems: "baseline", gap: 8,
               }}>
                 <div style={{
-                  fontFamily: "var(--font-prose)", fontSize: 13, fontWeight: 500,
+                  fontFamily: "var(--font-display)", fontSize: 13, fontWeight: 500,
                   color: "var(--ink)", lineHeight: 1.1,
                   background: "linear-gradient(to right, rgba(250,250,248,0.95) 68%, rgba(250,250,248,0))",
                   paddingRight: 8, maxWidth: "55%",
@@ -538,7 +538,7 @@ export default function MarketPulseCard({ t, profile, authUser, userTier, opport
         <p style={{ fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--muted)", marginBottom: 10 }}>
           MARKET PULSE
         </p>
-        <h1 style={{ fontFamily: "var(--font-prose)", fontSize: 26, fontWeight: 500, color: "var(--ink)", lineHeight: 1.18, margin: 0, letterSpacing: "-0.005em" }}>
+        <h1 style={{ fontFamily: "var(--font-display)", fontSize: 26, fontWeight: 700, color: "var(--ink)", lineHeight: 1.18, margin: 0, letterSpacing: "-0.005em" }}>
           {t.marketPulse || "Compensation intelligence."}
         </h1>
         <p style={{ margin: "10px 0 0", fontFamily: "var(--font-prose)", fontSize: 13, color: "var(--muted)", lineHeight: 1.55 }}>
@@ -551,7 +551,7 @@ export default function MarketPulseCard({ t, profile, authUser, userTier, opport
           <p style={{ fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: "0.16em", color: "var(--gold)", textTransform: "uppercase", fontWeight: 500, marginBottom: 10 }}>
             VANTAGE FEATURE
           </p>
-          <h3 style={{ fontFamily: "var(--font-prose)", fontSize: 19, fontWeight: 500, color: "var(--ink)", margin: 0, lineHeight: 1.25 }}>
+          <h3 style={{ fontFamily: "var(--font-display)", fontSize: 19, fontWeight: 700, color: "var(--ink)", margin: 0, lineHeight: 1.25 }}>
             {t.marketVantageGate || "Unlock salary benchmarks and live market intelligence."}
           </h3>
           <p style={{ margin: "10px 0 18px", fontFamily: "var(--font-prose)", fontSize: 14, color: "var(--muted)", lineHeight: 1.55 }}>
@@ -761,7 +761,7 @@ export default function MarketPulseCard({ t, profile, authUser, userTier, opport
                   <div style={{ fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: "0.16em", color: "rgba(244,248,240,0.6)", textTransform: "uppercase", marginBottom: 6 }}>
                     {titleToLookup ? titleToLookup.toUpperCase() : "SELECT A TITLE ABOVE"}
                   </div>
-                  <div style={{ fontFamily: "var(--font-prose)", fontSize: 18, letterSpacing: "-0.005em" }}>
+                  <div style={{ fontFamily: "var(--font-display)", fontSize: 18, letterSpacing: "-0.005em" }}>
                     {hasCacheData ? (t.marketAddTitle || "Add to chart") : (t.getMarketPulse || "Get Market Pulse")}
                   </div>
                 </div>

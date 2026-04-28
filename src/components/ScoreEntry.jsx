@@ -101,12 +101,12 @@ export default function ScoreEntry({
               value={val}
               onChange={e => setVal(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder={t.scorePlaceholder || "Paste a job description, or drop a Greenhouse / LinkedIn URL…"}
+              placeholder={t.scorePlaceholder || "Paste a job description, or drop a Greenhouse / Lever URL…"}
               rows={6}
               style={{
                 width: "100%", boxSizing: "border-box",
                 background: "transparent", border: "none", outline: "none",
-                fontFamily: "var(--font-prose)", fontSize: 15, color: "var(--ink)",
+                fontFamily: "var(--font-display)", fontSize: 15, color: "var(--ink)",
                 lineHeight: 1.5, resize: "none", minHeight: 120,
               }}
             />
