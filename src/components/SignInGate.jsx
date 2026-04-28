@@ -264,7 +264,7 @@ export default function SignInGate({ t, lang, setLang, onSignIn, onGitHubSignIn,
         lineHeight: 1.8,
         marginTop: 8,
       }}>
-        <a href={ENDPOINTS.privacy} target="_blank" rel="noopener noreferrer" style={{ color: "#1A2E1A", textDecoration: "none" }}>Terms of Use</a>
+        <a href={ENDPOINTS.terms} target="_blank" rel="noopener noreferrer" style={{ color: "#1A2E1A", textDecoration: "none" }}>Terms of Use</a>
         {"  ·  "}
         <a href={ENDPOINTS.privacy} target="_blank" rel="noopener noreferrer" style={{ color: "#1A2E1A", textDecoration: "none" }}>Privacy Policy</a>
       </p>
