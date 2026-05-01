@@ -612,27 +612,29 @@ async function completeWorkspaceReminder(appleId, reminderId) {
 async function checkScoreLimit(appleId) {
   const res = await supabaseRequest("GET", `/profiles?apple_id=eq.${encodeURIComponent(appleId)}&select=tier,scores_used,scores_reset_date&limit=1`);
   const profile = res.data?.[0];
-  if (!profile) return { allowed: true, tier: "free", scoresUsed: 0, scoresRemaining: 10 };
+  if (!profile) return { allowed: true, tier: "free", scoresUsed: 0, scoresRemaining: 5 };
 
   const tier = profile.tier || "free";
   if (tier !== "free") return { allowed: true, tier, scoresUsed: profile.scores_used || 0, scoresRemaining: null };
 
-  // Check if reset date has passed — reset if so
+  // Check if daily reset date has passed — reset if so
   const now = new Date();
   const resetDate = profile.scores_reset_date ? new Date(profile.scores_reset_date) : null;
   let scoresUsed = profile.scores_used || 0;
 
   if (!resetDate || now >= resetDate) {
-    // Reset the counter
-    const nextReset = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    // Reset the counter — next reset is tomorrow at midnight UTC
+    const tomorrow = new Date(now);
+    tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
+    tomorrow.setUTCHours(0, 0, 0, 0);
     await supabaseRequest("PATCH", `/profiles?apple_id=eq.${encodeURIComponent(appleId)}`, {
       scores_used: 0,
-      scores_reset_date: nextReset.toISOString().split("T")[0],
+      scores_reset_date: tomorrow.toISOString(),
     });
     scoresUsed = 0;
   }
 
-  const limit = 10;
+  const limit = 5;
   const allowed = scoresUsed < limit;
   return { allowed, tier, scoresUsed, scoresRemaining: limit - scoresUsed };
 }

@@ -9,118 +9,122 @@ const TIER_RANK = { free: 0, signal: 1, signal_lifetime: 2, vantage: 3, vantage_
 
 const COLLAPSED_COUNT = 3;
 
-// ── Plan definitions ──────────────────────────────────────────────────────────
+// ── Translated plan definitions ───────────────────────────────────────────────
 
-const FREE_PLAN = {
-  id: "free",
-  tier: "free",
-  label: "FREE",
-  price: "$0",
-  cadence: "/ FOREVER",
-  tagline: "Score roles. Build your framework.",
-  bullets: [
-    "Score up to 3 roles per month",
-    "5 core filters pre-loaded",
-    "VQ score + overall recommendation",
-    "VQ Advocate — first 3 patterns",
-  ],
-  purchasable: false,
-};
+function getPlans(t) {
+  const FREE_PLAN = {
+    id: "free",
+    tier: "free",
+    label: "FREE",
+    price: "$0",
+    cadence: "/ FOREVER",
+    tagline: t?.paywallFreeTagline || "Score roles. Build your framework.",
+    bullets: [
+      t?.paywallFreeBullet1 || "Score up to 5 roles per day",
+      t?.paywallFreeBullet2 || "5 core filters pre-loaded",
+      t?.paywallFreeBullet3 || "VQ score + overall recommendation",
+      t?.paywallFreeBullet4 || "VQ Advocate — first 3 patterns",
+    ],
+    purchasable: false,
+  };
 
-const MONTHLY = [
-  {
-    id: "signal",
-    iapId: "com.vettedai.app.signal.monthly",
-    tier: "signal",
-    label: "SIGNAL",
-    price: "$24.99",
-    cadence: "/ MO",
-    tagline: "See the work. Score with rationale.",
-    bullets: [
-      "Everything in Free",
-      "Per-filter rationale + JD evidence",
-      "Full strengths and gaps",
-      "Narrative bridge",
-      "VQ Advocate — pattern detection",
-      "Notes per scorecard",
-      "Coaching tab + Compare",
-      "PDF export · Resume parse",
-    ],
-    purchasable: true,
-  },
-  {
-    id: "vantage",
-    iapId: "com.vettedai.app.vantage.monthly",
-    tier: "vantage",
-    label: "VANTAGE",
-    price: "$49.99",
-    cadence: "/ MO",
-    tagline: "The full read. For roles that matter.",
-    bullets: [
-      "Everything in Signal",
-      "Coaching tab — moves + questions",
-      "Compare two roles side-by-side",
-      "PDF export — boardroom-ready",
-      "Resume parse + auto pre-fill",
-      "VQ Advocate — proactive coaching",
-      "Market Pulse salary benchmarks",
-      "Priority support · 4-hour response",
-    ],
-    purchasable: true,
-  },
-];
+  const MONTHLY = [
+    {
+      id: "signal",
+      iapId: "com.vettedai.app.signal.monthly",
+      tier: "signal",
+      label: "SIGNAL",
+      price: "$24.99",
+      cadence: "/ MO",
+      tagline: t?.paywallSignalTagline || "See the work. Score with rationale.",
+      bullets: [
+        t?.paywallSignalBullet1 || "Everything in Free",
+        t?.paywallSignalBullet2 || "Per-filter rationale + JD evidence",
+        t?.paywallSignalBullet3 || "Full strengths and gaps",
+        t?.paywallSignalBullet4 || "Narrative bridge",
+        t?.paywallSignalBullet5 || "VQ Advocate — pattern detection",
+        t?.paywallSignalBullet6 || "Notes per scorecard",
+        t?.paywallSignalBullet7 || "Coaching tab + Compare",
+        t?.paywallSignalBullet8 || "PDF export · Resume parse",
+      ],
+      purchasable: true,
+    },
+    {
+      id: "vantage",
+      iapId: "com.vettedai.app.vantage.monthly",
+      tier: "vantage",
+      label: "VANTAGE",
+      price: "$49.99",
+      cadence: "/ MO",
+      tagline: t?.paywallVantageTagline || "The full read. For roles that matter.",
+      bullets: [
+        t?.paywallVantageBullet1 || "Everything in Signal",
+        t?.paywallVantageBullet2 || "Coaching tab — moves + questions",
+        t?.paywallVantageBullet3 || "Compare two roles side-by-side",
+        t?.paywallVantageBullet4 || "PDF export — boardroom-ready",
+        t?.paywallVantageBullet5 || "Resume parse + auto pre-fill",
+        t?.paywallVantageBullet6 || "VQ Advocate — proactive coaching",
+        t?.paywallVantageBullet7 || "Market Pulse salary benchmarks",
+        t?.paywallVantageBullet8 || "Priority support · 4-hour response",
+      ],
+      purchasable: true,
+    },
+  ];
 
-const LIFETIME = [
-  {
-    id: "signal_lifetime",
-    iapId: "com.vettedai.app.signal.lifetime",
-    tier: "signal",
-    label: "SIGNAL",
-    price: "$399.99",
-    cadence: "ONE-TIME · LIFETIME",
-    tagline: "See the work. Score with rationale.",
-    slotsLabel: "183 OF 200 REMAINING",
-    bullets: [
-      "Everything in Free",
-      "Per-filter rationale + JD evidence",
-      "Full strengths and gaps",
-      "Narrative bridge",
-      "VQ Advocate — pattern detection",
-      "Notes per scorecard",
-      "Coaching tab + Compare",
-      "PDF export · Resume parse",
-    ],
-    purchasable: true,
-  },
-  {
-    id: "vantage_lifetime",
-    iapId: "com.vettedai.app.vantage.lifetime",
-    tier: "vantage",
-    label: "VANTAGE",
-    price: "$799.99",
-    cadence: "ONE-TIME · LIFETIME",
-    tagline: "The full read. For roles that matter.",
-    slotsLabel: "71 OF 100 REMAINING",
-    bullets: [
-      "Everything in Signal",
-      "Coaching tab — moves + questions",
-      "Compare two roles side-by-side",
-      "PDF export — boardroom-ready",
-      "Resume parse + auto pre-fill",
-      "VQ Advocate — proactive coaching",
-      "Market Pulse salary benchmarks",
-      "Priority support · 4-hour response",
-    ],
-    purchasable: true,
-  },
-];
+  const LIFETIME = [
+    {
+      id: "signal_lifetime",
+      iapId: "com.vettedai.app.signal.lifetime",
+      tier: "signal",
+      label: "SIGNAL",
+      price: "$399.99",
+      cadence: "ONE-TIME · LIFETIME",
+      tagline: t?.paywallSignalTagline || "See the work. Score with rationale.",
+      slotsLabel: "183 OF 200 REMAINING",
+      bullets: [
+        t?.paywallSignalBullet1 || "Everything in Free",
+        t?.paywallSignalBullet2 || "Per-filter rationale + JD evidence",
+        t?.paywallSignalBullet3 || "Full strengths and gaps",
+        t?.paywallSignalBullet4 || "Narrative bridge",
+        t?.paywallSignalBullet5 || "VQ Advocate — pattern detection",
+        t?.paywallSignalBullet6 || "Notes per scorecard",
+        t?.paywallSignalBullet7 || "Coaching tab + Compare",
+        t?.paywallSignalBullet8 || "PDF export · Resume parse",
+      ],
+      purchasable: true,
+    },
+    {
+      id: "vantage_lifetime",
+      iapId: "com.vettedai.app.vantage.lifetime",
+      tier: "vantage",
+      label: "VANTAGE",
+      price: "$799.99",
+      cadence: "ONE-TIME · LIFETIME",
+      tagline: t?.paywallVantageTagline || "The full read. For roles that matter.",
+      slotsLabel: "71 OF 100 REMAINING",
+      bullets: [
+        t?.paywallVantageBullet1 || "Everything in Signal",
+        t?.paywallVantageBullet2 || "Coaching tab — moves + questions",
+        t?.paywallVantageBullet3 || "Compare two roles side-by-side",
+        t?.paywallVantageBullet4 || "PDF export — boardroom-ready",
+        t?.paywallVantageBullet5 || "Resume parse + auto pre-fill",
+        t?.paywallVantageBullet6 || "VQ Advocate — proactive coaching",
+        t?.paywallVantageBullet7 || "Market Pulse salary benchmarks",
+        t?.paywallVantageBullet8 || "Priority support · 4-hour response",
+      ],
+      purchasable: true,
+    },
+  ];
+
+  return { FREE_PLAN, MONTHLY, LIFETIME };
+}
 
 // ── Tier helpers ──────────────────────────────────────────────────────────────
 
-function heroTitle(userTier) {
-  if (userTier === "signal" || userTier === "signal_lifetime") return "You're on Signal.";
-  if (userTier === "vantage" || userTier === "vantage_lifetime") return "You're on Vantage.";
-  return "You're on Free.";
+function heroTitle(userTier, t) {
+  if (userTier === "signal" || userTier === "signal_lifetime") return t?.paywallHeroSignal || "You're on Signal.";
+  if (userTier === "vantage" || userTier === "vantage_lifetime") return t?.paywallHeroVantage || "You're on Vantage.";
+  return t?.paywallHeroFree || "You're on Free.";
 }
 
 function defaultSelected(userTier) {
@@ -129,10 +133,10 @@ function defaultSelected(userTier) {
   return "signal";
 }
 
-function fromLabel(userTier) {
-  if (userTier === "signal" || userTier === "signal_lifetime") return "FROM SIGNAL";
-  if (userTier === "vantage" || userTier === "vantage_lifetime") return "FROM VANTAGE";
-  return "FROM FREE";
+function fromLabel(userTier, t) {
+  if (userTier === "signal" || userTier === "signal_lifetime") return t?.paywallFromSignal || "FROM SIGNAL";
+  if (userTier === "vantage" || userTier === "vantage_lifetime") return t?.paywallFromVantage || "FROM VANTAGE";
+  return t?.paywallFromFree || "FROM FREE";
 }
 
 function isCurrentPlan(plan, userTier, billing) {
@@ -153,7 +157,7 @@ function isRecommended(plan, userTier) {
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export default function PaywallModal({ authUser, onClose, contextCopy, userTier }) {
+export default function PaywallModal({ authUser, onClose, contextCopy, userTier, t }) {
   const effectiveTier = userTier || "free";
 
   const [loading,        setLoading]        = useState(null);
@@ -167,9 +171,26 @@ export default function PaywallModal({ authUser, onClose, contextCopy, userTier 
   const dialogRef = useRef(null);
   useFocusTrap(dialogRef, { onClose });
 
+  // ── Plan data (translated) ────────────────────────────────────────────────
+  const { FREE_PLAN, MONTHLY, LIFETIME } = getPlans(t);
+
+  // ── Auth guard ────────────────────────────────────────────────────────────
+  // Fall back to storage if authUser.sessionToken wasn't rehydrated yet.
+  function resolveToken() {
+    return authUser?.sessionToken ||
+      (typeof sessionStorage !== "undefined" ? sessionStorage.getItem("vetted_session_token") : "") ||
+      (typeof localStorage !== "undefined"   ? localStorage.getItem("vetted_session_token")   : "") ||
+      "";
+  }
+
   // ── iOS StoreKit 2 ────────────────────────────────────────────────────────
   async function handleIAPUpgrade(plan) {
     if (loading) return;
+    const sessionToken = resolveToken();
+    if (!authUser?.id || !sessionToken) {
+      setError("Session error — please sign out and sign back in to purchase.");
+      return;
+    }
     setLoading(plan.id); setError("");
     try {
       const plugin = window.Capacitor?.Plugins?.StoreKitPlugin;
@@ -179,7 +200,7 @@ export default function PaywallModal({ authUser, onClose, contextCopy, userTier 
       const res = await fetch(ENDPOINTS.appleIap, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ jws: result.jws, appleId: authUser?.id, sessionToken: authUser?.sessionToken || "" }),
+        body: JSON.stringify({ jws: result.jws, appleId: authUser?.id, sessionToken }),
       });
       if (res.status === 403) {
         const data = await res.json().catch(() => ({}));
@@ -192,7 +213,7 @@ export default function PaywallModal({ authUser, onClose, contextCopy, userTier 
     } catch (err) {
       if (err?.message === "cancelled" || err?.message === "pending") { setLoading(null); return; }
       handleError(err, "iap_upgrade");
-      setError(err?.message || "Purchase failed. Please try again.");
+      setError(err?.message || (t?.paywallPurchaseFailed || "Purchase failed. Please try again."));
       setLoading(null);
     }
   }
@@ -200,12 +221,17 @@ export default function PaywallModal({ authUser, onClose, contextCopy, userTier 
   // ── Web Stripe ────────────────────────────────────────────────────────────
   async function handleStripeUpgrade(plan) {
     if (loading) return;
+    const sessionToken = resolveToken();
+    if (!authUser?.id || !sessionToken) {
+      setError("Session error — please sign out and sign back in to purchase.");
+      return;
+    }
     setLoading(plan.id); setError("");
     try {
       const res = await fetch(ENDPOINTS.checkout, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tier: plan.id, appleId: authUser?.id, sessionToken: authUser?.sessionToken || "", isNative: false }),
+        body: JSON.stringify({ tier: plan.id, appleId: authUser?.id, sessionToken, isNative: false }),
       });
       if (res.status === 403) {
         const data = await res.json().catch(() => ({}));
@@ -217,7 +243,7 @@ export default function PaywallModal({ authUser, onClose, contextCopy, userTier 
       else throw new Error("No checkout URL returned");
     } catch (err) {
       handleError(err, "stripe_upgrade");
-      setError(err?.message || "Upgrade failed. Please try again.");
+      setError(err?.message || (t?.paywallUpgradeFailed || "Upgrade failed. Please try again."));
       setLoading(null);
     }
   }
@@ -230,14 +256,14 @@ export default function PaywallModal({ authUser, onClose, contextCopy, userTier 
       const plugin = window.Capacitor?.Plugins?.StoreKitPlugin;
       if (!plugin) throw new Error("StoreKit not available");
       const { transactions } = await plugin.restorePurchases();
-      if (!transactions?.length) { setRestoreMsg("No prior purchases found."); setRestoring(false); return; }
+      if (!transactions?.length) { setRestoreMsg(t?.paywallNoPrior || "No prior purchases found."); setRestoring(false); return; }
       let bestTier = null;
       for (const tx of transactions) {
         try {
           const res = await fetch(ENDPOINTS.appleIap, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ jws: tx.jws, appleId: authUser?.id, sessionToken: authUser?.sessionToken || "" }),
+            body: JSON.stringify({ jws: tx.jws, appleId: authUser?.id, sessionToken: resolveToken() }),
           });
           if (res.ok) {
             const { tier } = await res.json();
@@ -246,10 +272,10 @@ export default function PaywallModal({ authUser, onClose, contextCopy, userTier 
         } catch { /* skip */ }
       }
       if (bestTier) { setRestoring(false); onClose("iap_success", bestTier); }
-      else { setRestoreMsg("Purchases found but could not be verified. Please contact support."); setRestoring(false); }
+      else { setRestoreMsg(t?.paywallRestoreUnverified || "Purchases found but could not be verified. Please contact support."); setRestoring(false); }
     } catch (err) {
       handleError(err, "restore_purchases");
-      setError(err?.message || "Restore failed. Please try again.");
+      setError(err?.message || (t?.paywallRestoreFailed || "Restore failed. Please try again."));
       setRestoring(false);
     }
   }
@@ -265,10 +291,18 @@ export default function PaywallModal({ authUser, onClose, contextCopy, userTier 
   const selectedPlan = paidPlans.find(p => p.tier === selected) || paidPlans[0];
   const allCards = billing === "monthly" ? [FREE_PLAN, ...MONTHLY] : LIFETIME;
 
+  // Scoring limit context — passed as special string from App.jsx
+  const isScoringLimit = contextCopy === "scoring_limit";
+
   function ctaLabel() {
-    if (!selectedPlan) return "UPGRADE";
-    if (billing === "monthly") return `GO ${selectedPlan.label} · ${selectedPlan.price}/MO`;
-    return `LOCK IN ${selectedPlan.label} · ${selectedPlan.price}`;
+    if (!selectedPlan) return t?.paywallCtaUpgrade || "UPGRADE";
+    if (billing === "monthly")
+      return (t?.paywallCtaGo || "GO {label} · {price}/MO")
+        .replace("{label}", selectedPlan.label)
+        .replace("{price}", selectedPlan.price);
+    return (t?.paywallCtaLockIn || "LOCK IN {label} · {price}")
+      .replace("{label}", selectedPlan.label)
+      .replace("{price}", selectedPlan.price);
   }
 
   const isSelectedCurrent = isCurrentPlan(selectedPlan, effectiveTier, billing);
@@ -304,7 +338,7 @@ export default function PaywallModal({ authUser, onClose, contextCopy, userTier 
         }}
         style={{
           width: "100%", padding: "16px 16px", marginBottom: 10,
-          borderRadius: 14, textAlign: "left",
+          borderRadius: 14, textAlign: isRTL ? "right" : "left",
           background: bgColor,
           border: `${borderWidth} solid ${borderColor}`,
           cursor: plan.purchasable ? "pointer" : "default",
@@ -318,16 +352,16 @@ export default function PaywallModal({ authUser, onClose, contextCopy, userTier 
           </span>
           {isCurrent && (
             <span style={{ padding: "2px 7px", borderRadius: 999, background: "#8a6200", color: "#fff", fontFamily: "var(--font-data)", fontSize: 8, fontWeight: 600, letterSpacing: "0.14em", textTransform: "uppercase" }}>
-              CURRENT
+              {t?.paywallCurrent || "CURRENT"}
             </span>
           )}
           {recommend && !isCurrent && (
             <span style={{ padding: "2px 7px", borderRadius: 999, background: "var(--accent)", color: "#fff", fontFamily: "var(--font-data)", fontSize: 8, fontWeight: 600, letterSpacing: "0.14em", textTransform: "uppercase" }}>
-              RECOMMENDED
+              {t?.paywallRecommended || "RECOMMENDED"}
             </span>
           )}
           {billing === "lifetime" && plan.slotsLabel && (
-            <span style={{ marginLeft: "auto", fontFamily: "var(--font-data)", fontSize: 8, letterSpacing: "0.10em", color: "#8a6200", textTransform: "uppercase", fontWeight: 600 }}>
+            <span style={{ marginLeft: isRTL ? 0 : "auto", marginRight: isRTL ? "auto" : 0, fontFamily: "var(--font-data)", fontSize: 8, letterSpacing: "0.10em", color: "#8a6200", textTransform: "uppercase", fontWeight: 600 }}>
               {plan.slotsLabel}
             </span>
           )}
@@ -376,7 +410,7 @@ export default function PaywallModal({ authUser, onClose, contextCopy, userTier 
                   textTransform: "uppercase", fontWeight: 500,
                 }}
               >
-                + {hiddenCount} MORE · TAP TO SEE
+                {(t?.paywallMoreTap || "+ {n} MORE · TAP TO SEE").replace("{n}", hiddenCount)}
               </button>
             )}
           </div>
@@ -385,9 +419,12 @@ export default function PaywallModal({ authUser, onClose, contextCopy, userTier 
     );
   }
 
+  const isRTL = t?.dir === "rtl";
+
   return (
     <div
       role="dialog" aria-modal="true" aria-labelledby="paywall-title"
+      dir={isRTL ? "rtl" : "ltr"}
       style={{
         position: "fixed", inset: 0, zIndex: 1000,
         background: "var(--paper)", display: "flex", flexDirection: "column",
@@ -395,9 +432,9 @@ export default function PaywallModal({ authUser, onClose, contextCopy, userTier 
       ref={dialogRef}
     >
       {/* Top bar */}
-      <header style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "54px 8px 6px 20px", flexShrink: 0 }}>
+      <header style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: isRTL ? "54px 20px 6px 8px" : "54px 8px 6px 20px", flexShrink: 0 }}>
         <div style={{ fontFamily: "var(--font-data)", fontSize: 11, letterSpacing: "0.18em", color: "var(--muted)", textTransform: "uppercase" }}>
-          UPGRADE
+          {t?.paywallHeader || "UPGRADE"}
         </div>
         <button onClick={() => onClose()} aria-label="Close" style={{ background: "transparent", border: "none", cursor: "pointer", width: 44, height: 44, display: "inline-flex", alignItems: "center", justifyContent: "center", color: "var(--ink)" }}>
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -409,26 +446,47 @@ export default function PaywallModal({ authUser, onClose, contextCopy, userTier 
       {/* Scrollable body */}
       <div style={{ flex: 1, minHeight: 0, overflowY: "auto", paddingBottom: 140 }}>
 
+        {/* Scoring limit banner (shown when user hit their daily limit) */}
+        {isScoringLimit && (
+          <div style={{ margin: "0 20px 4px", padding: "14px 16px", background: "var(--gold)", borderRadius: 12 }}>
+            <div style={{ fontFamily: "var(--font-data)", fontSize: 9.5, letterSpacing: "0.16em", fontWeight: 700, color: "#1A1F18", textTransform: "uppercase", marginBottom: 5 }}>
+              {t?.paywallHeader || "UPGRADE"}
+            </div>
+            <div style={{ fontFamily: "var(--font-prose)", fontSize: 14, color: "#2a2200", lineHeight: 1.5, fontWeight: 500 }}>
+              {t?.paywallSubScoringLimit || "You've used your 5 free scores today. Upgrade for unlimited scoring."}
+            </div>
+          </div>
+        )}
+
         {/* Hero */}
         <div style={{ padding: "12px 20px 16px" }}>
           <h1 id="paywall-title" style={{ fontFamily: "var(--font-prose)", fontSize: 26, fontWeight: 500, color: "var(--ink)", lineHeight: 1.2, margin: 0, letterSpacing: "-0.005em" }}>
-            {heroTitle(effectiveTier)}
+            {heroTitle(effectiveTier, t)}
           </h1>
-          <p style={{ margin: "10px 0 0", fontFamily: "var(--font-prose)", fontSize: 14, fontStyle: "italic", color: "var(--muted)", lineHeight: 1.5 }}>
-            {billing === "lifetime"
-              ? "183 founding Signal seats remain. 71 for Vantage. Pay once, own it forever."
-              : contextCopy
-                ? contextCopy.replace(/[\.\s]*(Signal|Vantage) feature\.?$/i, "").trim()
-                : "Unlimited scoring. Full AI analysis. Cancel anytime."}
-          </p>
+          {!isScoringLimit && (
+            <p style={{ margin: "10px 0 0", fontFamily: "var(--font-prose)", fontSize: 14, fontStyle: "italic", color: "var(--muted)", lineHeight: 1.5 }}>
+              {billing === "lifetime"
+                ? (t?.paywallSubLifetime || "183 founding Signal seats remain. 71 for Vantage. Pay once, own it forever.")
+                : contextCopy
+                  ? contextCopy.replace(/[\.\s]*(Signal|Vantage) feature\.?$/i, "").trim()
+                  : (t?.paywallSubDefault || "Unlimited scoring. Full AI analysis. Cancel anytime.")}
+            </p>
+          )}
+          {isScoringLimit && (
+            <p style={{ margin: "10px 0 0", fontFamily: "var(--font-prose)", fontSize: 14, fontStyle: "italic", color: "var(--muted)", lineHeight: 1.5 }}>
+              {billing === "lifetime"
+                ? (t?.paywallSubLifetime || "183 founding Signal seats remain. 71 for Vantage. Pay once, own it forever.")
+                : (t?.paywallSubDefault || "Unlimited scoring. Full AI analysis. Cancel anytime.")}
+            </p>
+          )}
         </div>
 
         {/* Billing toggle */}
         <div style={{ padding: "4px 20px 14px" }}>
           <div style={{ display: "inline-flex", padding: 3, background: "var(--cream)", borderRadius: 999, border: "0.5px solid var(--border)" }}>
             {[
-              { id: "monthly",  label: "MONTHLY" },
-              { id: "lifetime", label: "FOUNDING · LIFETIME" },
+              { id: "monthly",  label: t?.paywallMonthly || "MONTHLY" },
+              { id: "lifetime", label: t?.paywallLifetime || "FOUNDING · LIFETIME" },
             ].map(b => {
               const active = b.id === billing;
               return (
@@ -449,10 +507,10 @@ export default function PaywallModal({ authUser, onClose, contextCopy, userTier 
         {billing === "lifetime" && (
           <div style={{ margin: "0 20px 14px", padding: "12px 16px", background: "var(--gold)", borderRadius: 10 }}>
             <div style={{ fontFamily: "var(--font-data)", fontSize: 9.5, letterSpacing: "0.16em", fontWeight: 700, color: "#1A1F18", textTransform: "uppercase", marginBottom: 4 }}>
-              FOUNDING MEMBER · 254 OF 300 LEFT
+              {t?.paywallFoundingBadge || "FOUNDING MEMBER · 254 OF 300 LEFT"}
             </div>
             <div style={{ fontFamily: "var(--font-prose)", fontSize: 12.5, color: "#2a2200", lineHeight: 1.5 }}>
-              Pay once, own it forever. Signal $399.99 · Vantage $799.99
+              {t?.paywallFoundingDesc || "Pay once, own it forever. Signal $399.99 · Vantage $799.99"}
             </div>
           </div>
         )}
@@ -464,12 +522,14 @@ export default function PaywallModal({ authUser, onClose, contextCopy, userTier 
 
         {/* How it works */}
         <div style={{ margin: "0 20px 18px", padding: "14px 0", borderTop: "0.5px solid var(--border)", borderBottom: "0.5px solid var(--border)" }}>
-          <div style={{ fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: "0.14em", color: "#8A9A8A", textTransform: "uppercase", fontWeight: 500, marginBottom: 10 }}>HOW IT WORKS</div>
+          <div style={{ fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: "0.14em", color: "#8A9A8A", textTransform: "uppercase", fontWeight: 500, marginBottom: 10 }}>
+            {t?.paywallHowItWorks || "HOW IT WORKS"}
+          </div>
           {[
-            "Cancel anytime. No retention dance, no win-back emails.",
-            "All your past scores stay yours, even on Free.",
-            "Founding is one-time — own the tier for life.",
-            "Features unlock instantly — no waiting period.",
+            t?.paywallHow1 || "Cancel anytime. No retention dance, no win-back emails.",
+            t?.paywallHow2 || "All your past scores stay yours, even on Free.",
+            t?.paywallHow3 || "Founding is one-time — own the tier for life.",
+            t?.paywallHow4 || "Features unlock instantly — no waiting period.",
           ].map((line, i) => (
             <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "5px 0", fontFamily: "var(--font-prose)", fontSize: 13.5, color: "var(--ink)", lineHeight: 1.5 }}>
               <span style={{ flexShrink: 0, width: 5, height: 1, background: "var(--muted)", marginTop: 9 }}/>
@@ -482,20 +542,26 @@ export default function PaywallModal({ authUser, onClose, contextCopy, userTier 
         <div style={{ padding: "0 20px 12px", textAlign: "center" }}>
           {isNativeApp && (
             <p style={{ fontSize: 11, color: "var(--muted)", lineHeight: 1.6, marginBottom: 8 }}>
-              Payment will be charged to your Apple ID at confirmation of purchase. Subscriptions automatically renew unless cancelled at least 24 hours before the end of the current period.
+              {t?.paywallLegalApple || "Payment will be charged to your Apple ID at confirmation of purchase. Subscriptions automatically renew unless cancelled at least 24 hours before the end of the current period."}
             </p>
           )}
           <p style={{ fontSize: 11, color: "var(--muted)", lineHeight: 1.6, marginBottom: 10 }}>
-            {isNativeApp ? "Vetted · Career Intelligence Subscription" : "Payment processed securely by Stripe. Cancel anytime."}
+            {isNativeApp
+              ? (t?.paywallLegalAppleSub || "Vetted · Career Intelligence Subscription")
+              : (t?.paywallLegalStripe || "Payment processed securely by Stripe. Cancel anytime.")}
           </p>
           <p style={{ fontSize: 11, color: "var(--muted)" }}>
-            <a href={ENDPOINTS.privacy} target="_blank" rel="noopener noreferrer" style={{ color: "var(--muted)", textDecoration: "underline" }}>Privacy Policy</a>
+            <a href={ENDPOINTS.privacy} target="_blank" rel="noopener noreferrer" style={{ color: "var(--muted)", textDecoration: "underline" }}>
+              {t?.paywallPrivacy || "Privacy Policy"}
+            </a>
             <span style={{ margin: "0 8px" }}>·</span>
-            <a href={ENDPOINTS.terms} target="_blank" rel="noopener noreferrer" style={{ color: "var(--muted)", textDecoration: "underline" }}>Terms of Use</a>
+            <a href={ENDPOINTS.terms} target="_blank" rel="noopener noreferrer" style={{ color: "var(--muted)", textDecoration: "underline" }}>
+              {t?.paywallTerms || "Terms of Use"}
+            </a>
           </p>
           {isNativeApp && (
             <button onClick={handleRestorePurchases} disabled={restoring || !!loading} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted)", fontSize: 12, textDecoration: "underline", fontFamily: "inherit", padding: "4px 8px", minHeight: 36, marginTop: 6 }}>
-              {restoring ? "Restoring…" : "Restore Purchases"}
+              {restoring ? (t?.paywallRestoring || "Restoring…") : (t?.paywallRestore || "Restore Purchases")}
             </button>
           )}
         </div>
@@ -526,9 +592,9 @@ export default function PaywallModal({ authUser, onClose, contextCopy, userTier 
           }}
         >
           {loading
-            ? <><span className="spinner" style={{ width: 14, height: 14, borderWidth: 2 }} aria-hidden="true" /> Starting…</>
+            ? <><span className="spinner" style={{ width: 14, height: 14, borderWidth: 2 }} aria-hidden="true" /> {t?.paywallStarting || "Starting…"}</>
             : isSelectedCurrent
-              ? `YOU'RE ON ${selectedPlan?.label || "THIS PLAN"}`
+              ? (t?.paywallOnPlan || "YOU'RE ON {label}").replace("{label}", selectedPlan?.label || "THIS PLAN")
               : <>
                   {ctaLabel()}
                   <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -540,12 +606,14 @@ export default function PaywallModal({ authUser, onClose, contextCopy, userTier 
         </button>
         {!loading && !isSelectedCurrent && (
           <div style={{ marginTop: 6, textAlign: "center", fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: "0.10em", color: "#8A9A8A", textTransform: "uppercase" }}>
-            {fromLabel(effectiveTier)} · {isNativeApp ? "SECURED BY APPLE" : "SECURED BY STRIPE"}
+            {fromLabel(effectiveTier, t)} · {isNativeApp ? (t?.paywallSecuredApple || "SECURED BY APPLE") : (t?.paywallSecuredStripe || "SECURED BY STRIPE")}
           </div>
         )}
         {(loading || isSelectedCurrent) && (
           <div style={{ marginTop: 6, textAlign: "center", fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: "0.10em", color: "#8A9A8A", textTransform: "uppercase" }}>
-            {isNativeApp ? "SECURED BY APPLE · CANCEL ANYTIME" : "SECURED BY STRIPE · CANCEL ANYTIME"}
+            {isNativeApp
+              ? `${t?.paywallSecuredApple || "SECURED BY APPLE"} · ${t?.paywallCancelAnytime || "CANCEL ANYTIME"}`
+              : `${t?.paywallSecuredStripe || "SECURED BY STRIPE"} · ${t?.paywallCancelAnytime || "CANCEL ANYTIME"}`}
           </div>
         )}
       </div>

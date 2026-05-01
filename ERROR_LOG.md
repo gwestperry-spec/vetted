@@ -1015,36 +1015,36 @@ LOCATION SCORING RULE: If the role is remote, fully remote, or remote-first, tre
 
 ---
 
-## Build History Summary (updated April 27, 2026)
+## Build History Summary (updated May 1, 2026)
 
-| Version | Build | Status | Key Changes |
-|---|---|---|---|
-| v1.0 | 1 | Superseded | Initial launch, scoring engine, Netlify backend |
-| v1.0.1 | 2 | Superseded | iOS absolute URL fix |
-| v1.1 | — | Superseded | Filter labels, VQ score display |
-| v1.2 | 3 | Superseded | Sign in with Apple, Supabase, security hardening |
-| v1.3 | 4 | Superseded | iOS 26 presentationAnchor fix |
-| v1.4 | 5 | Cancelled | Superseded before review |
-| v1.4 | 6 | Cancelled | 500 token truncation bug |
-| v1.5 | 7 | Superseded | max_tokens 2000 restored — broken by secret mismatch |
-| v1.6.0 | 8 | Superseded | Secret rotation fix, Supabase key fix, free tier gating, Sentry, config.js |
-| v2.0 | 9–12 | Superseded | Paywall, Stripe integration, lifetime tiers, session bridge |
-| v2.0 | 13 | Superseded | Incremented before submission |
-| v2.0.1 | 14 | Accepted — login broken | Carousels missing (not synced), Sign In with Apple failing (bundle ID typo) |
-| v2.0.2 | 15 | Approved — IAP not configured | Login fix, both carousels, session restore, Restore Purchases button |
-| v2.0.3 | 16 | Submitted | AppDelegate plugin race fix, Market Pulse role toolbar, all 4 IAP products submitted |
-| v2.0.3 | 17 | Rejected (2.1a) | iPad Sign in with Apple broken — presentationAnchor returned detached UIWindow() |
-| v2.1 | 18 | Rejected (2.1a) | Same iPad Sign in with Apple failure — authController deallocation + wrong window priority |
-| v2.001.1 | 19 | Failed processing | ITSAppUsesNonExemptEncryption missing from Info.plist |
-| v2.001.1 | 20 | Rejected at upload | TARGETED_DEVICE_FAMILY changed to "1" — cannot remove iPad support |
-| v2.001.1 | 21 | In review | All fixes applied (authController retain, foreground scene anchor, export compliance, iPad orientations) — resubmitted after orientation validation fix; awaiting Apple Review |
-| v2.001.1 | 22 | Superseded | Typography system (IBM Plex Mono + Inter), sign-in polish, iOS safe area fix, salary lookup geo-qualifier fix, compound-title retry, seniority fallback, application status tracker, PaywallModal disclosure |
-| v2.1.3 | 23 | Superseded | Serif display font (Libre Baskerville), scorecard hero contrast fixes, coach icon card layout, Profile/Filters nav from workspace, name pill border fix, loading screen contrast, "← Your Workspace" back button, Score a Role pill wrap fix |
-| v2.1.3 | 24 | In Review (Apr 26) | All build 23 UI changes + persistence bug fix (server-side Supabase upsert header); no binary delta required for server fix |
-| v2.1.4 | 25 | Pending submission | "Remove This Role" fix (3 stacked bugs); Delete button for archived cards; comprehensive UI translation; Export PDF translation + RTL; Market Pulse → Perplexity Sonar (live web data + citations); language scoring hint; **Security hardening sprint**: sanitizeTitle.js + sanitizePromptField.js shared modules; all AI prompt inputs sanitized server-side (profile, filters, background, resume, JD delimiter); IP rate limiting on market-pulse; max_tokens server cap; stored injection closed at DB write time in supabase.js |
-| v2.1.4 | post-25 | Live (Apr 27) | Profile restore key mismatch fix (Errors 77–78); Market Pulse joyplot target comp scale fix; display name "User" fix; per-field EDIT buttons on profile tab; timeline/country/currency now persisted to Supabase; fmtComp() helper for full-dollar comp display; session restore completeness audit |
-| v2.1.4 | post-26 | Live (Apr 27) | Full i18n pass — translations wired across ProfileTab, ScoreEntry, HamburgerSheet, SettingsTab (Errors 81–83); loading screen weight-label + filter-match fixes (Errors 84–85); hamburger share export wired end-to-end (Error 86); web export popup-blocker fix via `<a download>` (Error 87); iOS export silent failure surfaced with alert (Error 88); remote-role location scoring rule injected into prompt (Error 89) |
-| v2.1.5 | 25 | Pending submission (Apr 28) | Terms of Service hosted at tryvettedai.com/terms (public/terms.html); privacy ↔ terms cross-links; ENDPOINTS.terms updated; workspace title + headline translated (Errors 90–91); "User" name sentinel excluded from display fallback (Error 92); VQ Advocate fully translated — all 7 languages, ~60 keys each, fmt() interpolation helper, t prop wired throughout VQAdvocate.jsx; LinkedIn guide translated all 7 languages; hamburger About pane trimmed to Privacy + Terms; copyright year corrected to 2026; Terms link fixes across SignInGate + config.js; /terms Netlify redirect added (Errors 93–97) |
+| Date | Version | Build | Status | Key Changes |
+|---|---|---|---|---|
+| Early Mar 2026 | v1.0 | 1 | Superseded | Initial launch, scoring engine, Netlify backend |
+| Early Mar 2026 | v1.0.1 | 2 | Superseded | iOS absolute URL fix |
+| Mid Mar 2026 | v1.1 | — | Superseded | Filter labels, VQ score display |
+| Mid Mar 2026 | v1.2 | 3 | Superseded | Sign in with Apple, Supabase, security hardening |
+| Mid Mar 2026 | v1.3 | 4 | Superseded | iOS 26 presentationAnchor fix |
+| Mid Mar 2026 | v1.4 | 5 | Cancelled | Superseded before review |
+| Mid Mar 2026 | v1.4 | 6 | Cancelled | 500 token truncation bug |
+| Late Mar 2026 | v1.5 | 7 | Superseded | max_tokens 2000 restored — broken by secret mismatch |
+| Late Mar 2026 | v1.6.0 | 8 | Superseded | Secret rotation fix, Supabase key fix, free tier gating, Sentry, config.js |
+| Late Mar 2026 | v2.0 | 9–12 | Superseded | Paywall, Stripe integration, lifetime tiers, session bridge |
+| Late Mar 2026 | v2.0 | 13 | Superseded | Incremented before submission |
+| Early Apr 2026 | v2.0.1 | 14 | Accepted — login broken | Carousels missing (not synced), Sign In with Apple failing (bundle ID typo) |
+| Early Apr 2026 | v2.0.2 | 15 | Approved — IAP not configured | Login fix, both carousels, session restore, Restore Purchases button |
+| Apr 6, 2026 | v2.0.3 | 16 | Submitted | AppDelegate plugin race fix, Market Pulse role toolbar, all 4 IAP products submitted |
+| Apr 8, 2026 | v2.0.3 | 17 | Rejected (2.1a) | iPad Sign in with Apple broken — presentationAnchor returned detached UIWindow() |
+| Apr 10, 2026 | v2.1 | 18 | Rejected (2.1a) | Same iPad Sign in with Apple failure — authController deallocation + wrong window priority |
+| Apr 11, 2026 | v2.001.1 | 19 | Failed processing | ITSAppUsesNonExemptEncryption missing from Info.plist |
+| Apr 11, 2026 | v2.001.1 | 20 | Rejected at upload | TARGETED_DEVICE_FAMILY changed to "1" — cannot remove iPad support |
+| Apr 12, 2026 | v2.001.1 | 21 | Superseded | All fixes applied (authController retain, foreground scene anchor, export compliance, iPad orientations) |
+| Apr 16, 2026 | v2.001.1 | 22 | Superseded | Typography system (IBM Plex Mono + Inter), sign-in polish, iOS safe area fix, salary lookup geo-qualifier fix, compound-title retry, seniority fallback, application status tracker, PaywallModal disclosure |
+| Apr 22, 2026 | v2.1.3 | 23 | Superseded | Serif display font (Libre Baskerville), scorecard hero contrast fixes, coach icon card layout, Profile/Filters nav from workspace, name pill border fix, loading screen contrast, "← Your Workspace" back button, Score a Role pill wrap fix |
+| Apr 26, 2026 | v2.1.3 | 24 | Superseded | All build 23 UI changes + persistence bug fix (server-side Supabase upsert header) |
+| Apr 27, 2026 | v2.1.4 | — | Live (web) | Profile restore key mismatch fix; Market Pulse joyplot target comp scale fix; display name "User" fix; per-field EDIT buttons; timeline/country/currency persisted; fmtComp() helper; session restore audit (Errors 77–80) |
+| Apr 27, 2026 | v2.1.4 | — | Live (web) | Full i18n pass — ProfileTab, ScoreEntry, HamburgerSheet, SettingsTab; loading screen weight-label + filter-match fixes; hamburger share/export; web + iOS export fixes; remote-role location scoring rule (Errors 81–89) |
+| Apr 28, 2026 | v2.2.0 | 25 | Accepted (Apr 29) | Terms of Service at tryvettedai.com/terms; workspace title + headline translated; VQ Advocate fully translated (all 7 languages, ~60 keys); LinkedIn guide translated; hamburger About pane; Libre Baskerville typography sweep; GET MY VQ button rename (Errors 90–93) |
+| May 1, 2026 | v2.2.1 | 26 | Submitted | Spaces in inputs fixed; weight labels translated; profile tappable rows; hamburger on all tabs; Score/Workspace/Advocate strings translated; salary full-dollar entry; filter counter live; coaching pairs in all 7 languages (Errors 94–102) |
 
 ---
 
@@ -1087,3 +1087,156 @@ LOCATION SCORING RULE: If the role is remote, fully remote, or remote-first, tre
 - `PatternDetail`, `VQAdvocateScreen`, `VQAdvocateCard` all accept `t = {}`.
 - Passed `t={t}` at both call sites: App.jsx (VQAdvocateScreen) and RoleWorkspace.jsx (VQAdvocateCard).
 **Files:** `src/i18n/translations.js`, `src/components/VQAdvocate.jsx`, `src/App.jsx`, `src/components/workspace/RoleWorkspace.jsx`
+
+---
+
+## Error 94 — Text inputs strip spaces between words
+**Build:** v2.2.1 development
+**Symptom:** Typing a first and last name (e.g. "Sarah Johnson") — the space disappeared and text fused as "SarahJohnson".
+**Root cause:** `sanitizeText()` in `src/utils/sanitize.js` called `.trim()` inside the function body, which ran on every `onChange` keystroke and removed trailing spaces before they could be followed by the next word.
+**Fix:** Removed `.trim()` from `sanitizeText()` body. Submit handlers already call `.trim()` explicitly on save.
+**File:** `src/utils/sanitize.js`
+
+---
+
+## Error 95 — Weight labels show as numbers during scoring (e.g. "1.3×" instead of "Important")
+**Build:** v2.2.1 development
+**Symptom:** During scoring and on the scorecard, filter weight badges showed raw multipliers ("1.2×", "1.3×") instead of descriptors ("Slightly Important", "Important").
+**Root cause:** Two separate issues: (1) `resolveWeightLabel` in ScoreResult.jsx used an exact lookup against steps [1.0, 1.5, 2.0, 2.5, 3.0] — weights stored from older filter sets used a different scale [0.5, 1.0, 1.2, 1.3, 1.5, 2.0] causing all lookups to miss and fall back to the raw number. (2) `weightLabel` in VQLoadingScreen.jsx had the same exact-match problem.
+**Fix:** Both functions now use nearest-step reduction (`steps.reduce(...)`) instead of exact match. VQLoadingScreen also updated to accept and use `t` prop for translated labels.
+**Files:** `src/components/ScoreResult.jsx`, `src/components/VQLoadingScreen.jsx`
+
+---
+
+## Error 96 — Profile page cluttered with too many EDIT buttons
+**Build:** v2.2.1 development
+**Symptom:** Every field section had its own EDIT button, making the profile page feel noisy and repetitive. User: "it has EDIT too frequently."
+**Root cause:** Design choice — each ProfileSection and ProfileField had independent edit affordances.
+**Fix:** Redesigned profile tab as full-width tappable rows (`ProfileRow`) with a chevron indicator. Single "Tap any row to edit" hint caption replaces all individual EDIT buttons. Translatable via `t.profileEditHint` in all 7 languages.
+**File:** `src/App.jsx`
+
+---
+
+## Error 97 — Hamburger menu missing from Market Pulse, Filters, Profile, Settings tabs
+**Build:** v2.2.1 development
+**Symptom:** Hamburger (≡) was only accessible from the Score and Workspace tabs.
+**Root cause:** `onOpenMenu` prop not passed to `MarketPulse`, `FiltersStep`, `ProfileTab`, or `SettingsTab`.
+**Fix:** Added `onOpenMenu` prop and hamburger button to all five tab components.
+**Files:** `src/components/MarketPulse.jsx`, `src/components/FiltersStep.jsx`, `src/App.jsx`
+
+---
+
+## Error 98 — Score tab KPI strip and cohort list not translating
+**Build:** v2.2.1 development
+**Symptom:** "VS. STLW", "AVG VQ", "SCORED", "PURSUE" labels and role count text remained in English regardless of language.
+**Root cause:** Hardcoded English strings in `ScoreEntry.jsx` — no `t` keys wired.
+**Fix:** Added `t.scoreVsStlw`, `t.scoreAvgVq`, `t.scoreScored`, `t.scorePursueLabel`, `t.scoreRoleOne`, `t.scoreRoleMany`, `t.scoreUntitled` in all 7 languages and wired in `ScoreEntry.jsx`.
+**Files:** `src/components/ScoreEntry.jsx`, `src/i18n/translations.js`
+
+---
+
+## Error 99 — Workspace verdict pills, time labels, and VQ Advocate strings not translating
+**Build:** v2.2.1 development
+**Symptom:** PURSUE/MONITOR/PASS pills, time labels (TODAY, 3D AGO), VQ Advocate footer ("MORE IN MENU", "OPEN →"), and the "Pursue" word in workspace headline all remained in English.
+**Root cause:** (1) `WsVerdictPill` component did not accept `t` prop. (2) `wsAgoLabel()` function had hardcoded English strings. (3) VQAdvocate card footer had hardcoded "MORE IN MENU" / "ALL IN MENU" / "OPEN →". (4) Headline translations for ES/FR/VI/PT contained the English word "Pursue" mid-sentence.
+**Fix:** Passed `t` to `WsVerdictPill`; `wsAgoLabel` now accepts `t` and uses translation keys `wsToday`, `wsDaysAgo`, `ws1WeekAgo`, etc.; VQAdvocate strings wired to `t.vqaMoreInMenu`, `t.vqaAllInMenu`, `t.vqaOpen`; headline strings corrected in ES/FR/VI/PT to use native word. All keys added to all 7 languages.
+**Files:** `src/components/workspace/RoleWorkspace.jsx`, `src/components/VQAdvocate.jsx`, `src/i18n/translations.js`
+
+---
+
+## Error 100 — Salary input shows "K USD" suffix causing confusion about scale
+**Build:** v2.2.1 development
+**Symptom:** Salary input displayed "$ [value] K USD" — users unclear whether to enter thousands or full amounts. User: "the K issue for salary persists."
+**Root cause:** `FieldInput` money case in Onboarding.jsx appended a `K {currency}` suffix and stored raw numbers as thousands.
+**Fix:** Removed K/USD suffix. Input now accepts full dollar amounts with live comma formatting (type `230000` → displays `230,000`). Raw digits stripped of non-numeric characters; capped at 8 digits ($99,999,999 max). `fmtComp()` and MarketPulse already expected full-dollar storage — no downstream changes needed.
+**File:** `src/components/Onboarding.jsx`
+
+---
+
+## Error 101 — Filter progress counter (0/6) stuck at zero during scoring in non-English languages
+**Build:** v2.2.1 development
+**Symptom:** The live filter counter on the scoring screen stayed at "0 / 6" throughout scoring when language was set to anything other than English.
+**Root cause:** The AI scoring prompt instructed the model to "Respond in [language] for all text fields." This caused `filter_name` in the streamed JSON response to come back in the user's language (e.g. "Responsabilidad Financiera" in Spanish). The matching logic in `VQLoadingScreen` compared streamed names against English filter names — no match found, so no filters were marked done.
+**Fix:** Updated scoring prompt to explicitly exempt `filter_name` from language translation: "The `filter_name` field must always be in English, exactly matching the filter name as given in the SCORING FRAMEWORK." Same pattern already used for `recommendation`.
+**File:** `src/App.jsx`
+
+---
+
+## Error 110 — PaywallModal layout not mirrored for Arabic (RTL)
+**Build:** Build 27 prep
+**Symptom:** Arabic text rendered correctly but the layout remained LTR — close button on the right, text left-aligned, plan card prices and labels in the wrong positions, billing toggle in wrong order, CTA arrow pointing the wrong direction.
+**Root cause:** `PaywallModal.jsx` had no `dir` attribute on its root element. The `t.dir` field exists in `translations.js` (Arabic has `dir: "rtl"`, all others `dir: "ltr"`) but was never consumed by the modal.
+**Fix:** Added `isRTL = t?.dir === "rtl"` and applied `dir={isRTL ? "rtl" : "ltr"}` to the root dialog div. Browsers mirror the entire layout automatically from this single attribute. Three manual overrides also applied: (1) header padding flipped from `54px 8px 6px 20px` → `54px 20px 6px 8px` in RTL; (2) plan card `textAlign` changed from hardcoded `"left"` to `isRTL ? "right" : "left"`; (3) slots label margin flipped from `marginLeft: auto` to `marginRight: auto` in RTL. All other elements (flex rows, bullet alignment, billing toggle order, CTA arrow direction) flip correctly from the single `dir` attribute.
+**File:** `src/components/PaywallModal.jsx`
+
+---
+
+## Error 109 — Purchase fails with "appleId and sessionToken are required"
+**Build:** Build 27 prep
+**Symptom:** Tapping GO SIGNAL or GO VANTAGE showed the error "tier, appleId, and sessionToken are required" in the paywall modal instead of opening the Stripe or StoreKit flow.
+**Root cause:** Race condition during session restore. On app load, `useAuth` immediately sets `authUser` with an empty `sessionToken` (while the async `restoreSession` fetch is still in-flight to validate/retrieve the token). If the user opens the paywall before the token is confirmed, `authUser.sessionToken` is `""` — which the server rejects as invalid.
+**Fix:** Added `resolveToken()` helper in `PaywallModal.jsx` that falls back to `sessionStorage.getItem("vetted_session_token")` and `localStorage.getItem("vetted_session_token")` before sending the request. If the token still can't be resolved, shows a friendly inline error ("Session error — please sign out and sign back in") instead of silently sending a bad request. Applied to all three paths: IAP upgrade, Stripe upgrade, and Restore Purchases.
+**File:** `src/components/PaywallModal.jsx`
+
+---
+
+## Error 103 — Coaching sections show [object Object] in non-English languages
+**Build:** v2.2.1 (found post-submission, fixed in Build 27 prep)
+**Symptom:** Coaching tab sections (Interview Prep, Negotiation, Go/No-Go) displayed "[object Object]" instead of text when scored in French, Spanish, or other non-English languages.
+**Root cause:** The Claude model occasionally returned nested arrays or objects for coaching fields (e.g. `interview_prep: [{topic: "...", detail: "..."}]`) when responding in non-English. The app stored these raw values directly without defensive parsing.
+**Fix:** (1) Updated scoring prompt to explicitly state "ALL values must be plain strings, NOT arrays, NOT objects, NOT nested JSON." (2) Added `flattenField()` defensive parser in `ScoreResult.jsx` that handles string/array/object gracefully — arrays join with newlines, objects join values with " — ".
+**Files:** `src/components/ScoreResult.jsx`, `src/App.jsx`
+
+---
+
+## Error 104 — Coaching text remains in English after switching language
+**Build:** v2.2.1 (found post-submission, fixed in Build 27 prep)
+**Symptom:** If a user scored a role in English, then switched to French and opened the Coaching tab, the coaching text stayed in English.
+**Root cause:** `coachingCache` in `ScoreResult.jsx` persisted across language switches with no language tag.
+**Fix:** Added `coachingLang` state alongside `coachingCache`. Cache is only considered valid when `coachingLang === lang`. Any language switch invalidates the cache and forces a fresh coaching fetch.
+**File:** `src/components/ScoreResult.jsx`
+
+---
+
+## Error 105 — Insights/Analysis tab shows English text when scored in non-English language
+**Build:** v2.2.1 (found post-submission, fixed in Build 27 prep)
+**Symptom:** User scored a role in French; the Insights tab (rationale, strengths, gaps, honest fit, narrative bridge) displayed in English.
+**Root cause:** The LANGUAGE REQUIREMENT instruction was buried in the middle of the long scoring prompt, causing the model to deprioritize it.
+**Fix:** Restructured scoring prompt with a prominent `LANGUAGE REQUIREMENT` block at the very top AND a `REMINDER` line immediately before the JSON shape. Model compliance confirmed for all 7 languages.
+**File:** `src/App.jsx`
+
+---
+
+## Error 106 — PASS / SAVE / APPLY action buttons not translating
+**Build:** v2.2.1 (found post-submission, fixed in Build 27 prep)
+**Symptom:** The three action buttons in `ActionTracker` (ScoreResult status tab) always showed PASS / SAVE / APPLY in English regardless of language.
+**Root cause:** `ActionTracker` component had no `t` prop and used hardcoded English strings for all button labels.
+**Fix:** Added `t` prop to `ActionTracker`. Labels now use `t?.pass`, `t?.save`, `t?.apply`, `t?.passed`, `t?.saved`, `t?.applied` with uppercase conversion. All keys already existed in translations.js from the workspace work.
+**File:** `src/components/ScoreResult.jsx`
+
+---
+
+## Error 107 — Workspace scroll becomes unwieldy with 50+ scored roles
+**Build:** v2.2.1 (found post-submission, fixed in Build 27 prep)
+**Symptom:** Users who scored many roles faced an extremely long workspace page with no contained scroll.
+**Root cause:** The role history list in `RoleWorkspace.jsx` had no height constraint — it expanded the entire page.
+**Fix:** Wrapped the search bar through role list (THIS WEEK, EARLIER sections, empty states) in a `<div>` with `maxHeight: 630, overflowY: "auto", WebkitOverflowScrolling: "touch"`. The outer page chrome (header, score button) remains fixed.
+**File:** `src/components/workspace/RoleWorkspace.jsx`
+
+---
+
+## Error 108 — No contextual paywall when daily scoring limit is hit
+**Build:** Build 27 prep
+**Symptom:** When a free user hit the 10-score monthly limit, the generic upgrade modal appeared with no explanation of why it opened — no mention of a score limit or upgrade benefit for scoring.
+**Root cause:** (1) Scoring limit was 10/month — not ideal for daily activation pressure. (2) Both `limitReached` branches in `App.jsx` called `setShowPaywall(true)` without setting `paywallContext`. (3) `PaywallModal` had no `t` prop and all strings hardcoded in English. (4) No scoring-specific copy existed.
+**Fix:** Three-step fix: (1) `supabase.js` — changed `limit` from 10 to 5, changed reset from first-of-next-month to tomorrow-midnight UTC. (2) `App.jsx` — both `limitReached` branches now call `setPaywallContext("scoring_limit")` before `setShowPaywall(true)`. Added `t` prop to `<PaywallModal>` render. (3) `PaywallModal.jsx` — full translation overhaul: added `t` prop, `getPlans(t)` helper builds translated plan objects, all hardcoded English strings replaced with `t?.key || "fallback"` pattern. Added scoring-limit gold banner shown when `contextCopy === "scoring_limit"`. Updated FREE_PLAN bullet from "3 roles per month" → "5 roles per day". Added `paywallSubScoringLimit` key in all 7 languages. Also added 60+ translation keys (hero titles, billing toggle, plan taglines/bullets, How It Works, legal text, CTA labels, badges, error messages) to all 7 languages in `translations.js`.
+**Files:** `netlify/functions/supabase.js`, `src/App.jsx`, `src/components/PaywallModal.jsx`, `src/i18n/translations.js`
+
+---
+
+## Error 102 — Scoring loading screen coaching prompts English-only for all languages
+**Build:** v2.2.1 development
+**Symptom:** The reflective question/statement pairs displayed during scoring always showed in English, regardless of the user's language setting.
+**Root cause:** `COACHING_PAIRS` array in `VQLoadingScreen.jsx` was a single hardcoded English set with no language branching.
+**Fix:** Created `src/i18n/coachingPairs.js` with 3 natively-written pairs per non-English language (es, fr, zh, ar, vi, pt) — not translations of the English set, but independent pairs crafted in each language's voice. `VQLoadingScreen` imports `COACHING_PAIRS_BY_LANG` and selects the active set based on `lang` prop. English retains the full 51-pair weighted pool.
+**Files:** `src/i18n/coachingPairs.js` (new), `src/components/VQLoadingScreen.jsx`
