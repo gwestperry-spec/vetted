@@ -237,6 +237,12 @@ exports.handler = async (event) => {
     return { statusCode: 405, headers: corsHeaders(origin), body: JSON.stringify({ error: "Method not allowed" }) };
   }
 
+  // ── Origin gate — reject non-app traffic before body parse or any DB call ──
+  if (origin && !ALLOWED_ORIGINS.includes(origin)) {
+    console.warn(`[supabase] blocked: disallowed origin=${origin}`);
+    return { statusCode: 403, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ error: "Forbidden" }) };
+  }
+
   // ── Parse body first (required before session token validation) ───────────
   let body;
   try {
