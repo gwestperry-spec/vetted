@@ -15,8 +15,10 @@ export const ENDPOINTS = {
   salaryLookup: `${API_BASE}/.netlify/functions/salary-lookup`,
   behavioralIntelligence: `${API_BASE}/.netlify/functions/behavioral-intelligence`,
   marketPulse:  `${API_BASE}/.netlify/functions/market-pulse`,
-  fetchJd:      `${API_BASE}/.netlify/functions/fetch-jd`,
-  githubAuth:   `${API_BASE}/.netlify/functions/github-auth`,
+  fetchJd:          `${API_BASE}/.netlify/functions/fetch-jd`,
+  githubAuth:       `${API_BASE}/.netlify/functions/github-auth`,
+  registerDevice:   `${API_BASE}/.netlify/functions/register-device`,
+  sendNotification: `${API_BASE}/.netlify/functions/send-notification`,
   privacy:      `${API_BASE}/privacy`,
   terms:        `${API_BASE}/terms`,
 };

@@ -13,6 +13,7 @@ import {
 } from "./utils/analytics.js";
 import React, { Component, useState, useEffect, useRef } from "react";
 import { useAuth } from "./hooks/useAuth.js";
+import { usePushNotifications } from "./hooks/usePushNotifications.js";
 import { handleError } from "./utils/handleError.js";
 import LangSwitcher from "./components/LangSwitcher.jsx";
 import SignInGate from "./components/SignInGate.jsx";
@@ -236,6 +237,9 @@ export default function App() {
 
   const t = T[lang];
   const dir = t.dir;
+
+  // Register device for push notifications after sign-in
+  usePushNotifications({ authUser, enabled: !!authUser });
 
   // Inject styles
   useEffect(() => {
