@@ -87,13 +87,18 @@ export function useAuth({ setProfile, setLang, setFilters, setOpportunities, set
       }
 
       if (savedFilters?.length) {
-        setFilters(savedFilters.map(f => ({
-          id: f.filter_id,
-          name: f.name,
-          description: f.description,
-          weight: f.weight,
-          isCore: f.is_core,
-        })));
+        setFilters(savedFilters.map(f => {
+          // Merge name/description from DEFAULT_FILTERS for core filters so that
+          // accounts created before multilingual support get localized filter names.
+          const def = DEFAULT_FILTERS.find(d => d.id === f.filter_id);
+          return {
+            id: f.filter_id,
+            name: def ? def.name : f.name,
+            description: def ? def.description : f.description,
+            weight: f.weight,
+            isCore: f.is_core,
+          };
+        }));
       }
 
       if (savedOpps?.length) {
@@ -244,7 +249,10 @@ export function useAuth({ setProfile, setLang, setFilters, setOpportunities, set
                 if (p.tier) setUserTier(p.tier);
               }
               if (saved?.filters?.length) {
-                setFilters(saved.filters.map(f => ({ id: f.filter_id, name: f.name, description: f.description, weight: f.weight, isCore: f.is_core })));
+                setFilters(saved.filters.map(f => {
+                  const def = DEFAULT_FILTERS.find(d => d.id === f.filter_id);
+                  return { id: f.filter_id, name: def ? def.name : f.name, description: def ? def.description : f.description, weight: f.weight, isCore: f.is_core };
+                }));
               }
               if (saved?.opportunities?.length) {
                 setOpportunities(saved.opportunities.map(o => ({
