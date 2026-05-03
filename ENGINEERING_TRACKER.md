@@ -1,6 +1,6 @@
 # Vetted: Career Intelligence — Engineering Tracker
-**Gap Closure Roadmap · April 2026**
-_Last updated: April 24, 2026_
+**Gap Closure Roadmap · April–May 2026**
+_Last updated: May 3, 2026_
 
 ---
 
@@ -606,3 +606,8 @@ _Last updated: April 24, 2026_
 | — | LinkedIn inline guide | Shipped | 100% | ✅ Inline step-by-step replaces fetch attempt; iPhone long-press + Mac highlight instructions; blog link | User guidance |
 | — | Tracking param auto-strip | Shipped | 100% | ✅ 15 params stripped on URL paste; green confirmation banner; `urlCleaned` state | UX quality |
 | — | SignInGate blog link | Shipped | 100% | ✅ Web-only footer with blog link and domain attribution — hidden in native app | Content discoverability |
+| — | Push notifications — Sprint 1 (Infrastructure) | Shipped | 100% | ✅ APNs entitlement, `user_devices` table, `register-device` function, `usePushNotifications` hook, `send-notification` function | User retention |
+| — | Push notifications — Sprint 2 (Reminders) | Shipped | 100% | ✅ `notify-reminders.js` scheduled hourly; `push_sent_at` dedup stamp; deep-link tap → role open | Engagement |
+| — | Push notifications — Sprint 3 (Pipeline) | Shipped | 100% | ✅ `notify-pipeline.js` daily; staleness (7d), follow-up (10d applied), opt-out toggles in Settings | Re-engagement |
+| — | Push notifications — Sprint 4 (Timeline + Weekly) | Shipped | 100% | ✅ Timeline milestone nudges; `notify-weekly.js` Sunday digest; comp floor amber banner; 5 Settings toggles | Accountability |
+| — | Push notifications — Sprint 5 (i18n + UI polish) | Shipped | 100% | ✅ `notif-copy.js` — all 7 languages; `lang` stored in `user_devices`; lang-change patch; Settings font fix; "COMING SOON" removed; 10 toggle translation keys across 7 languages | International users |

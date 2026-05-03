@@ -1240,3 +1240,22 @@ LOCATION SCORING RULE: If the role is remote, fully remote, or remote-first, tre
 **Root cause:** `COACHING_PAIRS` array in `VQLoadingScreen.jsx` was a single hardcoded English set with no language branching.
 **Fix:** Created `src/i18n/coachingPairs.js` with 3 natively-written pairs per non-English language (es, fr, zh, ar, vi, pt) — not translations of the English set, but independent pairs crafted in each language's voice. `VQLoadingScreen` imports `COACHING_PAIRS_BY_LANG` and selects the active set based on `lang` prop. English retains the full 51-pair weighted pool.
 **Files:** `src/i18n/coachingPairs.js` (new), `src/components/VQLoadingScreen.jsx`
+
+---
+
+## Error 109 — Push notification copy hardcoded in English for all language users
+**Build:** Build 28 pre-archive (Sprint 4 → 5 transition)
+**Symptom:** All scheduled push notifications (reminders, staleness, follow-up, timeline, weekly digest) sent English copy regardless of user's language setting.
+**Root cause:** `notify-reminders.js`, `notify-pipeline.js`, and `notify-weekly.js` had hardcoded English strings. No `lang` field existed on `user_devices` and no mechanism existed to pass language preference to server-side notification functions.
+**Fix:** (1) Added `lang` column to `user_devices` table (migration `20260502_user_devices_lang.sql`, default `'en'`). (2) Created `netlify/functions/notif-copy.js` — shared translation object with all push copy for all 7 languages (en/es/zh/fr/ar/vi/pt), covering `reminderFallback`, `staleTitle/Body`, `followUpBody`, `timelineTitle/Body*`, `weeklyTitle/Body/Scored/Active/None`. (3) Updated all three notify functions to `select=token,lang` from `user_devices` and call `getCopy(lang)` before building notification payload. (4) `register-device.js` — now accepts `lang` field, stores it on upsert; added `langUpdateOnly` path that patches all device rows for a user when lang changes without re-registering a token. (5) `usePushNotifications.js` — sends `lang` on initial token registration; adds a secondary `useEffect` that fires `langUpdateOnly` patch whenever `lang` prop changes after registration. (6) `App.jsx` — passes `lang` to `usePushNotifications`. (7) All 10 notification toggle translation keys added to all 7 languages in `translations.js`.
+**Test:** 123/123 unit tests passing — key completeness, unknown lang fallback, output spot-checks, no-crash for all 7 langs × all function types.
+**Files:** `netlify/functions/notif-copy.js` (new), `netlify/functions/notify-reminders.js`, `netlify/functions/notify-pipeline.js`, `netlify/functions/notify-weekly.js`, `netlify/functions/register-device.js`, `src/hooks/usePushNotifications.js`, `src/App.jsx`, `src/i18n/translations.js`, `supabase/migrations/20260502_user_devices_lang.sql` (new)
+
+---
+
+## Error 110 — Notification Settings toggles used wrong font, showed "COMING SOON" subtitle
+**Build:** Build 28 pre-archive
+**Symptom:** Notification toggle labels in Settings used `var(--font-prose)` at 15px instead of `var(--font-display)` at 17px/500 weight, visually mismatching all other Settings rows (Language, Contact Support, Privacy, Terms). The Notifications section header showed a "COMING SOON" (or translated equivalent) subtitle even though notifications were now live.
+**Root cause:** Toggle labels were styled independently from other settings rows during Sprint 4 implementation without checking the existing settings row style pattern. The `settingsNotificationsHint` translation key carried over a "COMING SOON" placeholder from before the feature was built.
+**Fix:** (1) Toggle label style changed to `fontFamily: "var(--font-display)", fontSize: 17, fontWeight: 500` with `letterSpacing: "0.08em"` on desc — matches all other settings rows exactly. (2) "COMING SOON" subtitle div removed entirely from the Notifications section header. (3) `settingsNotificationsHint` translation key updated in all 7 languages to "Manage push alerts" equivalents (kept in translations.js for future use even though the hint is no longer rendered).
+**Files:** `src/App.jsx`, `src/i18n/translations.js`
