@@ -41,7 +41,7 @@ export default async function handler(req, context) {
     return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403 });
   }
 
-  const { appleId, sessionToken, token, platform = "ios" } = await req.json();
+  const { appleId, sessionToken, token, platform = "ios", prefs = {} } = await req.json();
 
   if (!appleId || !token) {
     return new Response(JSON.stringify({ error: "Missing appleId or token" }), { status: 400 });
@@ -51,10 +51,13 @@ export default async function handler(req, context) {
   const { error } = await supabase
     .from("user_devices")
     .upsert({
-      apple_id:   appleId,
+      apple_id:         appleId,
       token,
       platform,
-      updated_at: new Date().toISOString(),
+      notif_reminders:  prefs.reminders  ?? true,
+      notif_follow_up:  prefs.followUp   ?? true,
+      notif_staleness:  prefs.staleness  ?? true,
+      updated_at:       new Date().toISOString(),
     }, { onConflict: "apple_id,token" });
 
   if (error) {

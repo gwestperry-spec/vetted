@@ -85,7 +85,7 @@ export default async function handler(req, context) {
 
       // ── 3. Get device tokens for this user ─────────────────────────────
       const devices = await sbGet(
-        `/user_devices?apple_id=eq.${encodeURIComponent(appleId)}&select=token`
+        `/user_devices?apple_id=eq.${encodeURIComponent(appleId)}&notif_reminders=eq.true&select=token`
       );
       const tokens = devices.map(d => d.token).filter(Boolean);
       if (!tokens.length) {

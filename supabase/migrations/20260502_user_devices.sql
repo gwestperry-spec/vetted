@@ -10,7 +10,12 @@ create table if not exists user_devices (
   created_at  timestamptz not null default now(),
   updated_at  timestamptz not null default now(),
 
-  unique (apple_id, token)
+  unique (apple_id, token),
+
+  -- Notification opt-out preferences (default all on)
+  notif_reminders  boolean not null default true,
+  notif_follow_up  boolean not null default true,
+  notif_staleness  boolean not null default true
 );
 
 -- Index for fast lookup by user when sending notifications

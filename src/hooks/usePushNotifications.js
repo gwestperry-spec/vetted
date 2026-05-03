@@ -18,6 +18,11 @@ async function getPushPlugin() {
   }
 }
 
+const NOTIF_PREFS_KEY = "vetted_notif_prefs";
+function getNotifPrefs() {
+  try { return JSON.parse(localStorage.getItem(NOTIF_PREFS_KEY) || "{}"); } catch { return {}; }
+}
+
 export function usePushNotifications({ authUser, enabled, onOpenRole }) {
   const registered = useRef(false);
 
@@ -40,6 +45,7 @@ export function usePushNotifications({ authUser, enabled, onOpenRole }) {
         registered.current = true;
 
         try {
+          const prefs = getNotifPrefs();
           await fetch(ENDPOINTS.registerDevice, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -48,6 +54,7 @@ export function usePushNotifications({ authUser, enabled, onOpenRole }) {
               sessionToken: authUser.sessionToken || "",
               token,
               platform:     "ios",
+              prefs,
             }),
           });
         } catch (err) {

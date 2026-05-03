@@ -90,6 +90,12 @@
   schedule = "0 * * * *"
   timeout  = 30
 
+# Pipeline notifications — daily at 14:00 UTC (10am ET / 7am PT)
+# Sends: staleness nudge (7+ days no score) + application follow-up (10+ days)
+[functions."notify-pipeline"]
+  schedule = "0 14 * * *"
+  timeout  = 60
+
 # ── Staging context ───────────────────────────────────────────────────────────
 # Deploy the `staging` branch to a separate Netlify environment with its own
 # env vars (set in Netlify dashboard → Site configuration → Environment variables

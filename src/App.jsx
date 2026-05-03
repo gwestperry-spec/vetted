@@ -1357,8 +1357,25 @@ function ProfileTab({ t, lang, setLang, profile, authUser, userTier, onSignOut, 
   );
 }
 
+const NOTIF_PREFS_KEY = "vetted_notif_prefs";
+function useNotifPrefs() {
+  const [prefs, setPrefs] = React.useState(() => {
+    try { return JSON.parse(localStorage.getItem(NOTIF_PREFS_KEY) || "{}"); } catch { return {}; }
+  });
+  function toggle(key) {
+    setPrefs(prev => {
+      const next = { ...prev, [key]: !( prev[key] ?? true) };
+      localStorage.setItem(NOTIF_PREFS_KEY, JSON.stringify(next));
+      return next;
+    });
+  }
+  const get = (key) => prefs[key] ?? true; // default on
+  return { get, toggle };
+}
+
 function SettingsTab({ t, lang, onLangChange, onSignOut, onOpenMenu }) {
   const [showLangPicker, setShowLangPicker] = React.useState(false);
+  const notif = useNotifPrefs();
 
   const LANG_NAMES_LOCAL = {
     en: "English", es: "Español", pt: "Português", zh: "中文",
@@ -1444,12 +1461,50 @@ function SettingsTab({ t, lang, onLangChange, onSignOut, onOpenMenu }) {
 
         {/* Notifications */}
         <div style={{ padding: "0 20px" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 0", borderBottom: "0.5px solid var(--border)" }}>
-            <div>
-              <div style={{ fontFamily: "var(--font-display)", fontSize: 17, fontWeight: 500, color: "var(--ink)", lineHeight: 1.2 }}>{t.settingsNotifications || "Notifications"}</div>
-              <div style={{ fontFamily: "var(--font-data)", fontSize: 10, letterSpacing: "0.08em", color: "#8A9A8A", textTransform: "uppercase", marginTop: 4 }}>{t.settingsNotificationsHint || "COMING SOON"}</div>
+          <div style={{ padding: "20px 0 12px", borderBottom: "none" }}>
+            <div style={{ fontFamily: "var(--font-display)", fontSize: 17, fontWeight: 500, color: "var(--ink)", lineHeight: 1.2, marginBottom: 2 }}>
+              {t.settingsNotifications || "Notifications"}
+            </div>
+            <div style={{ fontFamily: "var(--font-data)", fontSize: 10, letterSpacing: "0.08em", color: "#8A9A8A", textTransform: "uppercase" }}>
+              {t.settingsNotificationsHint || "Manage push alerts"}
             </div>
           </div>
+          {[
+            { key: "reminders",  label: t.notifReminders  || "Reminders",          desc: t.notifRemindersDesc  || "Alerts you set on roles" },
+            { key: "followUp",   label: t.notifFollowUp   || "Application follow-ups", desc: t.notifFollowUpDesc   || "10 days after applying with no update" },
+            { key: "staleness",  label: t.notifStaleness  || "Pipeline nudges",    desc: t.notifStalenessDesc  || "When you haven't scored in 7 days" },
+          ].map(({ key, label, desc }, i, arr) => (
+            <button
+              key={key}
+              onClick={() => notif.toggle(key)}
+              style={{
+                width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
+                gap: 12, padding: "14px 0",
+                borderBottom: i < arr.length - 1 ? "0.5px solid var(--border)" : "none",
+                borderTop: "none", background: "transparent", cursor: "pointer", textAlign: "left",
+              }}
+            >
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div style={{ fontFamily: "var(--font-prose)", fontSize: 15, color: "var(--ink)", lineHeight: 1.2 }}>{label}</div>
+                <div style={{ fontFamily: "var(--font-data)", fontSize: 10, letterSpacing: "0.06em", color: "#8A9A8A", textTransform: "uppercase", marginTop: 3 }}>{desc}</div>
+              </div>
+              {/* iOS-style toggle */}
+              <div style={{
+                width: 51, height: 31, borderRadius: 999, flexShrink: 0,
+                background: notif.get(key) ? "#1A3A1A" : "#D0D8D0",
+                transition: "background .2s", position: "relative",
+              }}>
+                <div style={{
+                  position: "absolute", top: 3,
+                  left: notif.get(key) ? 23 : 3,
+                  width: 25, height: 25, borderRadius: 999,
+                  background: "#fff", boxShadow: "0 1px 3px rgba(0,0,0,.2)",
+                  transition: "left .2s",
+                }} />
+              </div>
+            </button>
+          ))}
+          <div style={{ borderTop: "0.5px solid var(--border)", marginTop: 4 }} />
         </div>
 
         {/* Support */}
