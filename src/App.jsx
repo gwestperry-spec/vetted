@@ -1472,11 +1472,11 @@ function SettingsTab({ t, lang, onLangChange, onSignOut, onOpenMenu }) {
             </div>
           </div>
           {[
-            { key: "reminders",  label: t.notifReminders  || "Reminders",              desc: t.notifRemindersDesc  || "Alerts you set on roles" },
-            { key: "followUp",   label: t.notifFollowUp   || "Application follow-ups", desc: t.notifFollowUpDesc   || "10 days after applying with no update" },
-            { key: "staleness",  label: t.notifStaleness  || "Pipeline nudges",        desc: t.notifStalenessDesc  || "When you haven't scored in 7 days" },
-            { key: "timeline",   label: t.notifTimeline   || "Timeline check-ins",     desc: t.notifTimelineDesc   || "Milestone nudges based on your landing window" },
-            { key: "digest",     label: t.notifDigest     || "Weekly recap",           desc: t.notifDigestDesc     || "Sunday summary of your week's activity" },
+            { key: "reminders",  label: t.notifReminders  || "Reminders",                desc: t.notifRemindersDesc  || "Alerts you set on roles" },
+            { key: "followUp",   label: t.notifFollowUp   || "Application Follow-Ups", desc: t.notifFollowUpDesc   || "10 days after applying with no update" },
+            { key: "staleness",  label: t.notifStaleness  || "Pipeline Nudges",        desc: t.notifStalenessDesc  || "When you haven't scored in 7 days" },
+            { key: "timeline",   label: t.notifTimeline   || "Timeline Check-Ins",     desc: t.notifTimelineDesc   || "Milestone nudges based on your landing window" },
+            { key: "digest",     label: t.notifDigest     || "Weekly Recap",           desc: t.notifDigestDesc     || "Sunday summary of your week's activity" },
           ].map(({ key, label, desc }, i, arr) => (
             <button
               key={key}
