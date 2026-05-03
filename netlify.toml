@@ -91,9 +91,14 @@
   timeout  = 30
 
 # Pipeline notifications — daily at 14:00 UTC (10am ET / 7am PT)
-# Sends: staleness nudge (7+ days no score) + application follow-up (10+ days)
+# Sends: staleness nudge (7+ days no score) + application follow-up (10+ days) + timeline milestones
 [functions."notify-pipeline"]
   schedule = "0 14 * * *"
+  timeout  = 60
+
+# Weekly digest — every Sunday at 15:00 UTC (11am ET / 8am PT)
+[functions."notify-weekly"]
+  schedule = "0 15 * * 0"
   timeout  = 60
 
 # ── Staging context ───────────────────────────────────────────────────────────

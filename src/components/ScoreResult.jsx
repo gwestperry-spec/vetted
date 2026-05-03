@@ -241,6 +241,17 @@ function InsightsSection({ opp, t }) {
 
   return (
     <div style={{ padding: "16px 16px 40px" }}>
+      {/* Comp floor alert — shown when a comp-related filter scored below 2.5 */}
+      {opp.compBelowFloor && (
+        <div style={{
+          background: "#FDF8EE", border: "1px solid #E8C84A",
+          borderLeft: "3px solid #C8A020", borderRadius: 8,
+          padding: "10px 14px", marginBottom: 16,
+          fontFamily: "var(--font-prose)", fontSize: 12, color: "#5A4A10", lineHeight: 1.6,
+        }}>
+          ⚠️ {t?.compFloorAlert || "Compensation signals on this role are below your stated floor. Review before investing time."}
+        </div>
+      )}
       {SECTION_DEFS.map((sec, i) => (
         <div key={sec.key} style={{ marginBottom: i < SECTION_DEFS.length - 1 ? 20 : 0 }}>
           {/* Section divider label */}

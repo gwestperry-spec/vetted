@@ -57,6 +57,8 @@ export default async function handler(req, context) {
       notif_reminders:  prefs.reminders  ?? true,
       notif_follow_up:  prefs.followUp   ?? true,
       notif_staleness:  prefs.staleness  ?? true,
+      notif_timeline:   prefs.timeline   ?? true,
+      notif_digest:     prefs.digest     ?? true,
       updated_at:       new Date().toISOString(),
     }, { onConflict: "apple_id,token" });
 

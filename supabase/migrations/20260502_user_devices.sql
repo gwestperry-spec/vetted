@@ -15,7 +15,9 @@ create table if not exists user_devices (
   -- Notification opt-out preferences (default all on)
   notif_reminders  boolean not null default true,
   notif_follow_up  boolean not null default true,
-  notif_staleness  boolean not null default true
+  notif_staleness  boolean not null default true,
+  notif_timeline   boolean not null default true,
+  notif_digest     boolean not null default true
 );
 
 -- Index for fast lookup by user when sending notifications

@@ -156,6 +156,87 @@ export default async function handler(req, context) {
       }
     }
 
+    // ── 3. TIMELINE — milestone nudges based on user's stated landing window ──
+    // Milestones by timeline value (days since search start):
+    //   asap / 30days : 7, 15, 25
+    //   quarter       : 30, 60, 80
+    //   6months       : 60, 120, 160
+    //   yearout       : 90, 180, 270
+    // "yearplus" is excluded — no deadline, no pressure nudges.
+
+    const TIMELINE_MILESTONES = {
+      asap:     [7, 15, 25],
+      "30days": [7, 15, 25],
+      quarter:  [30, 60, 80],
+      "6months":[60, 120, 160],
+      yearout:  [90, 180, 270],
+    };
+
+    const TIMELINE_WINDOWS = {
+      asap: 30, "30days": 30, quarter: 90, "6months": 180, yearout: 365,
+    };
+
+    // Fetch users who have a timeline set and have device tokens opted in
+    const timelineDevices = await sbGet(
+      `/user_devices?notif_timeline=eq.true&select=apple_id`
+    );
+    const timelineUsers = [...new Set(timelineDevices.map(d => d.apple_id))];
+    console.log(`[notify-pipeline] ${timelineUsers.length} timeline user(s) to check`);
+
+    for (const apple_id of timelineUsers) {
+      try {
+        // Get profile timeline + oldest workspace role (search start proxy)
+        const [profiles, oldestRole] = await Promise.all([
+          sbGet(`/profiles?apple_id=eq.${encodeURIComponent(apple_id)}&select=timeline&limit=1`),
+          sbGet(`/workspace_roles?apple_id=eq.${encodeURIComponent(apple_id)}&status=neq.queued&order=created_at.asc&select=created_at&limit=1`),
+        ]);
+
+        const timeline = profiles[0]?.timeline;
+        const milestones = TIMELINE_MILESTONES[timeline];
+        if (!milestones || !oldestRole.length) continue;
+
+        const searchStart = new Date(oldestRole[0].created_at);
+        const daysSinceStart = Math.floor((Date.now() - searchStart.getTime()) / 86400_000);
+        const windowDays = TIMELINE_WINDOWS[timeline];
+        const pctThrough = Math.round((daysSinceStart / windowDays) * 100);
+
+        // Find which milestone we're at (within ±1 day)
+        const hitMilestone = milestones.find(m => Math.abs(daysSinceStart - m) <= 1);
+        if (!hitMilestone) continue;
+
+        const milestoneKey = `${timeline}_${hitMilestone}`;
+        if (await alreadySent(apple_id, "timeline", milestoneKey, 3)) continue;
+
+        const devices = await sbGet(`/user_devices?apple_id=eq.${encodeURIComponent(apple_id)}&notif_timeline=eq.true&select=token`);
+        const tokens = devices.map(d => d.token).filter(Boolean);
+        if (!tokens.length) continue;
+
+        // Count how many roles scored + applied
+        const [scoredRoles, appliedRoles2] = await Promise.all([
+          sbGet(`/workspace_roles?apple_id=eq.${encodeURIComponent(apple_id)}&status=neq.queued&select=vq_score&limit=200`),
+          sbGet(`/workspace_roles?apple_id=eq.${encodeURIComponent(apple_id)}&application_status=eq.applied&select=role_id&limit=200`),
+        ]);
+
+        const daysLeft = Math.max(0, windowDays - daysSinceStart);
+        const body = appliedRoles2.length > 0
+          ? `${scoredRoles.length} roles scored · ${appliedRoles2.length} applied · ${daysLeft}d left in your window.`
+          : `${scoredRoles.length} roles scored · ${pctThrough}% through your window · no applications yet.`;
+
+        const sent = await sendPush(
+          provider, tokens,
+          `${hitMilestone}-day check-in`,
+          body,
+          { type: "timeline", milestone: hitMilestone }
+        );
+        if (sent > 0) {
+          await logSent(apple_id, "timeline", milestoneKey);
+          totalSent += sent;
+        }
+      } catch (err) {
+        console.error(`[notify-pipeline] timeline error for ${apple_id}:`, err.message);
+      }
+    }
+
   } finally {
     provider.shutdown();
   }
