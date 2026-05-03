@@ -52,8 +52,8 @@ function isVantage(tier) {
 }
 
 const LANG_NAMES = {
-  en: "English", es: "Spanish", zh: "Chinese (Simplified)",
-  fr: "French",  ar: "Arabic",  vi: "Vietnamese",
+  en: "English", es: "Spanish", pt: "Portuguese (Brazilian)",
+  zh: "Chinese (Simplified)", fr: "French", ar: "Arabic", vi: "Vietnamese",
 };
 
 const FUNNEL_STAGES = [
@@ -312,12 +312,23 @@ function resolveWeightLabel(value, t) {
 }
 
 // ── Filters ───────────────────────────────────────────────────────────────
-function FiltersSection({ filterScores, t }) {
+function FiltersSection({ filterScores, filters, lang, t }) {
   if (!filterScores?.length) return (
     <div style={{ padding: 32, textAlign: "center", color: "#4A6A4A", fontFamily: "var(--font-data)", fontSize: 12 }}>
       No filter scores available.
     </div>
   );
+
+  // Look up localized filter name from the filter definitions by matching English name
+  function localFilterName(englishName) {
+    const match = (filters || []).find(f => {
+      const en = typeof f.name === "object" ? (f.name.en || "") : (f.name || "");
+      return en.toLowerCase() === (englishName || "").toLowerCase();
+    });
+    if (!match) return englishName;
+    if (typeof match.name === "object") return match.name[lang] || match.name.en || englishName;
+    return match.name || englishName;
+  }
 
   // Sort: lowest scores first so gaps surface immediately
   const sorted = [...filterScores].sort((a, b) => a.score - b.score);
@@ -346,7 +357,7 @@ function FiltersSection({ filterScores, t }) {
                 color: "#3A5A3A", textTransform: "uppercase", flex: 1, marginRight: 10,
                 fontWeight: 700,
               }}>
-                {fs.filter_name}
+                {localFilterName(fs.filter_name)}
                 {fs.weight && fs.weight !== 1.0 && (
                   <span style={{ color: "var(--muted-soft)", marginLeft: 6, fontWeight: 400 }}>
                     · {resolveWeightLabel(fs.weight, t)}
@@ -422,10 +433,12 @@ function CoachSection({ opp, profile, lang, userTier, authUser, onUpgrade, t }) 
 
       const langName = LANG_NAMES[lang] || "English";
       const langInstruction = lang !== "en"
-        ? `LANGUAGE REQUIREMENT: You MUST write every JSON value in ${langName}. This is mandatory — do not write any value in English. The only exception is the JSON keys themselves (keep those in English).`
+        ? `LANGUAGE REQUIREMENT: Every text value in your JSON response MUST be written in ${langName}. This is mandatory — do not write any coaching value in English. The only exception is the JSON keys themselves (keep those in English).`
         : "";
 
-      const prompt = `${langInstruction ? langInstruction + "\n\n" : ""}You are an executive career coach. Be brief — write like a trusted advisor in a 15-minute meeting, not a report. Each section must be 60 words or fewer.
+      const prompt = `You are an executive career coach. Be brief — write like a trusted advisor in a 15-minute meeting, not a report. Each section must be 60 words or fewer.
+
+${langInstruction}
 
 ${ADVOCATE_INSTRUCTION}
 
@@ -443,7 +456,9 @@ ${filterSummary}
 STRENGTHS: ${(opp.strengths || []).join("; ")}
 GAPS: ${(opp.gaps || []).join("; ")}
 
-Respond ONLY with valid JSON (no markdown). Every value must be a plain string — never an array, never a nested object. Each string must be 60 words or fewer.${lang !== "en" ? ` REMINDER: ALL values must be written in ${langName}.` : ""} Shape:
+REMINDER: ${lang !== "en" ? `ALL JSON values MUST be written in ${langName}. Do not write any coaching content in English.` : "Respond in English."}
+
+Respond ONLY with valid JSON (no markdown). Every value must be a plain string — never an array, never a nested object. Each string must be 60 words or fewer. Shape:
 {
   "interview_prep": "Write 2 likely hard questions and a one-line coaching note for each, as a single plain string.",
   "positioning_angle": "Exactly how to frame their background for this role in 2 sentences. Reference real experience.",
@@ -618,7 +633,7 @@ Respond ONLY with valid JSON (no markdown). Every value must be a plain string �
 }
 
 // ══════════════════════════════════════════════════════════════════════════
-export default function ScoreResult({ t, lang, opp, profile, onBack, onRemove, onUpdateStatus, userTier, authUser, onUpgrade }) {
+export default function ScoreResult({ t, lang, opp, profile, filters, onBack, onRemove, onUpdateStatus, userTier, authUser, onUpgrade }) {
   if (!opp) return null;
 
   // Default to INSIGHTS — the most valuable content
@@ -678,7 +693,7 @@ export default function ScoreResult({ t, lang, opp, profile, onBack, onRemove, o
             <path d="M7 2L3 5L7 8" stroke="currentColor" strokeWidth="1.4"
                   strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
-          BACK
+          {(t?.btnBack || "BACK").toUpperCase()}
         </button>
 
         {/* VERDICT eyebrow */}
@@ -687,7 +702,7 @@ export default function ScoreResult({ t, lang, opp, profile, onBack, onRemove, o
           letterSpacing: "0.16em", textTransform: "uppercase",
           color: theme.border, margin: "0 0 8px 0",
         }}>
-          VERDICT · {verdictLabel}
+          {t?.verdictEyebrow || "VERDICT"} · {verdictLabel}
         </p>
 
         {/* Big VQ score */}
@@ -722,9 +737,9 @@ export default function ScoreResult({ t, lang, opp, profile, onBack, onRemove, o
           {opp.company || "—"}
           {profile.threshold && (
             <span style={{ color: "#8A9A8A" }}>
-              {" "}· Threshold {profile.threshold}{" "}
+              {" "}· {t?.threshold || "Threshold"} {profile.threshold}{" "}
               <span style={{ color: opp.overall_score >= profile.threshold ? "var(--score-high)" : "var(--score-mid)" }}>
-                ({opp.overall_score >= profile.threshold ? "above" : "below"})
+                ({opp.overall_score >= profile.threshold ? (t?.above || "above") : (t?.below || "below")})
               </span>
             </span>
           )}
@@ -785,7 +800,7 @@ export default function ScoreResult({ t, lang, opp, profile, onBack, onRemove, o
           </div>
         )}
         {activeTab === "insights" && <InsightsSection opp={opp} t={t} />}
-        {activeTab === "filters"  && <FiltersSection filterScores={opp.filter_scores || []} t={t} />}
+        {activeTab === "filters"  && <FiltersSection filterScores={opp.filter_scores || []} filters={filters} lang={lang} t={t} />}
 
         {activeTab === "coach"    && (
           <CoachSection

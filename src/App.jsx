@@ -73,20 +73,20 @@ export class ErrorBoundary extends Component {
 // ─── Default filters ──────────────────────────────────────────────────────
 const DEFAULT_FILTERS = [
   { id: "pl_ownership", weight: 3.0, isCore: true,
-    name: { en: "Financial Accountability", es: "Responsabilidad Financiera", zh: "财务责任", fr: "Responsabilité Financière", ar: "المساءلة المالية", vi: "Trách Nhiệm Tài Chính" },
-    description: { en: "Does the role carry named financial accountability or is it support language?", es: "¿El rol lleva responsabilidad financiera nombrada?", zh: "该职位是否具有明确的财务责任？", fr: "Le rôle porte-t-il une responsabilité financière nommée?", ar: "هل يحمل الدور مسؤولية مالية محددة؟", vi: "Vai trò có trách nhiệm tài chính cụ thể hay chỉ là ngôn ngữ hỗ trợ?" } },
+    name: { en: "Financial Accountability", es: "Responsabilidad Financiera", pt: "Responsabilidade Financeira", zh: "财务责任", fr: "Responsabilité Financière", ar: "المساءلة المالية", vi: "Trách Nhiệm Tài Chính" },
+    description: { en: "Does the role carry named financial accountability or is it support language?", es: "¿El rol lleva responsabilidad financiera nombrada?", pt: "O cargo possui responsabilidade financeira nomeada ou é linguagem de suporte?", zh: "该职位是否具有明确的财务责任？", fr: "Le rôle porte-t-il une responsabilité financière nommée?", ar: "هل يحمل الدور مسؤولية مالية محددة؟", vi: "Vai trò có trách nhiệm tài chính cụ thể hay chỉ là ngôn ngữ hỗ trợ?" } },
   { id: "reporting_structure", weight: 2.0, isCore: true,
-    name: { en: "Access to Leadership", es: "Acceso al Liderazgo", zh: "领导层接触", fr: "Accès au Leadership", ar: "الوصول إلى القيادة", vi: "Tiếp Cận Lãnh Đạo" },
-    description: { en: "Does the role provide meaningful visibility with or access to senior leadership? Do not penalize IC or specialist tracks (scientist, engineer, analyst) for having more rungs to C-suite — that is structural, not a flaw. Focus on whether the function reports into senior leadership and whether the role has real cross-functional exposure.", es: "¿El rol proporciona visibilidad significativa con el liderazgo senior? No penalices los roles IC por tener más niveles hasta el C-suite.", zh: "该职位是否提供与高级领导层的实质性接触？不要因IC路线（科学家、工程师等）层级较多而扣分——这是结构性的，而非缺陷。", fr: "Le rôle offre-t-il une visibilité réelle auprès de la direction senior? Ne pas pénaliser les parcours IC pour le nombre de niveaux jusqu'au C-suite.", ar: "هل يوفر الدور رؤية حقيقية مع القيادة العليا؟ لا تعاقب المسارات التخصصية على وجود مستويات أكثر حتى المجموعة التنفيذية.", vi: "Vai trò có cung cấp khả năng tiếp cận lãnh đạo cấp cao không? Không trừ điểm các vị trí IC chỉ vì có nhiều cấp bậc hơn đến C-suite." } },
+    name: { en: "Access to Leadership", es: "Acceso al Liderazgo", pt: "Acesso à Liderança", zh: "领导层接触", fr: "Accès au Leadership", ar: "الوصول إلى القيادة", vi: "Tiếp Cận Lãnh Đạo" },
+    description: { en: "Does the role provide meaningful visibility with or access to senior leadership? Do not penalize IC or specialist tracks (scientist, engineer, analyst) for having more rungs to C-suite — that is structural, not a flaw. Focus on whether the function reports into senior leadership and whether the role has real cross-functional exposure.", es: "¿El rol proporciona visibilidad significativa con el liderazgo senior? No penalices los roles IC por tener más niveles hasta el C-suite.", pt: "O cargo oferece visibilidade real com a liderança sênior? Não penalize trilhas de especialistas por terem mais níveis até o C-suite.", zh: "该职位是否提供与高级领导层的实质性接触？不要因IC路线（科学家、工程师等）层级较多而扣分——这是结构性的，而非缺陷。", fr: "Le rôle offre-t-il une visibilité réelle auprès de la direction senior? Ne pas pénaliser les parcours IC pour le nombre de niveaux jusqu'au C-suite.", ar: "هل يوفر الدور رؤية حقيقية مع القيادة العليا؟ لا تعاقب المسارات التخصصية على وجود مستويات أكثر حتى المجموعة التنفيذية.", vi: "Vai trò có cung cấp khả năng tiếp cận lãnh đạo cấp cao không? Không trừ điểm các vị trí IC chỉ vì có nhiều cấp bậc hơn đến C-suite." } },
   { id: "metric_specificity", weight: 2.5, isCore: true,
-    name: { en: "Clear Success Measures", es: "Métricas de Éxito Claras", zh: "明确的成功指标", fr: "Mesures de Succès Claires", ar: "مقاييس نجاح واضحة", vi: "Thước Đo Thành Công Rõ Ràng" },
-    description: { en: "Are success metrics explicit and financially anchored, or vague?", es: "¿Las métricas de éxito están declaradas explícitamente?", zh: "成功指标是否明确陈述并以财务为基础？", fr: "Les métriques de succès sont-elles explicites?", ar: "هل مقاييس النجاح محددة بوضوح؟", vi: "Các chỉ số thành công có cụ thể và gắn với tài chính không?" } },
+    name: { en: "Clear Success Measures", es: "Métricas de Éxito Claras", pt: "Métricas de Sucesso Claras", zh: "明确的成功指标", fr: "Mesures de Succès Claires", ar: "مقاييس نجاح واضحة", vi: "Thước Đo Thành Công Rõ Ràng" },
+    description: { en: "Are success metrics explicit and financially anchored, or vague?", es: "¿Las métricas de éxito están declaradas explícitamente?", pt: "As métricas de sucesso são explícitas e financeiramente ancoradas?", zh: "成功指标是否明确陈述并以财务为基础？", fr: "Les métriques de succès sont-elles explicites?", ar: "هل مقاييس النجاح محددة بوضوح؟", vi: "Các chỉ số thành công có cụ thể và gắn với tài chính không?" } },
   { id: "scope_language", weight: 2.0, isCore: true,
-    name: { en: "Organizational Impact", es: "Impacto Organizacional", zh: "组织影响力", fr: "Impact Organisationnel", ar: "الأثر التنظيمي", vi: "Tác Động Tổ Chức" },
-    description: { en: "Is the role enterprise-wide, regional, or single-function? Does scope match title?", es: "¿Es el rol a nivel empresarial, regional o monofuncional?", zh: "该职位是企业级、区域性还是单一职能？", fr: "Le rôle est-il à l'échelle de l'entreprise?", ar: "هل الدور على مستوى المؤسسة أم إقليمي؟", vi: "Vai trò có phạm vi toàn doanh nghiệp, khu vực hay đơn chức năng?" } },
+    name: { en: "Organizational Impact", es: "Impacto Organizacional", pt: "Impacto Organizacional", zh: "组织影响力", fr: "Impact Organisationnel", ar: "الأثر التنظيمي", vi: "Tác Động Tổ Chức" },
+    description: { en: "Is the role enterprise-wide, regional, or single-function? Does scope match title?", es: "¿Es el rol a nivel empresarial, regional o monofuncional?", pt: "O cargo é de abrangência empresarial, regional ou de função única? O escopo corresponde ao título?", zh: "该职位是企业级、区域性还是单一职能？", fr: "Le rôle est-il à l'échelle de l'entreprise?", ar: "هل الدور على مستوى المؤسسة أم إقليمي؟", vi: "Vai trò có phạm vi toàn doanh nghiệp, khu vực hay đơn chức năng?" } },
   { id: "title_gap", weight: 1.5, isCore: true,
-    name: { en: "Role Integrity", es: "Integridad del Rol", zh: "职位诚信度", fr: "Intégrité du Rôle", ar: "نزاهة الدور", vi: "Tính Toàn Vẹn của Vai Trò" },
-    description: { en: "Does the role deliver what the title promises, or is it inflated/understated?", es: "¿El rol entrega lo que promete el título?", zh: "该职位是否兑现了职位名称所承诺的内容？", fr: "Le rôle tient-il les promesses du titre?", ar: "هل يحقق الدور ما يعد به المسمى؟", vi: "Vai trò có đáp ứng những gì chức danh hứa hẹn không?" } },
+    name: { en: "Role Integrity", es: "Integridad del Rol", pt: "Integridade do Cargo", zh: "职位诚信度", fr: "Intégrité du Rôle", ar: "نزاهة الدور", vi: "Tính Toàn Vẹn của Vai Trò" },
+    description: { en: "Does the role deliver what the title promises, or is it inflated/understated?", es: "¿El rol entrega lo que promete el título?", pt: "O cargo entrega o que o título promete ou está inflado/subestimado?", zh: "该职位是否兑现了职位名称所承诺的内容？", fr: "Le rôle tient-il les promesses du titre?", ar: "هل يحقق الدور ما يعد به المسمى؟", vi: "Vai trò có đáp ứng những gì chức danh hứa hẹn không?" } },
 ];
 
 
@@ -668,7 +668,10 @@ export default function App() {
       clearTimeout(safetyPhaseTimer2);
       clearTimeout(safetyPhaseTimer3);
       setScoringPhase(3);
-      const raw = JSON.parse(text.replace(/```json|```/g, "").trim());
+      const cleanedText = text.replace(/```json|```/g, "").trim();
+      const jsonMatch = cleanedText.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) throw new Error("Could not parse scoring response — no JSON found");
+      const raw = JSON.parse(jsonMatch[0]);
 
       // Build filter_scores first so we can calculate the weighted average
       const filter_scores = Array.isArray(raw.filter_scores) ? raw.filter_scores.map(fs => ({
@@ -1078,11 +1081,11 @@ export default function App() {
                   {(authUser.displayName && authUser.displayName !== "User" ? authUser.displayName : null) || authUser.email || "Signed in"}
                 </span>
                 <button className="btn btn-secondary btn-sm" onClick={handleSignOut} style={{ fontSize: 11, padding: "4px 12px", minHeight: 30 }}>
-                  Sign Out
+                  {t?.profileSignOut || "Sign Out"}
                 </button>
               </div>
             )}
-            <ScoreResult t={t} lang={lang} opp={currentOpp} profile={profile} userTier={devTierOverride || userTier} authUser={authUser} onUpgrade={(copy) => { setPaywallContext(copy || null); setShowPaywall(true); }} onBack={() => setStep("workspace")}
+            <ScoreResult t={t} lang={lang} opp={currentOpp} profile={profile} filters={filters} userTier={devTierOverride || userTier} authUser={authUser} onUpgrade={(copy) => { setPaywallContext(copy || null); setShowPaywall(true); }} onBack={() => setStep("workspace")}
               onUpdateStatus={(oppId, status) => {
                 const now = new Date().toISOString();
                 setOpportunities(prev => prev.map(o => o.id === oppId ? { ...o, application_status: status, status_updated_at: now } : o));
