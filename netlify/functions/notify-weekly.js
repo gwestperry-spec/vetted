@@ -12,6 +12,7 @@
 //   APNS_KEY, APNS_KEY_ID, APNS_TEAM_ID, APNS_BUNDLE_ID
 
 import apn from "apn";
+import { getCopy } from "./notif-copy.js";
 
 const SB_URL = process.env.SUPABASE_URL;
 const SB_KEY = process.env.SUPABASE_SERVICE_KEY;
@@ -54,14 +55,16 @@ export default async function handler(req, context) {
 
   // Get all distinct users with device tokens opted into digest
   const devices = await sbGet(
-    `/user_devices?notif_digest=eq.true&select=apple_id,token`
+    `/user_devices?notif_digest=eq.true&select=apple_id,token,lang`
   );
 
-  // Group tokens by user
+  // Group tokens + lang by user
   const userTokens = {};
+  const userLang   = {};
   for (const d of devices) {
     if (!userTokens[d.apple_id]) userTokens[d.apple_id] = [];
     userTokens[d.apple_id].push(d.token);
+    if (!userLang[d.apple_id]) userLang[d.apple_id] = d.lang || "en";
   }
 
   const users = Object.keys(userTokens);
@@ -88,21 +91,22 @@ export default async function handler(req, context) {
         `/workspace_roles?apple_id=eq.${encodeURIComponent(appleId)}&status=in.(pursue,monitor)&select=vq_score&limit=200`
       );
 
-      const scored     = newRoles.length;
-      const bestScore  = newRoles.reduce((max, r) => Math.max(max, Number(r.vq_score) || 0), 0);
-      const inFlight   = activeRoles.length;
+      const scored    = newRoles.length;
+      const bestScore = newRoles.reduce((max, r) => Math.max(max, Number(r.vq_score) || 0), 0);
+      const inFlight  = activeRoles.length;
 
-      // Build copy
-      const scoredLine = scored === 1 ? "1 role scored" : `${scored} roles scored`;
-      const bestLine   = bestScore >= 3.5 ? ` · Best match: ${bestScore.toFixed(1)}` : "";
-      const flightLine = inFlight > 0 ? `${inFlight} active in your pipeline.` : "Keep your pipeline moving.";
+      // Build localized copy
+      const copy       = getCopy(userLang[appleId] || "en");
+      const scoredLine = copy.weeklyScored(scored);
+      const bestLine   = bestScore >= 3.5 ? copy.weeklyBestLine(bestScore.toFixed(1)) : "";
+      const flightLine = inFlight > 0 ? copy.weeklyActive(inFlight) : copy.weeklyNone;
 
       const note = new apn.Notification();
       note.expiry  = Math.floor(Date.now() / 1000) + 86400;
       note.sound   = "default";
       note.alert   = {
-        title: `Weekly recap${bestLine}`,
-        body:  `${scoredLine} this week. ${flightLine}`,
+        title: copy.weeklyTitle(bestLine),
+        body:  copy.weeklyBody(scoredLine, flightLine),
       };
       note.payload = { type: "weekly_digest" };
       note.topic   = process.env.APNS_BUNDLE_ID;

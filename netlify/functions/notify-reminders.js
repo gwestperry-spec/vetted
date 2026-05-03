@@ -13,6 +13,7 @@
 //   APNS_KEY, APNS_KEY_ID, APNS_TEAM_ID, APNS_BUNDLE_ID
 
 import apn from "apn";
+import { getCopy } from "./notif-copy.js";
 
 const SB_URL = process.env.SUPABASE_URL;
 const SB_KEY = process.env.SUPABASE_SERVICE_KEY;
@@ -85,9 +86,11 @@ export default async function handler(req, context) {
 
       // ── 3. Get device tokens for this user ─────────────────────────────
       const devices = await sbGet(
-        `/user_devices?apple_id=eq.${encodeURIComponent(appleId)}&notif_reminders=eq.true&select=token`
+        `/user_devices?apple_id=eq.${encodeURIComponent(appleId)}&notif_reminders=eq.true&select=token,lang`
       );
       const tokens = devices.map(d => d.token).filter(Boolean);
+      const lang   = devices[0]?.lang || "en";
+      const copy   = getCopy(lang);
       if (!tokens.length) {
         console.log(`[notify-reminders] no devices for ${appleId} — skipping`);
         // Still stamp push_sent_at so we don't retry infinitely for users without tokens
@@ -104,7 +107,7 @@ export default async function handler(req, context) {
       note.sound   = "default";
       note.alert   = {
         title: `📅 ${title}${company ? ` · ${company}` : ""}`,
-        body:  reminder.label || "Time to follow up.",
+        body:  reminder.label || copy.reminderFallback,
       };
       note.payload = { roleId, type: "reminder", reminderId: reminder.id };
       note.topic   = process.env.APNS_BUNDLE_ID;

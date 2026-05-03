@@ -41,10 +41,31 @@ export default async function handler(req, context) {
     return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403 });
   }
 
-  const { appleId, sessionToken, token, platform = "ios", prefs = {} } = await req.json();
+  const { appleId, sessionToken, token, platform = "ios", lang, prefs = {}, langUpdateOnly = false } = await req.json();
 
-  if (!appleId || !token) {
-    return new Response(JSON.stringify({ error: "Missing appleId or token" }), { status: 400 });
+  if (!appleId) {
+    return new Response(JSON.stringify({ error: "Missing appleId" }), { status: 400 });
+  }
+
+  // ── Lang-only update: user changed language — patch all their device rows ──
+  if (langUpdateOnly && lang) {
+    const { error } = await supabase
+      .from("user_devices")
+      .update({ lang, updated_at: new Date().toISOString() })
+      .eq("apple_id", appleId);
+
+    if (error) {
+      console.error("[register-device] lang update error:", error);
+      return new Response(JSON.stringify({ error: "Failed to update lang" }), { status: 500 });
+    }
+    return new Response(JSON.stringify({ ok: true }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  if (!token) {
+    return new Response(JSON.stringify({ error: "Missing token" }), { status: 400 });
   }
 
   // Upsert — if same user registers same token again (app restart), just update timestamp
@@ -54,6 +75,7 @@ export default async function handler(req, context) {
       apple_id:         appleId,
       token,
       platform,
+      lang:             lang || "en",
       notif_reminders:  prefs.reminders  ?? true,
       notif_follow_up:  prefs.followUp   ?? true,
       notif_staleness:  prefs.staleness  ?? true,

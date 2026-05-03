@@ -16,6 +16,7 @@
 //   APNS_KEY, APNS_KEY_ID, APNS_TEAM_ID, APNS_BUNDLE_ID
 
 import apn from "apn";
+import { getCopy } from "./notif-copy.js";
 
 const SB_URL = process.env.SUPABASE_URL;
 const SB_KEY = process.env.SUPABASE_SERVICE_KEY;
@@ -105,14 +106,15 @@ export default async function handler(req, context) {
       try {
         if (await alreadySent(apple_id, "staleness", "", 7)) continue;
 
-        const devices = await sbGet(`/user_devices?apple_id=eq.${encodeURIComponent(apple_id)}&notif_staleness=eq.true&select=token`);
+        const devices = await sbGet(`/user_devices?apple_id=eq.${encodeURIComponent(apple_id)}&notif_staleness=eq.true&select=token,lang`);
         const tokens = devices.map(d => d.token).filter(Boolean);
         if (!tokens.length) continue;
 
+        const copy = getCopy(devices[0]?.lang || "en");
         const sent = await sendPush(
           provider, tokens,
-          "Keep your pipeline moving",
-          "Your framework is ready — don't let momentum slip.",
+          copy.staleTitle,
+          copy.staleBody,
           { type: "staleness" }
         );
         if (sent > 0) {
@@ -136,15 +138,16 @@ export default async function handler(req, context) {
       try {
         if (await alreadySent(apple_id, "follow_up", role_id, 10)) continue;
 
-        const devices = await sbGet(`/user_devices?apple_id=eq.${encodeURIComponent(apple_id)}&notif_follow_up=eq.true&select=token`);
+        const devices = await sbGet(`/user_devices?apple_id=eq.${encodeURIComponent(apple_id)}&notif_follow_up=eq.true&select=token,lang`);
         const tokens = devices.map(d => d.token).filter(Boolean);
         if (!tokens.length) continue;
 
+        const copy      = getCopy(devices[0]?.lang || "en");
         const roleLabel = title || "This role";
         const sent = await sendPush(
           provider, tokens,
           `${roleLabel}${company ? ` · ${company}` : ""}`,
-          "10 days since you applied — time to follow up?",
+          copy.followUpBody,
           { type: "follow_up", roleId: role_id }
         );
         if (sent > 0) {
@@ -207,9 +210,11 @@ export default async function handler(req, context) {
         const milestoneKey = `${timeline}_${hitMilestone}`;
         if (await alreadySent(apple_id, "timeline", milestoneKey, 3)) continue;
 
-        const devices = await sbGet(`/user_devices?apple_id=eq.${encodeURIComponent(apple_id)}&notif_timeline=eq.true&select=token`);
+        const devices = await sbGet(`/user_devices?apple_id=eq.${encodeURIComponent(apple_id)}&notif_timeline=eq.true&select=token,lang`);
         const tokens = devices.map(d => d.token).filter(Boolean);
         if (!tokens.length) continue;
+
+        const copy = getCopy(devices[0]?.lang || "en");
 
         // Count how many roles scored + applied
         const [scoredRoles, appliedRoles2] = await Promise.all([
@@ -219,12 +224,12 @@ export default async function handler(req, context) {
 
         const daysLeft = Math.max(0, windowDays - daysSinceStart);
         const body = appliedRoles2.length > 0
-          ? `${scoredRoles.length} roles scored · ${appliedRoles2.length} applied · ${daysLeft}d left in your window.`
-          : `${scoredRoles.length} roles scored · ${pctThrough}% through your window · no applications yet.`;
+          ? copy.timelineBodyApplied(scoredRoles.length, appliedRoles2.length, daysLeft)
+          : copy.timelineBodyNoApps(scoredRoles.length, pctThrough);
 
         const sent = await sendPush(
           provider, tokens,
-          `${hitMilestone}-day check-in`,
+          copy.timelineTitle(hitMilestone),
           body,
           { type: "timeline", milestone: hitMilestone }
         );

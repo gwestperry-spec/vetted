@@ -242,6 +242,7 @@ export default function App() {
   // onOpenRole: tap a notification → open that role's scorecard directly.
   usePushNotifications({
     authUser,
+    lang,
     enabled: !!authUser,
     onOpenRole: (roleId) => {
       const role = workspaceRoles.find(r => r.role_id === roleId);
@@ -1466,11 +1467,8 @@ function SettingsTab({ t, lang, onLangChange, onSignOut, onOpenMenu }) {
         {/* Notifications */}
         <div style={{ padding: "0 20px" }}>
           <div style={{ padding: "20px 0 12px", borderBottom: "none" }}>
-            <div style={{ fontFamily: "var(--font-display)", fontSize: 17, fontWeight: 500, color: "var(--ink)", lineHeight: 1.2, marginBottom: 2 }}>
+            <div style={{ fontFamily: "var(--font-display)", fontSize: 17, fontWeight: 500, color: "var(--ink)", lineHeight: 1.2 }}>
               {t.settingsNotifications || "Notifications"}
-            </div>
-            <div style={{ fontFamily: "var(--font-data)", fontSize: 10, letterSpacing: "0.08em", color: "#8A9A8A", textTransform: "uppercase" }}>
-              {t.settingsNotificationsHint || "Manage push alerts"}
             </div>
           </div>
           {[
@@ -1491,8 +1489,8 @@ function SettingsTab({ t, lang, onLangChange, onSignOut, onOpenMenu }) {
               }}
             >
               <div style={{ minWidth: 0, flex: 1 }}>
-                <div style={{ fontFamily: "var(--font-prose)", fontSize: 15, color: "var(--ink)", lineHeight: 1.2 }}>{label}</div>
-                <div style={{ fontFamily: "var(--font-data)", fontSize: 10, letterSpacing: "0.06em", color: "#8A9A8A", textTransform: "uppercase", marginTop: 3 }}>{desc}</div>
+                <div style={{ fontFamily: "var(--font-display)", fontSize: 17, fontWeight: 500, color: "var(--ink)", lineHeight: 1.2 }}>{label}</div>
+                <div style={{ fontFamily: "var(--font-data)", fontSize: 10, letterSpacing: "0.08em", color: "#8A9A8A", textTransform: "uppercase", marginTop: 4 }}>{desc}</div>
               </div>
               {/* iOS-style toggle */}
               <div style={{

@@ -23,8 +23,9 @@ function getNotifPrefs() {
   try { return JSON.parse(localStorage.getItem(NOTIF_PREFS_KEY) || "{}"); } catch { return {}; }
 }
 
-export function usePushNotifications({ authUser, enabled, onOpenRole }) {
+export function usePushNotifications({ authUser, lang, enabled, onOpenRole }) {
   const registered = useRef(false);
+  const lastLang   = useRef(null);
 
   useEffect(() => {
     if (!authUser?.id || !enabled || registered.current) return;
@@ -46,6 +47,7 @@ export function usePushNotifications({ authUser, enabled, onOpenRole }) {
 
         try {
           const prefs = getNotifPrefs();
+          lastLang.current = lang || "en";
           await fetch(ENDPOINTS.registerDevice, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -54,6 +56,7 @@ export function usePushNotifications({ authUser, enabled, onOpenRole }) {
               sessionToken: authUser.sessionToken || "",
               token,
               platform:     "ios",
+              lang:         lang || "en",
               prefs,
             }),
           });
@@ -97,4 +100,20 @@ export function usePushNotifications({ authUser, enabled, onOpenRole }) {
       cleanup.then(fn => fn?.());
     };
   }, [authUser?.id, enabled]);
+
+  // When lang changes after registration, patch the server with updated preference
+  useEffect(() => {
+    if (!authUser?.id || !lang || !registered.current) return;
+    if (lastLang.current === lang) return;
+    lastLang.current = lang;
+    fetch(ENDPOINTS.registerDevice, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        appleId: authUser.id,
+        lang,
+        langUpdateOnly: true,
+      }),
+    }).catch(() => {});
+  }, [lang, authUser?.id]);
 }
