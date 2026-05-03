@@ -85,6 +85,11 @@
 [functions."fetch-jd"]
   timeout = 20
 
+# Reminder push — runs every hour, checks for due reminders
+[functions."notify-reminders"]
+  schedule = "0 * * * *"
+  timeout  = 30
+
 # ── Staging context ───────────────────────────────────────────────────────────
 # Deploy the `staging` branch to a separate Netlify environment with its own
 # env vars (set in Netlify dashboard → Site configuration → Environment variables

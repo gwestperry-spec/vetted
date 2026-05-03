@@ -238,8 +238,21 @@ export default function App() {
   const t = T[lang];
   const dir = t.dir;
 
-  // Register device for push notifications after sign-in
-  usePushNotifications({ authUser, enabled: !!authUser });
+  // Register device for push notifications after sign-in.
+  // onOpenRole: tap a notification → open that role's scorecard directly.
+  usePushNotifications({
+    authUser,
+    enabled: !!authUser,
+    onOpenRole: (roleId) => {
+      const role = workspaceRoles.find(r => r.role_id === roleId);
+      if (role?.framework_snapshot) {
+        setCurrentOpp({ ...role.framework_snapshot, id: role.role_id, role_id: role.role_id, role_title: role.title, company: role.company });
+        setStep("result");
+      } else {
+        setStep("workspace");
+      }
+    },
+  });
 
   // Inject styles
   useEffect(() => {

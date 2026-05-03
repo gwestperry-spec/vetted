@@ -18,7 +18,7 @@ async function getPushPlugin() {
   }
 }
 
-export function usePushNotifications({ authUser, enabled }) {
+export function usePushNotifications({ authUser, enabled, onOpenRole }) {
   const registered = useRef(false);
 
   useEffect(() => {
@@ -66,12 +66,11 @@ export function usePushNotifications({ authUser, enabled }) {
         console.log("[push] foreground notification:", notification.title);
       });
 
-      // Deep-link handler — notification tapped while app is open
+      // Deep-link handler — notification tapped while app is open or from cold launch
       const tapListener = await Push.addListener("pushNotificationActionPerformed", (action) => {
         const data = action.notification?.data || {};
-        if (data.oppId) {
-          // Future: navigate to scorecard for data.oppId
-          console.log("[push] tapped — oppId:", data.oppId);
+        if (data.roleId && onOpenRole) {
+          onOpenRole(data.roleId);
         }
       });
 
