@@ -298,14 +298,17 @@ function InsightsSection({ opp, t }) {
 
 // ── Weight label helper ───────────────────────────────────────────────────
 function resolveWeightLabel(value, t) {
-  const map = {
-    1.0: t?.weightNotImportant      || "Not Important",
-    1.5: t?.weightSlightlyImportant || "Slightly Important",
-    2.0: t?.weightImportant         || "Important",
-    2.5: t?.weightVeryImportant     || "Very Important",
-    3.0: t?.weightCritical          || "Critical",
-  };
-  return map[value] ?? `${value}×`;
+  const steps = [
+    { v: 1.0, label: t?.weightNotImportant      || "Not Important" },
+    { v: 1.5, label: t?.weightSlightlyImportant || "Slightly Important" },
+    { v: 2.0, label: t?.weightImportant         || "Important" },
+    { v: 2.5, label: t?.weightVeryImportant     || "Very Important" },
+    { v: 3.0, label: t?.weightCritical          || "Critical" },
+  ];
+  const exact = steps.find(s => s.v === value);
+  if (exact) return exact.label;
+  // Nearest step — handles legacy weight values stored on a different scale
+  return steps.reduce((a, b) => Math.abs(b.v - value) < Math.abs(a.v - value) ? b : a).label;
 }
 
 // ── Filters ───────────────────────────────────────────────────────────────
@@ -384,15 +387,17 @@ function FiltersSection({ filterScores, t }) {
 function CoachSection({ opp, profile, lang, userTier, authUser, onUpgrade, t }) {
   const canVantage = isVantage(userTier);
   const [coachingCache, setCoachingCache]   = useState(null);
+  const [coachingLang, setCoachingLang]     = useState(null);
   const [coachingLoading, setCoachingLoading] = useState(false);
   const [coachingError, setCoachingError]   = useState("");
   const [coachingOpen, setCoachingOpen]     = useState(false);
 
-  const coaching = coachingCache || null;
+  // Bust cache if language has changed since coaching was fetched
+  const coaching = (coachingCache && coachingLang === lang) ? coachingCache : null;
 
   async function fetchCoaching() {
     if (!canVantage) { onUpgrade?.(t?.paywallCompare || "Unlock personalized coaching. Vantage feature."); return; }
-    if (coachingCache) { setCoachingOpen(true); return; }
+    if (coaching) { setCoachingOpen(true); return; }
     if (coachingLoading) return;
 
     setCoachingLoading(true);
@@ -416,10 +421,11 @@ function CoachSection({ opp, profile, lang, userTier, authUser, onUpgrade, t }) 
         .join("\n");
 
       const langName = LANG_NAMES[lang] || "English";
+      const langInstruction = lang !== "en"
+        ? `LANGUAGE REQUIREMENT: You MUST write every JSON value in ${langName}. This is mandatory — do not write any value in English. The only exception is the JSON keys themselves (keep those in English).`
+        : "";
 
-      const prompt = `You are an executive career coach. Be brief — write like a trusted advisor in a 15-minute meeting, not a report. Each section must be 60 words or fewer.
-
-Respond entirely in ${langName}. All JSON values must be written in ${langName}.
+      const prompt = `${langInstruction ? langInstruction + "\n\n" : ""}You are an executive career coach. Be brief — write like a trusted advisor in a 15-minute meeting, not a report. Each section must be 60 words or fewer.
 
 ${ADVOCATE_INSTRUCTION}
 
@@ -437,12 +443,12 @@ ${filterSummary}
 STRENGTHS: ${(opp.strengths || []).join("; ")}
 GAPS: ${(opp.gaps || []).join("; ")}
 
-Respond ONLY with valid JSON (no markdown). Each value must be 60 words or fewer — lead with the most important point, no padding. Shape:
+Respond ONLY with valid JSON (no markdown). Every value must be a plain string — never an array, never a nested object. Each string must be 60 words or fewer.${lang !== "en" ? ` REMINDER: ALL values must be written in ${langName}.` : ""} Shape:
 {
-  "interview_prep": "2 likely hard questions they'll face and one-line coaching note for each. Be specific to their gaps.",
+  "interview_prep": "Write 2 likely hard questions and a one-line coaching note for each, as a single plain string.",
   "positioning_angle": "Exactly how to frame their background for this role in 2 sentences. Reference real experience.",
-  "negotiation": "Their strongest leverage point and one risk. Be direct — apply the coaching style.",
-  "go_no_go": "Pursue, cautious, or pass — and one-sentence reason. Reference the VQ score and career goal."
+  "negotiation": "Their strongest leverage point and one risk, as a single plain string. Be direct.",
+  "go_no_go": "Pursue, cautious, or pass — and one-sentence reason, as a single plain string. Reference the VQ score."
 }`;
 
       const res = await fetch(ENDPOINTS.anthropic, {
@@ -464,12 +470,22 @@ Respond ONLY with valid JSON (no markdown). Each value must be 60 words or fewer
       const text = data.content?.map(b => (typeof b.text === "string" ? b.text : "")).join("") || "";
       const raw = JSON.parse(text.replace(/```json|```/g, "").trim());
 
+      const flattenField = (v) => {
+        if (!v) return "";
+        if (typeof v === "string") return v;
+        if (Array.isArray(v)) return v.map(item =>
+          typeof item === "string" ? item : Object.values(item).join(" — ")
+        ).join("\n");
+        if (typeof v === "object") return Object.values(v).join(" — ");
+        return String(v);
+      };
       setCoachingCache({
-        interview_prep:    String(raw.interview_prep    || ""),
-        positioning_angle: String(raw.positioning_angle || ""),
-        negotiation:       String(raw.negotiation       || ""),
-        go_no_go:          String(raw.go_no_go          || ""),
+        interview_prep:    flattenField(raw.interview_prep),
+        positioning_angle: flattenField(raw.positioning_angle),
+        negotiation:       flattenField(raw.negotiation),
+        go_no_go:          flattenField(raw.go_no_go),
       });
+      setCoachingLang(lang);
     } catch (err) {
       handleError(err, "coaching_prompts");
       setCoachingError("Coaching failed to load. Please try again.");
@@ -800,6 +816,7 @@ export default function ScoreResult({ t, lang, opp, profile, onBack, onRemove, o
           if (newVal === "applied") onUpdateStatus?.(opp.id, "applied");
         }}
         onOverflow={() => setShowOverflow(true)}
+        t={t}
       />
 
       {showOverflow && (
@@ -817,18 +834,18 @@ export default function ScoreResult({ t, lang, opp, profile, onBack, onRemove, o
 }
 
 // ── ActionTracker ─────────────────────────────────────────────────────────
-function ActionTracker({ status, onSelect, onOverflow }) {
+function ActionTracker({ status, onSelect, onOverflow, t }) {
   const items = [
     {
-      id: "passed", label: "PASS", short: "PASSED",
+      id: "passed", label: (t?.pass    || "PASS").toUpperCase(),    short: (t?.passed  || "PASSED").toUpperCase(),
       icon: <><path d="M3 7L11 7" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/><path d="M3 3L11 11" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></>,
     },
     {
-      id: "saved", label: "SAVE", short: "SAVED",
+      id: "saved",  label: (t?.save    || "SAVE").toUpperCase(),    short: (t?.saved   || "SAVED").toUpperCase(),
       icon: <path d="M3 2h8v10l-4-2.5L3 12V2z" stroke="currentColor" strokeWidth="1.3" fill="none" strokeLinejoin="round"/>,
     },
     {
-      id: "applied", label: "APPLY", short: "APPLIED",
+      id: "applied", label: (t?.apply  || "APPLY").toUpperCase(),   short: (t?.applied || "APPLIED").toUpperCase(),
       icon: <path d="M2 7l3 3 7-7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" fill="none"/>,
     },
   ];
