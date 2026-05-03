@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { COACHING_PAIRS_BY_LANG } from "../i18n/coachingPairs.js";
 
 // ─── Coaching pairs — shown during scoring wait ────────────────────────────
 const COACHING_PAIRS = [
@@ -84,17 +85,17 @@ if (typeof document !== "undefined" && !document.getElementById("vq-loading-keyf
 }
 
 // ─── Weight label map — matches exportPdf.js ──────────────────────────────
-const WEIGHT_LABELS = {
-  1.0: "Not Important",
-  1.5: "Slightly Important",
-  2.0: "Important",
-  2.5: "Very Important",
-  3.0: "Critical",
-};
-function weightLabel(w) {
+function weightLabel(w, t) {
   const n = parseFloat(w);
   if (isNaN(n)) return null;
-  return WEIGHT_LABELS[n] ?? `${n.toFixed(1)}×`;
+  const steps = [
+    { v: 1.0, label: t?.weightNotImportant      || "Not Important" },
+    { v: 1.5, label: t?.weightSlightlyImportant || "Slightly Important" },
+    { v: 2.0, label: t?.weightImportant         || "Important" },
+    { v: 2.5, label: t?.weightVeryImportant     || "Very Important" },
+    { v: 3.0, label: t?.weightCritical          || "Critical" },
+  ];
+  return steps.reduce((a, b) => Math.abs(b.v - n) < Math.abs(a.v - n) ? b : a).label;
 }
 
 // ─── Score color helper ────────────────────────────────────────────────────
@@ -163,13 +164,20 @@ function FilterRow({ name, status, score }) {
 //
 // Typography: IBM Plex Mono for all data/labels, Libre Baskerville for prose
 export function VQLoadingScreen({ loadingMsg, streamingFilters = [], filters = [], scoringPhase = 0, t = {}, lang = "en" }) {
+  const activePairs = COACHING_PAIRS_BY_LANG[lang] || COACHING_PAIRS;
+  const isEnglish   = !COACHING_PAIRS_BY_LANG[lang];
+
   // Pick initial coaching pair
   const initIdx = useRef(null);
   if (initIdx.current === null) {
-    const pool = COACHING_PAIRS.map((_, i) => i).filter(i => i !== _lastCoachingIdx);
-    if (_lastCoachingIdx !== ANCHOR_IDX) pool.push(ANCHOR_IDX);
-    initIdx.current = pool[Math.floor(Math.random() * pool.length)];
-    _lastCoachingIdx = initIdx.current;
+    if (isEnglish) {
+      const pool = COACHING_PAIRS.map((_, i) => i).filter(i => i !== _lastCoachingIdx);
+      if (_lastCoachingIdx !== ANCHOR_IDX) pool.push(ANCHOR_IDX);
+      initIdx.current = pool[Math.floor(Math.random() * pool.length)];
+      _lastCoachingIdx = initIdx.current;
+    } else {
+      initIdx.current = Math.floor(Math.random() * activePairs.length);
+    }
   }
 
   const [pairIdx, setPairIdx]                 = useState(initIdx.current);
@@ -200,11 +208,16 @@ export function VQLoadingScreen({ loadingMsg, streamingFilters = [], filters = [
       setPhase("out");
       setTimeout(() => {
         setPairIdx(prev => {
-          const pool = COACHING_PAIRS.map((_, i) => i).filter(i => i !== prev);
-          if (prev !== ANCHOR_IDX) pool.push(ANCHOR_IDX);
-          const next = pool[Math.floor(Math.random() * pool.length)];
-          _lastCoachingIdx = next;
-          return next;
+          if (isEnglish) {
+            const pool = COACHING_PAIRS.map((_, i) => i).filter(i => i !== prev);
+            if (prev !== ANCHOR_IDX) pool.push(ANCHOR_IDX);
+            const next = pool[Math.floor(Math.random() * pool.length)];
+            _lastCoachingIdx = next;
+            return next;
+          } else {
+            const pool = activePairs.map((_, i) => i).filter(i => i !== prev);
+            return pool[Math.floor(Math.random() * pool.length)];
+          }
         });
         setPhase("in");
       }, 380);
@@ -366,7 +379,7 @@ export function VQLoadingScreen({ loadingMsg, streamingFilters = [], filters = [
               color: "#7B776C",
               letterSpacing: ".06em",
             }}>
-              {streamingFilters.length} / {filters.length}
+              {doneCount} / {filters.length}
             </span>
           </div>
 
@@ -410,7 +423,7 @@ export function VQLoadingScreen({ loadingMsg, streamingFilters = [], filters = [
                 }}>{row.name}</span>
 
                 {/* Weight badge — descriptor label, skip Standard (baseline) */}
-                {row.weight !== undefined && row.weight !== 1.0 && weightLabel(row.weight) && (
+                {row.weight !== undefined && row.weight !== 1.0 && weightLabel(row.weight, t) && (
                   <span style={{
                     fontFamily: "var(--font-data)",
                     fontSize: 8,
@@ -420,7 +433,7 @@ export function VQLoadingScreen({ loadingMsg, streamingFilters = [], filters = [
                     flexShrink: 0,
                     marginRight: 2,
                     transition: "color 0.3s ease",
-                  }}>{weightLabel(row.weight)}</span>
+                  }}>{weightLabel(row.weight, t)}</span>
                 )}
 
                 {/* Score — Libre Baskerville numeral when done */}
@@ -483,7 +496,7 @@ export function VQLoadingScreen({ loadingMsg, streamingFilters = [], filters = [
               lineHeight: 1.55,
               margin: "0 auto 14px",
             }}>
-              {COACHING_PAIRS[pairIdx].question}
+              {activePairs[pairIdx].question}
             </p>
 
             {/* Divider */}
@@ -504,7 +517,7 @@ export function VQLoadingScreen({ loadingMsg, streamingFilters = [], filters = [
               lineHeight: 1.75,
               margin: 0,
             }}>
-              {COACHING_PAIRS[pairIdx].statement}
+              {activePairs[pairIdx].statement}
             </p>
           </div>
         )}
