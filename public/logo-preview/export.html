@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Vetted — Export App Icon</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    background: #1a1a1a; color: #fff;
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 48px 24px; margin: 0; gap: 32px;
+  }
+  h1 { font-size: 13px; letter-spacing: .18em; text-transform: uppercase; color: #555; margin: 0; }
+  #preview { border-radius: 22.5%; overflow: hidden; }
+  .btn {
+    background: #2d6a4f; color: #fff; border: none;
+    padding: 12px 28px; border-radius: 6px;
+    font-size: 13px; font-weight: 600; letter-spacing: .08em;
+    cursor: pointer;
+  }
+  .btn:hover { background: #235440; }
+  .note { font-size: 11px; color: #555; text-align: center; line-height: 1.7; }
+</style>
+</head>
+<body>
+<h1>Vetted App Icon — 1024 × 1024</h1>
+<div id="preview"></div>
+<button class="btn" id="dl">↓ Download 1024px PNG</button>
+<p class="note">
+  No rounded corners — Xcode applies the icon mask.<br>
+  Replace <code>ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon.png</code>
+</p>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+<script type="text/babel" src="logo-marks.jsx"></script>
+<script type="text/babel">
+  const SIZE = 1024;
+
+  // Canonical mark — CandB spec from handoff README
+  const iconEl = (
+    <ScoreV
+      size={SIZE}
+      vSpan={0.50}
+      strokeRel={0.17}
+      dotSizeRel={0.17}
+      dotGlow={true}
+      dotGlowSize={2.0}
+      vignette={0.30}
+      grooveOpacity={0.10}
+      grooveStyle="outlined"
+      progress={0.72}
+      showFrame={false}
+      shadow={false}
+    />
+  );
+
+  // Render small preview (280px)
+  const previewEl = (
+    <ScoreV
+      size={280}
+      vSpan={0.50}
+      strokeRel={0.17}
+      dotSizeRel={0.17}
+      dotGlow={true}
+      dotGlowSize={2.0}
+      vignette={0.30}
+      grooveOpacity={0.10}
+      grooveStyle="outlined"
+      progress={0.72}
+      showFrame={true}
+      shadow={true}
+    />
+  );
+
+  ReactDOM.createRoot(document.getElementById('preview')).render(previewEl);
+
+  // Export — render 1024px offscreen, draw to canvas, download
+  document.getElementById('dl').addEventListener('click', () => {
+    const offscreen = document.createElement('div');
+    offscreen.style.cssText = 'position:fixed;left:-2000px;top:0;';
+    document.body.appendChild(offscreen);
+
+    const root = ReactDOM.createRoot(offscreen);
+    root.render(iconEl);
+
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      const svg = offscreen.querySelector('svg');
+      if (!svg) { alert('SVG not found — try again'); return; }
+
+      const serialized = new XMLSerializer().serializeToString(svg);
+      const blob = new Blob([serialized], { type: 'image/svg+xml' });
+      const url = URL.createObjectURL(blob);
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = SIZE; canvas.height = SIZE;
+        canvas.getContext('2d').drawImage(img, 0, 0, SIZE, SIZE);
+        URL.revokeObjectURL(url);
+        canvas.toBlob(b => {
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(b);
+          a.download = 'vetted-appicon-1024.png';
+          a.click();
+          root.unmount();
+          document.body.removeChild(offscreen);
+        }, 'image/png');
+      };
+      img.src = url;
+    }));
+  });
+</script>
+</body>
+</html>
