@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200" role="img" aria-label="Vetted">
+  <defs>
+    <clipPath id="vetted-clip">
+      <rect x="0" y="0" width="200" height="200" rx="45" ry="45"></rect>
+    </clipPath>
+    <radialGradient id="vetted-vig" cx="50%" cy="50%" r="70%">
+      <stop offset="55%" stop-color="#000" stop-opacity="0"></stop>
+      <stop offset="100%" stop-color="#000" stop-opacity="0.30"></stop>
+    </radialGradient>
+    <radialGradient id="vetted-dot-halo" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#fbbf24" stop-opacity="0.55"></stop>
+      <stop offset="55%" stop-color="#fbbf24" stop-opacity="0.18"></stop>
+      <stop offset="100%" stop-color="#fbbf24" stop-opacity="0"></stop>
+    </radialGradient>
+  </defs>
+  <g clip-path="url(#vetted-clip)">
+    
+    <rect x="0" y="0" width="200" height="200" fill="#2d6a4f"></rect>
+    
+    <rect x="0" y="0" width="200" height="200" fill="url(#vetted-vig)"></rect>
+    
+    <path d="M 50 64 L 100 156 L 150 64" stroke="#ffffff" stroke-opacity="0.14" stroke-width="34" stroke-linecap="round" stroke-linejoin="round" fill="none"></path>
+    
+    <path d="M 50 64 L 100 156 L 122 115.52" stroke="#ffffff" stroke-opacity="0.93" stroke-width="34" stroke-linecap="round" stroke-linejoin="round" fill="none"></path>
+    
+    <circle cx="122" cy="115.52" r="40" fill="url(#vetted-dot-halo)"></circle>
+    
+    <circle cx="122" cy="115.52" r="17" fill="#fbbf24"></circle>
+  </g>
+</svg>

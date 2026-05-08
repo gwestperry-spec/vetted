@@ -1,0 +1,1589 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Vetted: Career Intelligence — Score every opportunity</title>
+<meta name="description" content="Vetted: Career Intelligence is an iOS app for senior professionals to score job opportunities against their personal filter framework." />
+<meta name="theme-color" content="#1A2E1A" />
+<link rel="stylesheet" href="assets/tokens.css" />
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-prose);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    overflow-x: hidden;
+  }
+  img, svg { display: block; max-width: 100%; }
+  a { color: inherit; text-decoration: none; }
+
+  /* ───────── Layout ───────── */
+  .page { width: 100%; max-width: 100%; margin: 0 auto; }
+  .container {
+    width: 100%;
+    max-width: 560px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  /* ───────── Sticky topbar ───────── */
+  .topbar {
+    position: sticky;
+    position: -webkit-sticky;
+    top: 0;
+    z-index: 40;
+    background: rgba(250,250,248,0.92);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: var(--hairline);
+  }
+  .topbar-inner {
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  .wordmark { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
+  .wordmark .name {
+    font-family: var(--font-serif);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    color: var(--ink);
+    text-transform: uppercase;
+  }
+  .wordmark .sub {
+    font-family: var(--font-serif);
+    font-size: 9px;
+    font-weight: 400;
+    letter-spacing: 0.20em;
+    color: var(--muted-soft);
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .topbar a.signin {
+    font-family: var(--font-serif);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink);
+    padding: 10px 14px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    border: 1.5px solid var(--ink);
+    border-radius: var(--r);
+    transition: background var(--t-fast), color var(--t-fast);
+  }
+  .topbar a.signin:hover { background: var(--ink); color: var(--paper); }
+  .logo-mark {
+    height: 36px;
+    width: 36px;
+    object-fit: contain;
+    display: block;
+    flex-shrink: 0;
+  }
+  .wordmark { text-decoration: none; display: inline-flex; align-items: center; gap: 12px; }
+
+  /* ───────── Section scaffolding ───────── */
+  section { padding: 56px 0; }
+  section + section { border-top: var(--hairline); }
+  .sec-eyebrow {
+    font-family: var(--font-serif);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.20em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 16px;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .sec-eyebrow::before {
+    content: "";
+    width: 20px;
+    height: 1px;
+    background: var(--accent);
+  }
+  .sec-title {
+    font-family: var(--font-serif);
+    font-size: clamp(32px, 7.5vw, 44px);
+    font-weight: 700;
+    line-height: 1.05;
+    letter-spacing: -0.022em;
+    color: var(--ink);
+    margin: 0 0 16px;
+  }
+  .sec-title em { font-style: italic; font-weight: 400; color: var(--accent); }
+  .sec-lede {
+    font-family: var(--font-prose);
+    font-size: 16px;
+    line-height: 1.6;
+    color: var(--muted-deep);
+    margin: 0 0 28px;
+    max-width: 44ch;
+  }
+
+  /* ───────── HERO ───────── */
+  .hero { padding: 48px 0 56px; }
+  .hero .eyebrow {
+    font-family: var(--font-serif);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 24px;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .hero .eyebrow::before {
+    content: "";
+    width: 24px;
+    height: 1px;
+    background: var(--accent);
+  }
+  .hero h1 {
+    font-family: var(--font-serif);
+    font-size: clamp(44px, 12vw, 72px);
+    font-weight: 700;
+    line-height: 0.98;
+    letter-spacing: -0.028em;
+    color: var(--ink);
+    margin: 0;
+  }
+  .hero h1 em {
+    font-style: italic;
+    font-weight: 400;
+    color: var(--accent);
+  }
+  .hero .lede {
+    font-family: var(--font-prose);
+    font-size: 17px;
+    line-height: 1.55;
+    color: var(--muted-deep);
+    margin: 28px 0 32px;
+    max-width: 38ch;
+  }
+
+  /* ───────── CTAs ───────── */
+  .cta-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+  }
+  .cta-stack .meta {
+    font-family: var(--font-serif);
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted-soft);
+    text-align: center;
+    margin-top: 8px;
+  }
+  .app-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 16px 22px;
+    background: var(--ink);
+    color: var(--paper);
+    border-radius: var(--r);
+    transition: background var(--t-fast);
+    min-height: 56px;
+    width: 100%;
+  }
+  .app-badge:hover, .app-badge:active { background: #2D4A2D; }
+  .app-badge svg { width: 28px; height: 28px; fill: currentColor; flex-shrink: 0; }
+  .app-badge .stack { display: flex; flex-direction: column; line-height: 1; align-items: flex-start; }
+  .app-badge .small {
+    font-family: var(--font-serif);
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    opacity: 0.7;
+    margin-bottom: 4px;
+  }
+  .app-badge .big {
+    font-family: var(--font-prose);
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 16px 22px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--r);
+    color: var(--ink);
+    font-family: var(--font-prose);
+    font-size: 15px;
+    font-weight: 600;
+    transition: border-color var(--t-fast), background var(--t-fast);
+    min-height: 56px;
+    background: transparent;
+    cursor: pointer;
+    text-align: center;
+  }
+  .btn-secondary:hover, .btn-secondary:active { border-color: var(--ink); background: var(--cream); }
+
+  /* ───────── DEMO REEL ───────── */
+  .demo {
+    padding: 48px 0 56px;
+    background: var(--cream);
+    border-top: var(--hairline);
+    border-bottom: var(--hairline);
+  }
+  .reel-frame {
+    margin: 24px auto 0;
+    width: 100%;
+    max-width: 320px;
+    aspect-ratio: 9 / 16;
+    background: #0e120f;
+    border-radius: 28px;
+    overflow: hidden;
+    position: relative;
+    border: 1px solid rgba(0,0,0,0.06);
+  }
+  .reel-frame iframe {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    display: block;
+  }
+  .reel-frame .placeholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 20px;
+    color: rgba(244,241,232,0.7);
+    font-family: var(--font-serif);
+    text-align: center;
+    padding: 24px;
+    cursor: pointer;
+  }
+  .reel-frame .placeholder .play {
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    background: rgba(244,241,232,0.12);
+    display: flex; align-items: center; justify-content: center;
+    border: 1.5px solid rgba(244,241,232,0.4);
+  }
+  .reel-frame .placeholder .play::after {
+    content: "";
+    width: 0; height: 0;
+    border-left: 14px solid #F4F1E8;
+    border-top: 9px solid transparent;
+    border-bottom: 9px solid transparent;
+    margin-left: 4px;
+  }
+  .reel-frame .placeholder .label {
+    font-size: 10px;
+    letter-spacing: 0.20em;
+    text-transform: uppercase;
+    opacity: 0.7;
+  }
+  .reel-caption {
+    margin-top: 20px;
+    font-family: var(--font-serif);
+    font-size: 13px;
+    font-style: italic;
+    color: var(--muted-deep);
+    text-align: center;
+    max-width: 36ch;
+    margin-left: auto;
+    margin-right: auto;
+    line-height: 1.55;
+  }
+  .reel-tabs {
+    margin-top: 24px;
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .reel-tab {
+    font-family: var(--font-serif);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-pill);
+    background: var(--paper);
+    cursor: pointer;
+    min-height: 40px;
+    transition: all var(--t-fast);
+  }
+  .reel-tab.active {
+    background: var(--ink);
+    color: var(--paper);
+    border-color: var(--ink);
+  }
+
+  /* ───────── FEATURES ───────── */
+  .features-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0;
+    border-top: var(--hairline);
+    margin-top: 8px;
+  }
+  .feature {
+    padding: 24px 0;
+    border-bottom: var(--hairline);
+    display: grid;
+    grid-template-columns: 56px 1fr;
+    gap: 16px;
+    align-items: start;
+  }
+  .feature .num {
+    font-family: var(--font-serif);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    color: var(--accent);
+    text-transform: uppercase;
+    padding-top: 4px;
+  }
+  .feature h3 {
+    font-family: var(--font-serif);
+    font-size: 19px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin: 0 0 6px;
+    color: var(--ink);
+    line-height: 1.25;
+  }
+  .feature p {
+    font-family: var(--font-prose);
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--muted-deep);
+    margin: 0;
+  }
+
+  /* ───────── TRUST STRIP ───────── */
+  .trust-strip {
+    margin-top: 56px;
+    padding: 36px 32px;
+    background: var(--ink);
+    color: var(--paper);
+    border-radius: var(--r-card);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 32px;
+  }
+  .trust-strip .trust-num {
+    font-family: var(--font-serif);
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    line-height: 1.15;
+    color: var(--paper);
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+  .trust-strip .trust-num span {
+    font-family: var(--font-serif);
+    font-size: 15px;
+    font-weight: 400;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--on-dark-ink);
+    line-height: 1.2;
+  }
+  .trust-strip .trust-divider {
+    width: 1px;
+    height: 26px;
+    background: rgba(255,255,255,0.18);
+  }
+  .trust-strip .trust-cta {
+    margin-left: 0;
+    font-family: var(--font-serif);
+    font-size: 15px;
+    font-weight: 400;
+    letter-spacing: 0;
+    line-height: 1.2;
+    color: var(--on-dark-ink);
+    display: inline-flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+  .trust-strip .trust-cta a {
+    color: var(--paper);
+    text-decoration: none;
+    font-family: var(--font-serif);
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0;
+    border-bottom: 1px solid rgba(255,255,255,0.4);
+    padding-bottom: 2px;
+    transition: border-color var(--t-fast);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .trust-strip .trust-cta a svg,
+  .trust-strip .trust-cta a img {
+    width: 22px;
+    height: 22px;
+    fill: currentColor;
+    display: block;
+    border-radius: 5px;
+  }
+  .trust-strip .trust-cta a:hover { border-bottom-color: var(--paper); }
+  @media (max-width: 720px) {
+    .trust-strip { flex-direction: column; align-items: flex-start; gap: 16px; padding: 24px; }
+    .trust-strip .trust-divider { display: none; }
+    .trust-strip .trust-cta { margin-left: 0; }
+  }
+
+  /* ───────── HOW IT WORKS ───────── */
+  .how-list {
+    list-style: none;
+    margin: 8px 0 0;
+    padding: 0;
+    counter-reset: how;
+  }
+  .how-list li {
+    counter-increment: how;
+    padding: 24px 0;
+    border-top: var(--hairline);
+    display: grid;
+    grid-template-columns: 36px 1fr;
+    gap: 16px;
+    align-items: start;
+  }
+  .how-list li:last-child { border-bottom: var(--hairline); }
+  .how-list li::before {
+    content: counter(how, decimal-leading-zero);
+    font-family: var(--font-serif);
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 0.04em;
+    padding-top: 2px;
+  }
+  .how-list li h3 {
+    font-family: var(--font-serif);
+    font-size: 20px;
+    font-weight: 600;
+    margin: 0 0 6px;
+    color: var(--ink);
+    letter-spacing: -0.01em;
+  }
+  .how-list li p {
+    font-family: var(--font-prose);
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--muted-deep);
+    margin: 0;
+  }
+
+  /* ───────── TIERS ───────── */
+  .tiers {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+    margin-top: 8px;
+  }
+  .tier {
+    background: var(--paper);
+    border: var(--rule);
+    border-radius: var(--r-card);
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .tier.featured {
+    background: var(--ink);
+    color: var(--paper);
+    border-color: var(--ink);
+  }
+  .tier .tier-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .tier .tier-name {
+    font-family: var(--font-serif);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.20em;
+    text-transform: uppercase;
+    color: inherit;
+  }
+  .tier.featured .tier-name { color: var(--on-dark-eyebrow); }
+  .tier .tier-tag {
+    font-family: var(--font-serif);
+    font-size: 9px;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-pill);
+    color: var(--muted);
+  }
+  .tier.featured .tier-tag {
+    border-color: var(--on-dark-mono);
+    color: var(--on-dark-ink);
+  }
+  .tier .tier-price {
+    font-family: var(--font-serif);
+    font-size: 36px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.02em;
+  }
+  .tier .tier-price small {
+    font-family: var(--font-prose);
+    font-size: 13px;
+    font-weight: 400;
+    letter-spacing: 0;
+    color: var(--muted-deep);
+    margin-left: 6px;
+  }
+  .tier.featured .tier-price small { color: var(--on-dark-mono); }
+  .tier .tier-desc {
+    font-family: var(--font-prose);
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--muted-deep);
+    margin: 0;
+  }
+  .tier.featured .tier-desc { color: var(--on-dark-mono); }
+  .tier ul {
+    list-style: none;
+    margin: 4px 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .tier ul li {
+    font-family: var(--font-prose);
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--ink);
+    padding-left: 22px;
+    position: relative;
+  }
+  .tier.featured ul li { color: var(--on-dark-ink); }
+  .tier ul li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 8px;
+    width: 12px;
+    height: 1px;
+    background: var(--accent);
+  }
+  .tier.featured ul li::before { background: #8FBC8F; }
+  .tier ul li.muted {
+    color: var(--muted-soft);
+    text-decoration: line-through;
+    text-decoration-color: var(--border);
+  }
+  .tier.featured ul li.muted { color: var(--on-dark-mono); opacity: 0.55; }
+  .tier-foundnote {
+    font-family: var(--font-serif);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin: -4px 0 0;
+    line-height: 1.5;
+  }
+  .tier.featured .tier-foundnote { color: #D4B97A; }
+  .founding-callout {
+    margin-top: 32px;
+    padding: 24px;
+    border: 1.5px solid var(--gold);
+    border-radius: var(--r-card);
+    background: var(--gold-light);
+    text-align: center;
+  }
+  .founding-callout .head {
+    font-family: var(--font-serif);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.20em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 8px;
+  }
+  .founding-callout .body {
+    font-family: var(--font-serif);
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 1.35;
+    color: var(--ink);
+    letter-spacing: -0.01em;
+  }
+  .founding-callout .body em { font-style: italic; color: var(--gold); font-weight: 500; }
+  .founding-callout .meta {
+    margin-top: 10px;
+    font-family: var(--font-prose);
+    font-size: 13px;
+    color: var(--muted-deep);
+    line-height: 1.55;
+  }
+  .tier .tier-cta {
+    margin-top: auto;
+    font-family: var(--font-serif);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    text-align: center;
+    padding: 14px 18px;
+    border-radius: var(--r);
+    border: 1.5px solid var(--ink);
+    color: var(--ink);
+    background: transparent;
+    transition: background var(--t-fast), color var(--t-fast);
+    min-height: 48px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .tier.featured .tier-cta {
+    background: var(--paper);
+    color: var(--ink);
+    border-color: var(--paper);
+  }
+  .tier .tier-cta:hover { background: var(--ink); color: var(--paper); }
+  .tier.featured .tier-cta:hover { background: transparent; color: var(--paper); }
+
+  .tiers-note {
+    margin-top: 24px;
+    font-family: var(--font-prose);
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--muted-deep);
+    text-align: center;
+  }
+
+  /* ───────── BLOG ───────── */
+  .blog-strip {
+    background: var(--ink);
+    color: var(--paper);
+  }
+  .blog-strip .sec-eyebrow {
+    color: #B8C8B8;
+  }
+  .blog-strip .sec-eyebrow::before {
+    background: #B8C8B8;
+  }
+  .blog-strip .sec-title { color: var(--paper); }
+  .blog-strip .sec-lede { color: var(--on-dark-mono); }
+  .blog-list {
+    margin: 8px 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    border-top: 1px solid rgba(244,250,232,0.14);
+  }
+  .blog-list a {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    padding: 22px 0;
+    border-bottom: 1px solid rgba(244,250,232,0.14);
+    transition: padding var(--t-fast);
+  }
+  .blog-list a:hover { padding-left: 8px; }
+  .blog-list .meta {
+    font-family: var(--font-serif);
+    font-size: 9px;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #8FA89A;
+  }
+  .blog-list h3 {
+    font-family: var(--font-serif);
+    font-size: 20px;
+    font-weight: 500;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+    color: var(--paper);
+    margin: 0;
+  }
+  .blog-list p {
+    font-family: var(--font-prose);
+    font-size: 14px;
+    line-height: 1.5;
+    color: #B8C8B8;
+    margin: 4px 0 0;
+  }
+  .blog-cta {
+    margin-top: 24px;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 22px;
+    border: 1.5px solid rgba(244,250,232,0.4);
+    border-radius: var(--r);
+    color: var(--paper);
+    font-family: var(--font-serif);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    min-height: 48px;
+    transition: border-color var(--t-fast), background var(--t-fast);
+  }
+  .blog-cta:hover { border-color: var(--paper); background: rgba(244,250,232,0.08); }
+
+  /* ───────── COMPANY / CONTACT ───────── */
+  .info dl {
+    margin: 16px 0 0;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0;
+    border-top: var(--hairline);
+  }
+  .info dl > div {
+    padding: 16px 0;
+    border-bottom: var(--hairline);
+    display: grid;
+    grid-template-columns: 100px 1fr;
+    gap: 16px;
+    align-items: baseline;
+  }
+  .info dt {
+    font-family: var(--font-serif);
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted-soft);
+  }
+  .info dd {
+    margin: 0;
+    font-family: var(--font-prose);
+    font-size: 15px;
+    color: var(--ink);
+    word-break: break-word;
+  }
+  .info dd a {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 1px;
+  }
+  .info dd a:hover { border-bottom-color: var(--ink); }
+  .info p {
+    font-family: var(--font-prose);
+    font-size: 15px;
+    line-height: 1.65;
+    color: var(--muted-deep);
+    margin: 0 0 14px;
+  }
+
+  /* ───────── FOUNDER ───────── */
+  .founder {
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: var(--hairline);
+  }
+  .founder-eyebrow {
+    font-family: var(--font-serif);
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.20em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+  .founder-name {
+    font-family: var(--font-serif);
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    margin-bottom: 10px;
+  }
+  .founder-bio {
+    font-family: var(--font-prose);
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--muted-deep);
+    margin: 0 0 12px;
+    max-width: 48ch;
+  }
+  .founder-link {
+    font-family: var(--font-serif);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 2px;
+    transition: border-color var(--t-fast);
+  }
+  .founder-link:hover { border-bottom-color: var(--ink); }
+
+  /* ───────── COMPARE MATRIX ───────── */
+  .compare-wrap { margin-top: 48px; }
+  .compare-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  table.compare {
+    width: 100%;
+    min-width: 560px;
+    border-collapse: collapse;
+    font-family: var(--font-prose);
+    font-size: 14px;
+  }
+  table.compare thead th {
+    font-family: var(--font-serif);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink);
+    text-align: left;
+    padding: 16px 14px;
+    border-bottom: 1.5px solid var(--ink);
+    background: var(--paper);
+    white-space: nowrap;
+  }
+  table.compare thead th.tier-h { text-align: center; }
+  table.compare thead th.tier-h.featured { color: var(--accent); }
+  table.compare tbody td {
+    padding: 14px;
+    border-bottom: var(--hairline);
+    color: var(--ink);
+    vertical-align: middle;
+  }
+  table.compare tbody tr.section td {
+    font-family: var(--font-serif);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.20em;
+    text-transform: uppercase;
+    color: var(--muted-soft);
+    background: var(--cream);
+    padding: 12px 14px;
+  }
+  table.compare tbody td.feat {
+    font-family: var(--font-prose);
+    font-size: 14px;
+    color: var(--ink);
+  }
+  table.compare tbody td.cell {
+    text-align: center;
+    font-family: var(--font-serif);
+    font-size: 13px;
+    color: var(--ink);
+    width: 110px;
+  }
+  table.compare tbody td.cell.featured { background: rgba(58,122,58,0.04); }
+  table.compare .check {
+    display: inline-block;
+    width: 16px; height: 16px;
+    color: var(--accent);
+  }
+  table.compare .dash {
+    color: var(--muted-soft);
+    font-family: var(--font-serif);
+  }
+
+  /* ───────── FOOTER ───────── */
+  footer {
+    padding: 48px 0 calc(120px + env(safe-area-inset-bottom));
+    border-top: var(--hairline);
+    background: var(--paper);
+  }
+  .footer-cols {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+  .footer-brand .footer-tag {
+    font-family: var(--font-prose);
+    font-size: 13px;
+    line-height: 1.55;
+    color: var(--muted-deep);
+    margin: 0 0 16px;
+    max-width: 36ch;
+  }
+  .footer-badge {
+    display: inline-flex;
+    width: auto;
+    padding: 12px 18px;
+    min-height: 48px;
+  }
+  .footer-col {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+  .footer-head {
+    font-family: var(--font-serif);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.20em;
+    text-transform: uppercase;
+    color: var(--ink);
+    margin-bottom: 12px;
+  }
+  .footer-col a {
+    font-family: var(--font-prose);
+    font-size: 14px;
+    color: var(--muted-deep);
+    padding: 8px 0;
+    min-height: 36px;
+    display: inline-flex;
+    align-items: center;
+    transition: color var(--t-fast);
+  }
+  .footer-col a:hover { color: var(--ink); }
+  .footer-base {
+    margin-top: 32px;
+    padding-top: 24px;
+    border-top: var(--hairline);
+    font-family: var(--font-serif);
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted-soft);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .footer-base .copy { color: var(--ink); font-weight: 600; }
+  .footer-logo {
+    height: 96px;
+    width: 96px;
+    object-fit: contain;
+    display: block;
+  }
+  .trust-strip .trust-num span.counter {
+    font-variant-numeric: tabular-nums;
+    min-width: 4ch;
+    display: inline-block;
+    font-family: var(--font-serif);
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    line-height: 1.15;
+    color: var(--paper);
+    text-transform: none;
+    display: inline-block;
+    text-align: left;
+    color: var(--paper);
+  }
+
+  /* ───────── Sticky mobile CTA bar ───────── */
+  .stickycta {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    z-index: 50;
+    background: rgba(250,250,248,0.96);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-top: var(--hairline);
+    padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+    display: flex;
+    gap: 10px;
+    transition: transform var(--t-slow);
+  }
+  .stickycta.hidden { transform: translateY(110%); }
+  .stickycta a {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 48px;
+    padding: 12px 16px;
+    border-radius: var(--r);
+    font-family: var(--font-prose);
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: -0.005em;
+  }
+  .stickycta .primary { background: var(--ink); color: var(--paper); }
+  .stickycta .secondary { border: 1.5px solid var(--border); color: var(--ink); }
+
+  /* ───────── Desktop / wider screens ───────── */
+  @media (min-width: 720px) {
+    .container { max-width: 880px; padding: 0 40px; }
+    section { padding: 72px 0; }
+    .hero { padding: 72px 0 80px; }
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1.1fr 1fr;
+      gap: 64px;
+      align-items: center;
+    }
+    .hero .cta-stack {
+      flex-direction: row;
+      align-items: stretch;
+      flex-wrap: wrap;
+    }
+    .hero .cta-stack .app-badge,
+    .hero .cta-stack .btn-secondary { width: auto; flex: 1; min-width: 200px; }
+    .hero .cta-stack .meta { width: 100%; text-align: left; }
+    .reel-frame { max-width: 360px; }
+    .features-grid { grid-template-columns: 1fr 1fr; column-gap: 40px; }
+    .feature { border-bottom: var(--hairline); }
+    .feature:nth-last-child(-n+2) { border-bottom: var(--hairline); }
+    .tiers { grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+    .blog-list a { grid-template-columns: 140px 1fr; gap: 32px; align-items: baseline; }
+    .blog-list .meta { padding-top: 4px; }
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: start; }
+    .info dl > div { grid-template-columns: 120px 1fr; }
+    footer .footer-cols { grid-template-columns: 1.6fr 1fr 1fr 1fr; gap: 48px; }
+    footer { padding-bottom: 56px; }
+    .stickycta { display: none; }
+  }
+  @media (min-width: 1024px) {
+    .container { max-width: 1040px; }
+  }
+</style>
+</head>
+<body>
+  <div class="page">
+
+    <!-- ───────── TOPBAR ───────── -->
+    <header class="topbar">
+      <div class="container topbar-inner">
+        <a class="wordmark" href="/">
+          <img src="assets/vetted-logo.svg" alt="Vetted" class="logo-mark" />
+          <span class="sub">Career Intelligence</span>
+        </a>
+        <a class="signin" href="/app">Sign in</a>
+      </div>
+    </header>
+
+    <!-- ───────── HERO ───────── -->
+    <section class="hero">
+      <div class="container">
+        <div class="hero-grid">
+          <div>
+            <div class="eyebrow">iOS · Available now</div>
+            <h1>Score every<br/>opportunity<br/>against <em>what<br/>matters.</em></h1>
+            <p class="lede">
+              Vetted is a career intelligence app for senior professionals — directors, VPs, founders, principal ICs — to evaluate job opportunities against their own weighted filter framework. No SaaS vibes. No salary slop. No fluff.
+            </p>
+            <div class="cta-stack">
+              <a class="app-badge" href="https://apps.apple.com/app/id6761249955">
+                <svg viewBox="0 0 384 512" aria-hidden="true"><path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zM256.6 67.7C293.1 26.3 290.7 4.6 290.7 4.6c-29.4 1.7-63.5 20.1-83.1 42.8-21.6 24.3-34.3 54.4-31.6 88.4 31.8 2.4 60.8-13.9 80.6-68.1z"/></svg>
+                <span class="stack">
+                  <span class="small">Download on the</span>
+                  <span class="big">App Store</span>
+                </span>
+              </a>
+              <a class="btn-secondary" href="#demo">Watch a 15s demo →</a>
+              <span class="meta">iPhone · Rated 16+ · Free to start</span>
+            </div>
+          </div>
+
+          <!-- Hero reel slot — collapsed into demo section below on mobile -->
+          <div class="hero-reel-desktop" aria-hidden="true" style="display:none;"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ───────── DEMO REEL ───────── -->
+    <section class="demo" id="demo">
+      <div class="container">
+        <div class="sec-eyebrow">In motion</div>
+        <h2 class="sec-title">Watch a role get <em>scored.</em></h2>
+        <p class="sec-lede">
+          A real opportunity, parsed against a real filter framework. No mocked numbers. The Vetted Quotient comes out the other side with the rationale to back it up.
+        </p>
+
+        <div class="reel-frame" id="reelFrame" data-reel="reel/01-original.html">
+          <div class="placeholder" id="reelPlaceholder">
+            <div class="play"></div>
+            <div class="label">Tap to play · 24s</div>
+          </div>
+        </div>
+
+        <div class="reel-tabs" role="tablist" aria-label="Examples">
+          <button class="reel-tab active" data-src="reel/01-original.html">GTM Ops · Anthropic</button>
+          <button class="reel-tab" data-src="reel/04-salary.html">CFO · Salary truthing</button>
+          <button class="reel-tab" data-src="reel/06-forensic.html">Technical Director</button>
+        </div>
+
+        <p class="reel-caption">"What if this score — whatever it says — is exactly the information you needed today?"</p>
+      </div>
+    </section>
+
+    <!-- ───────── FEATURES ───────── -->
+    <section id="features">
+      <div class="container">
+        <div class="sec-eyebrow">What it does</div>
+        <h2 class="sec-title">Built for how senior professionals <em>actually decide.</em></h2>
+
+        <div class="features-grid">
+          <div class="feature">
+            <div class="num">VQ</div>
+            <div>
+              <h3>Vetted Quotient · 0.0–5.0</h3>
+              <p>A single calibrated score against your filter framework. Pursue, monitor, or pass — with the editorial breakdown to back it up.</p>
+            </div>
+          </div>
+          <div class="feature">
+            <div class="num">FILTER</div>
+            <div>
+              <h3>Your framework, weighted.</h3>
+              <p>Define what actually matters — comp floor, scope, ownership, access, timing — and how much. Your filters are the engine, not a generic rubric.</p>
+            </div>
+          </div>
+          <div class="feature">
+            <div class="num">SALARY</div>
+            <div>
+              <h3>Comp truthing.</h3>
+              <p>AI-powered salary and total-comp benchmarks for senior IC and exec ranges. Stops the salary slop where it lives.</p>
+            </div>
+          </div>
+          <div class="feature">
+            <div class="num">STAGE</div>
+            <div>
+              <h3>Pipeline tracker.</h3>
+              <p>Applied, phone, interview, final, offer, rejected, withdrew. One quiet board for everything in motion.</p>
+            </div>
+          </div>
+          <div class="feature">
+            <div class="num">COMPARE</div>
+            <div>
+              <h3>Side-by-side.</h3>
+              <p>Stack two or three offers against the same framework. The trade-offs become visible in seconds, not weekends.</p>
+            </div>
+          </div>
+          <div class="feature">
+            <div class="num">PRIVATE</div>
+            <div>
+              <h3>Your decisions are yours.</h3>
+              <p>Sign in with Apple. No tracking, no recruiter feeds, no public profile. Career intelligence is private by default.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ───────── HOW IT WORKS ───────── -->
+    <section id="how">
+      <div class="container">
+        <div class="sec-eyebrow">How it works</div>
+        <h2 class="sec-title">Job offers <em>don't deserve hunches.</em></h2>
+
+        <ol class="how-list">
+          <li>
+            <div>
+              <h3>Build your filter framework.</h3>
+              <p>Five filters or more &mdash; you decide what matters. Comp, scope, access, timing, culture, location, growth. Set the weights once. Adjust whenever your career posture shifts.</p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <h3>Paste a job &mdash; or a URL.</h3>
+              <p>Drop the JD or link the listing. Vetted parses the role and runs it against your framework, not a generic rubric.</p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <h3>One verdict you can defend.</h3>
+              <p>Pursue the opportunity, monitor the opportunity, or pass on it entirely &mdash; with a VQ Score, an honest fit summary, the real gaps, and the comp picture to back it up.</p>
+            </div>
+          </li>
+        </ol>
+
+        <div class="trust-strip">
+          <div class="trust-num"><span class="counter" id="industries-counter" aria-live="polite">0</span> <span>industries</span></div>
+          <div class="trust-divider" aria-hidden="true"></div>
+          <div class="trust-num"><span class="counter" id="trust-counter" aria-live="polite">0</span> <span>VQs generated</span></div>
+          <div class="trust-divider" aria-hidden="true"></div>
+          <div class="trust-cta"><span>Add yours to our community.</span><a href="https://apps.apple.com/app/id6761249955" aria-label="Download Vetted on the App Store"><img src="assets/vetted-logo.svg" alt="" aria-hidden="true" />Download</a></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ───────── TIERS ───────── -->
+    <section id="pricing">
+      <div class="container">
+        <div class="sec-eyebrow">Tiers</div>
+        <h2 class="sec-title">Free to start. <em>Honest pricing.</em></h2>
+        <p class="sec-lede">No trials that bait-and-switch, no annual lock-ins disguised as discounts. Cancel from Settings.</p>
+
+        <div class="tiers">
+          <div class="tier">
+            <div class="tier-head">
+              <span class="tier-name">Free</span>
+              <span class="tier-tag">Start here</span>
+            </div>
+            <div class="tier-price">$0</div>
+            <p class="tier-desc">5 VQ scores per day · resets at midnight · no card required.</p>
+            <a class="tier-cta" href="/app">Download free</a>
+          </div>
+
+          <div class="tier featured">
+            <div class="tier-head">
+              <span class="tier-name">Signal</span>
+              <span class="tier-tag">Most popular</span>
+            </div>
+            <div class="tier-price">$24.99<small>/month</small></div>
+            <p class="tier-foundnote">Founding lifetime $399.99 · 200 seats left</p>
+            <p class="tier-desc">For active candidates running a real search.</p>
+            <a class="tier-cta" href="/app">Start Signal</a>
+          </div>
+
+          <div class="tier">
+            <div class="tier-head">
+              <span class="tier-name">Vantage</span>
+              <span class="tier-tag">Top tier</span>
+            </div>
+            <div class="tier-price">$49.99<small>/month</small></div>
+            <p class="tier-foundnote">Founding lifetime $799.99 · 100 seats left</p>
+            <p class="tier-desc">For senior professionals who want the full intelligence layer.</p>
+            <a class="tier-cta" href="/app">Start Vantage</a>
+          </div>
+        </div>
+
+        <div class="founding-callout">
+          <div class="head">Founding member pricing · open now</div>
+          <div class="body">Signal lifetime <em>$399.99</em> · Vantage lifetime <em>$799.99</em></div>
+          <div class="meta">When seats fill, this offer closes permanently. 200 Signal · 100 Vantage seats remaining.</div>
+        </div>
+
+        <div class="compare-wrap">
+          <div class="sec-eyebrow" style="margin-top: 16px;">Full comparison</div>
+          <h3 class="sec-title" style="font-size: clamp(24px, 5vw, 32px); margin-bottom: 24px;">Every feature, every tier.</h3>
+          <div class="compare-scroll">
+            <table class="compare">
+              <thead>
+                <tr>
+                  <th style="width: 40%;">Feature</th>
+                  <th class="tier-h">Free</th>
+                  <th class="tier-h featured">Signal</th>
+                  <th class="tier-h">Vantage</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="section"><td colspan="4">Core</td></tr>
+                <tr><td class="feat">VQ scoring</td><td class="cell">5 / day</td><td class="cell featured">Unlimited</td><td class="cell">Unlimited</td></tr>
+                <tr><td class="feat">Pursue / Monitor / Pass verdict</td><td class="cell"><span class="dash">—</span></td><td class="cell featured"><svg class="check" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M6.3 11.3 2.7 7.7l1.4-1.4 2.2 2.2 5.6-5.6 1.4 1.4z"/></svg></td><td class="cell"><svg class="check" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M6.3 11.3 2.7 7.7l1.4-1.4 2.2 2.2 5.6-5.6 1.4 1.4z"/></svg></td></tr>
+                <tr><td class="feat">Five-filter framework</td><td class="cell"><span class="dash">—</span></td><td class="cell featured"><svg class="check" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M6.3 11.3 2.7 7.7l1.4-1.4 2.2 2.2 5.6-5.6 1.4 1.4z"/></svg></td><td class="cell"><svg class="check" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M6.3 11.3 2.7 7.7l1.4-1.4 2.2 2.2 5.6-5.6 1.4 1.4z"/></svg></td></tr>
+                <tr><td class="feat">Seven languages</td><td class="cell"><span class="dash">—</span></td><td class="cell featured"><svg class="check" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M6.3 11.3 2.7 7.7l1.4-1.4 2.2 2.2 5.6-5.6 1.4 1.4z"/></svg></td><td class="cell"><svg class="check" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M6.3 11.3 2.7 7.7l1.4-1.4 2.2 2.2 5.6-5.6 1.4 1.4z"/></svg></td></tr>
+
+                <tr class="section"><td colspan="4">Signal</td></tr>
+                <tr><td class="feat">Résumé upload</td><td class="cell"><span class="dash">—</span></td><td class="cell featured"><svg class="check" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M6.3 11.3 2.7 7.7l1.4-1.4 2.2 2.2 5.6-5.6 1.4 1.4z"/></svg></td><td class="cell"><svg class="check" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M6.3 11.3 2.7 7.7l1.4-1.4 2.2 2.2 5.6-5.6 1.4 1.4z"/></svg></td></tr>
+                <tr><td class="feat">Custom filter creation</td><td class="cell"><span class="dash">—</span></td><td class="cell featured"><svg class="check" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M6.3 11.3 2.7 7.7l1.4-1.4 2.2 2.2 5.6-5.6 1.4 1.4z"/></svg></td><td class="cell"><svg class="check" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M6.3 11.3 2.7 7.7l1.4-1.4 2.2 2.2 5.6-5.6 1.4 1.4z"/></svg></td></tr>
+                <tr><td class="feat">Persistent score history</td><td class="cell"><span class="dash">—</span></td><td class="cell featured"><svg class="check" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M6.3 11.3 2.7 7.7l1.4-1.4 2.2 2.2 5.6-5.6 1.4 1.4z"/></svg></td><td class="cell"><svg class="check" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M6.3 11.3 2.7 7.7l1.4-1.4 2.2 2.2 5.6-5.6 1.4 1.4z"/></svg></td></tr>
+                <tr><td class="feat">Application tracker</td><td class="cell"><span class="dash">—</span></td><td class="cell featured"><svg class="check" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M6.3 11.3 2.7 7.7l1.4-1.4 2.2 2.2 5.6-5.6 1.4 1.4z"/></svg></td><td class="cell"><svg class="check" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M6.3 11.3 2.7 7.7l1.4-1.4 2.2 2.2 5.6-5.6 1.4 1.4z"/></svg></td></tr>
+
+                <tr class="section"><td colspan="4">Vantage only</td></tr>
+                <tr><td class="feat">Coach — interview prep, negotiating leverage, and more</td><td class="cell"><span class="dash">—</span></td><td class="cell featured"><span class="dash">—</span></td><td class="cell"><svg class="check" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M6.3 11.3 2.7 7.7l1.4-1.4 2.2 2.2 5.6-5.6 1.4 1.4z"/></svg></td></tr>
+                <tr><td class="feat">Market Pulse salary intelligence</td><td class="cell"><span class="dash">—</span></td><td class="cell featured"><span class="dash">—</span></td><td class="cell"><svg class="check" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M6.3 11.3 2.7 7.7l1.4-1.4 2.2 2.2 5.6-5.6 1.4 1.4z"/></svg></td></tr>
+                <tr><td class="feat">Custom filter weighting (Not important → Critical)</td><td class="cell"><span class="dash">—</span></td><td class="cell featured"><span class="dash">—</span></td><td class="cell"><svg class="check" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M6.3 11.3 2.7 7.7l1.4-1.4 2.2 2.2 5.6-5.6 1.4 1.4z"/></svg></td></tr>
+                <tr><td class="feat">Role comparison</td><td class="cell"><span class="dash">—</span></td><td class="cell featured"><span class="dash">—</span></td><td class="cell"><svg class="check" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M6.3 11.3 2.7 7.7l1.4-1.4 2.2 2.2 5.6-5.6 1.4 1.4z"/></svg></td></tr>
+                <tr><td class="feat">VQ Advocate</td><td class="cell"><span class="dash">—</span></td><td class="cell featured"><span class="dash">—</span></td><td class="cell"><svg class="check" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M6.3 11.3 2.7 7.7l1.4-1.4 2.2 2.2 5.6-5.6 1.4 1.4z"/></svg></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <p class="tiers-note">
+          Enterprise pricing available for your workforce — organizations, schools, small businesses. Write <a href="mailto:hello@tryvettedai.com" style="border-bottom:1px solid var(--border);">hello@tryvettedai.com</a>.
+        </p>
+      </div>
+    </section>
+
+    <!-- ───────── BLOG ───────── -->
+    <section class="blog-strip" id="blog">
+      <div class="container">
+        <div class="sec-eyebrow">The Editorial</div>
+        <h2 class="sec-title">A new essay <em>every week.</em></h2>
+        <p class="sec-lede">Field notes on senior careers, comp, market posture, and the math behind the verdicts. Written by the team. No newsletter funnel, no growth-hack copy.</p>
+
+        <div class="blog-list">
+          <a href="/blog">
+            <div class="meta">May 2026 · Frameworks</div>
+            <div>
+              <h3>Why your filter framework is worth more than your résumé.</h3>
+              <p>The first piece of a career strategy isn't a CV — it's the criteria you'd refuse a job over. Here's how to write yours.</p>
+            </div>
+          </a>
+          <a href="/blog">
+            <div class="meta">Apr 2026 · Comp</div>
+            <div>
+              <h3>The salary slop tax: what senior professionals lose to bad market data.</h3>
+              <p>Levels, Glassdoor, and "industry average" all break the same way at the senior tier. We measured it.</p>
+            </div>
+          </a>
+          <a href="/blog">
+            <div class="meta">Apr 2026 · Decisions</div>
+            <div>
+              <h3>Pursue, monitor, pass: the three-verdict discipline.</h3>
+              <p>Why "maybe" is the most expensive word in a job search, and how to retire it from your vocabulary.</p>
+            </div>
+          </a>
+          <a href="/blog">
+            <div class="meta">Mar 2026 · Method</div>
+            <div>
+              <h3>How VQ is calibrated — and how it isn't.</h3>
+              <p>The math behind the score, what it can and can't see, and why we publish our weights.</p>
+            </div>
+          </a>
+        </div>
+
+        <a class="blog-cta" href="/blog">Read the editorial →</a>
+      </div>
+    </section>
+
+    <!-- ───────── COMPANY / CONTACT ───────── -->
+    <section class="info" id="contact">
+      <div class="container">
+        <div class="info-grid">
+          <div>
+            <div class="sec-eyebrow">The company</div>
+            <h2 class="sec-title">Vetted AI LLC.</h2>
+            <p>
+              Vetted AI LLC is the company behind Vetted: Career Intelligence. We build editorial decision tools for senior professionals — restrained, direct, and answerable to the people using them.
+            </p>
+            <p>
+              The app is available on the iPhone App Store. Direct support from the team — we respond within 48 business hours or sooner.
+            </p>
+
+            <div class="founder">
+              <div class="founder-eyebrow">Founder</div>
+              <div class="founder-name">George West-Perry</div>
+              <p class="founder-bio">
+                Twenty-two years of work experience, thirteen in the food industry across every level — from food microbiology intern to head of supplier quality and food safety for a global QSR. Operator at multiple Fortune 500 firms. Texas Tech alumni. Vetted: Career Intelligence is the tool I envisioned will benefit jobseekers of all levels and industries.
+              </p>
+              <a class="founder-link" href="https://www.linkedin.com/in/george-west-perry-cp-fs-a3353070/" target="_blank" rel="noopener">LinkedIn ↗</a>
+            </div>
+          </div>
+
+          <div>
+            <div class="sec-eyebrow">Get in touch</div>
+            <dl>
+              <div>
+                <dt>Support</dt>
+                <dd><a href="mailto:hello@tryvettedai.com">hello@tryvettedai.com</a></dd>
+              </div>
+              <div>
+                <dt>App Store</dt>
+                <dd><a href="https://apps.apple.com/app/id6761249955">Vetted on the App Store</a></dd>
+              </div>
+              <div>
+                <dt>Privacy</dt>
+                <dd><a href="/privacy">tryvettedai.com/privacy</a></dd>
+              </div>
+              <div>
+                <dt>Terms</dt>
+                <dd><a href="/terms">tryvettedai.com/terms</a></dd>
+              </div>
+              <div>
+                <dt>Blog</dt>
+                <dd><a href="/blog">tryvettedai.com/blog</a></dd>
+              </div>
+              <div>
+                <dt>Sign in</dt>
+                <dd><a href="/app">Open the app →</a></dd>
+              </div>
+            </dl>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ───────── FOOTER ───────── -->
+    <footer>
+      <div class="container">
+        <div class="footer-cols">
+          <div class="footer-brand">
+            <a href="/" style="display: inline-block; margin-bottom: 16px;">
+              <img src="assets/vetted-logo.svg" alt="Vetted · Filter the noise" class="footer-logo" />
+            </a>
+            <div class="wordmark" style="margin-bottom: 12px;">
+              <span class="name">Vetted</span>
+              <span class="sub">Career Intelligence</span>
+            </div>
+            <p class="footer-tag">Score every opportunity against what matters. iPhone · Rated 16+.</p>
+            <a class="app-badge footer-badge" href="https://apps.apple.com/app/id6761249955">
+              <svg viewBox="0 0 384 512" aria-hidden="true"><path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zM256.6 67.7C293.1 26.3 290.7 4.6 290.7 4.6c-29.4 1.7-63.5 20.1-83.1 42.8-21.6 24.3-34.3 54.4-31.6 88.4 31.8 2.4 60.8-13.9 80.6-68.1z"/></svg>
+              <span class="stack">
+                <span class="small">Download on the</span>
+                <span class="big">App Store</span>
+              </span>
+            </a>
+          </div>
+
+          <div class="footer-col">
+            <div class="footer-head">Product</div>
+            <a href="#features">Features</a>
+            <a href="#how">How it works</a>
+            <a href="#demo">Demo</a>
+            <a href="#pricing">Pricing</a>
+            <a href="/app">Sign in</a>
+          </div>
+
+          <div class="footer-col">
+            <div class="footer-head">Company</div>
+            <a href="#contact">About</a>
+            <a href="/blog">Blog</a>
+            <a href="mailto:hello@tryvettedai.com">Contact</a>
+            <a href="https://www.linkedin.com/in/george-west-perry-cp-fs-a3353070/" target="_blank" rel="noopener">Founder</a>
+            <a href="https://www.tiktok.com/@vetted.career.int?_r=1&amp;_t=ZT-96B8mIT8gTF" target="_blank" rel="noopener">TikTok ↗</a>
+          </div>
+
+          <div class="footer-col">
+            <div class="footer-head">Legal</div>
+            <a href="/privacy">Privacy</a>
+            <a href="/terms">Terms</a>
+            <a href="mailto:hello@tryvettedai.com">Support</a>
+          </div>
+        </div>
+
+        <div class="footer-base">
+          <span class="copy">© 2026 Vetted AI LLC. All rights reserved.</span>
+          <span class="tagline">Filter the noise.</span>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- ───────── Sticky mobile CTA ───────── -->
+  <div class="stickycta" id="stickycta">
+    <a class="primary" href="https://apps.apple.com/app/id6761249955">Download on the App Store</a>
+  </div>
+
+  <script>
+    // ── Reel: tap-to-play (saves bandwidth, defers heavy iframe) ──
+    (function() {
+      var frame = document.getElementById('reelFrame');
+      var ph = document.getElementById('reelPlaceholder');
+      var tabs = document.querySelectorAll('.reel-tab');
+      var loaded = false;
+
+      function loadReel(src) {
+        // Remove existing iframe if any
+        var existing = frame.querySelector('iframe');
+        if (existing) existing.remove();
+        if (ph) ph.style.display = 'none';
+        var iframe = document.createElement('iframe');
+        iframe.src = src;
+        iframe.title = 'Vetted demo reel';
+        iframe.loading = 'lazy';
+        iframe.allow = 'autoplay';
+        frame.appendChild(iframe);
+        loaded = true;
+      }
+
+      if (ph) {
+        ph.addEventListener('click', function() {
+          loadReel(frame.dataset.reel);
+        });
+      }
+
+      tabs.forEach(function(tab) {
+        tab.addEventListener('click', function() {
+          tabs.forEach(function(t) { t.classList.remove('active'); });
+          tab.classList.add('active');
+          var src = tab.dataset.src;
+          frame.dataset.reel = src;
+          if (loaded) loadReel(src);
+        });
+      });
+
+      // Auto-load when scrolled into view (desktop only — saves mobile data)
+      if (window.matchMedia('(min-width: 720px)').matches && 'IntersectionObserver' in window) {
+        var io = new IntersectionObserver(function(entries) {
+          entries.forEach(function(e) {
+            if (e.isIntersecting && !loaded) {
+              loadReel(frame.dataset.reel);
+              io.disconnect();
+            }
+          });
+        }, { threshold: 0.4 });
+        io.observe(frame);
+      }
+    })();
+
+    // ── Trust-strip counter: 0 → 1,000+ pause → reset ──
+    (function() {
+      function makeCounter(elId, target, suffix, countMs, holdMs) {
+        var el = document.getElementById(elId);
+        if (!el) return;
+        function fmt(n) { return n.toLocaleString('en-US'); }
+        function loop() {
+          var start = performance.now();
+          function tick(now) {
+            var t = Math.min(1, (now - start) / countMs);
+            var eased = 1 - Math.pow(1 - t, 3);
+            var n = Math.floor(eased * target);
+            el.textContent = fmt(n);
+            if (t < 1) {
+              requestAnimationFrame(tick);
+            } else {
+              el.textContent = fmt(target) + suffix;
+              setTimeout(function() { el.textContent = '0'; loop(); }, holdMs);
+            }
+          }
+          requestAnimationFrame(tick);
+        }
+        var started = false;
+        var io = new IntersectionObserver(function(entries) {
+          entries.forEach(function(e) {
+            if (e.isIntersecting && !started) { started = true; loop(); io.disconnect(); }
+          });
+        }, { threshold: 0.3 });
+        io.observe(el);
+      }
+      makeCounter('industries-counter', 15, '+', 2400, 5000);
+      makeCounter('trust-counter', 1000, '+', 8000, 5000);
+    })();
+
+    // ── Sticky mobile CTA: hide near footer ──
+    (function() {
+      var sticky = document.getElementById('stickycta');
+      var footer = document.querySelector('footer');
+      if (!sticky || !footer) return;
+      function update() {
+        var rect = footer.getBoundingClientRect();
+        if (rect.top < window.innerHeight - 80) {
+          sticky.classList.add('hidden');
+        } else {
+          sticky.classList.remove('hidden');
+        }
+      }
+      window.addEventListener('scroll', update, { passive: true });
+      window.addEventListener('resize', update);
+      update();
+    })();
+  </script>
+</body>
+</html>

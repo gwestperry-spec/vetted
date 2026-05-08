@@ -8,5 +8,11 @@ export default defineConfig(({ mode }) => {
     plugins: [react()],
     // Load .env.preview when VITE_PREVIEW_MODE flag file exists
     envPrefix: 'VITE_',
+    build: {
+      // The static landing page (design/landing/Landing Page.html) ships its
+      // own asset bundle at /assets/. Move Vite's hashed SPA bundle to
+      // /_assets/ so the two don't collide.
+      assetsDir: '_assets',
+    },
   }
 })

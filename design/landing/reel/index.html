@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Vetted — Reel Canvas</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; padding: 0; height: 100%; background: #1a1f1c; font-family: 'Inter', system-ui, sans-serif; }
+  iframe { display: block; border: 0; width: 100%; height: 100%; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" src="design-canvas.jsx"></script>
+
+<script type="text/babel">
+  const { DCRoot, DCSection, DCArtboard } = window;
+  const REELS = [
+    { id: 'r01', label: '01 · Original — GTM Ops · Anthropic',     src: '01-original.html' },
+    { id: 'r02', label: '02 · Spiral Read — Master Electrician',   src: '02-spiral.html'   },
+    { id: 'r03', label: '03 · Profile Built — Art Director',       src: '03-profile.html'  },
+    { id: 'r04', label: '04 · Salary Truthing — CFO',              src: '04-salary.html'   },
+    { id: 'r05', label: '05 · Deploy Advocate — Head of Product',  src: '05-deploy.html'   },
+    { id: 'r06', label: '06 · Tilt-Shift Forensic — Technical Director', src: '06-forensic.html' },
+  ];
+  function App() {
+    return (
+      <DCRoot title="Vetted — TikTok reels" subtitle="Six 20s vertical concepts. Hand-and-phone open on each. Drag to reorder, double-click to focus.">
+        <DCSection id="reels" title="Reels" subtitle="1080×1920 · 20s · loops">
+          {REELS.map(r => (
+            <DCArtboard key={r.id} id={r.id} label={r.label} width={540} height={960}>
+              <iframe src={r.src} title={r.label}/>
+            </DCArtboard>
+          ))}
+        </DCSection>
+      </DCRoot>
+    );
+  }
+  ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

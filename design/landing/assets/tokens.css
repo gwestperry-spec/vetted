@@ -1,0 +1,244 @@
+/* ─────────────────────────────────────────────────────────────────────
+   Vetted: Career Intelligence — Design Tokens
+   Source of truth: src/utils/buildCss.js in gwestperry-spec/vetted
+   Use these vars verbatim. Do not introduce new colors.
+   ───────────────────────────────────────────────────────────────────── */
+
+@import url('https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;500;600;700&family=Noto+Sans+Arabic:wght@300;400;500&family=Noto+Sans+SC:wght@300;400;500&display=swap');
+
+:root {
+  /* ── Core palette ─────────────────────────────────────────── */
+  --ink:           #1A2E1A;   /* deep forest green — primary */
+  --paper:         #FAFAF8;   /* warm off-white background */
+  --cream:         #F0F4F0;   /* secondary surface */
+  --border:        #D8E8D8;   /* hairline rules */
+
+  --accent:        #3A7A3A;   /* active states, success, score-bar fills */
+  --accent-bg:     rgba(58,122,58,0.08);
+  --accent-border: rgba(58,122,58,0.3);
+
+  --gold:          #8A6A10;   /* Vantage badge, mid-range scores — AA on paper */
+  --gold-display:  #B8A030;   /* legacy display-only tone, large sizes only (fails AA at small sizes) */
+  --gold-light:    #F8F4D8;
+
+  --muted:         #4A5A4A;   /* secondary text */
+  --muted-soft:    #8A9A8A;   /* tertiary mono labels */
+  --muted-deep:    #5A6A5A;   /* card subtitle text */
+
+  /* ── Semantic ─────────────────────────────────────────────── */
+  --success:       #3A7A3A;
+  --warn:          #B8A030;
+  --warn-bg:       #FDF8E8;
+  --error:         #C05050;   /* form validation, system errors, hard failures only */
+  --error-bg:      #F8ECEC;
+
+  /* ── On-dark variants (used inside the dark hero card) ────── */
+  --on-dark-ink:        #E8F0E8;
+  --on-dark-mono:       #5A8A5A;
+  --on-dark-eyebrow:    #4A7A4A;
+  --on-dark-surface:    #253C25;
+
+  /* ── Score colors ─────────────────────────────────────────── */
+  --score-high:    #1A2E1A;   /* ≥ 4.0 — deep forest, "Pursue" (13.86:1 AA) */
+  --score-mid:     #8A6A10;   /* 3.0 – 3.9 — amber, "Monitor" (4.84:1 AA) */
+  --score-pass:    #5A6A5A;   /* < 3.0 — sage neutral, deliberate "Pass" decision (5.51:1 AA) */
+
+  /* ── Verdict pill — light surface ─────────────────────────── */
+  --pursue-bg:     #EAF3DE;  --pursue-fg:     #27500A;
+  --monitor-bg:    #FAEEDA;  --monitor-fg:    #633806;
+  --pass-pill-bg:  #F8ECEC;  --pass-pill-fg:  #C05050;
+
+  /* ── Verdict pill — dark surface (alpha-tinted) ───────────── */
+  --pursue-dark-bg: #C8E8C0; --pursue-dark-fg: #1A4A10;
+  --monitor-dark-bg: rgba(212,168,64,0.25); --monitor-dark-fg: #F0D090;
+  --pass-dark-bg:    rgba(192,80,80,0.25);  --pass-dark-fg:    #F0A0A0;
+
+  /* ── Application stage swatches ───────────────────────────── */
+  --stage-applied-bg:      #DFF0DF;  --stage-applied-fg:      #27500A;
+  --stage-phone-bg:        #E8F4FF;  --stage-phone-fg:        #0C447C;
+  --stage-interview-bg:    #FFF0E0;  --stage-interview-fg:    #7A3A00;
+  --stage-final-bg:        #E8EEF8;  --stage-final-fg:        #3A4A8A;
+  --stage-offer-bg:        #D0EED0;  --stage-offer-fg:        #1A4A1A;
+  --stage-rejected-bg:     #F8ECEC;  --stage-rejected-fg:     #C05050;
+  --stage-withdrew-bg:     #F0F4F0;  --stage-withdrew-fg:     #8A9A8A;
+
+  /* ── Type system (two-font, locked) ───────────────────────── */
+  --font-serif:   'Libre Baskerville', Georgia, 'Times New Roman', serif;
+  --font-prose:   'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-data:    'Libre Baskerville', Georgia, serif;  /* alias — labels stay in serif */
+  --font-arabic:  'Noto Sans Arabic', sans-serif;
+  --font-sc:      'Noto Sans SC', sans-serif;
+
+  /* ── Spacing scale (4px grid; pulled from production code) ─ */
+  --sp-1:  4px;
+  --sp-2:  6px;
+  --sp-3:  8px;
+  --sp-4:  10px;
+  --sp-5:  12px;
+  --sp-6:  14px;
+  --sp-7:  16px;
+  --sp-8:  20px;
+  --sp-9:  24px;
+  --sp-10: 28px;
+  --sp-11: 32px;
+  --sp-12: 48px;
+
+  /* ── Radii ────────────────────────────────────────────────── */
+  --r:           10px;       /* form fields, primary buttons */
+  --r-card:      12px;       /* cards */
+  --r-tile:      8px;        /* stat tiles */
+  --r-pill:      20px;       /* pills, segmented controls */
+
+  /* ── Borders ──────────────────────────────────────────────── */
+  --hairline:    0.5px solid var(--border);
+  --rule:        1px solid var(--border);
+  --field-bdr:   1.5px solid var(--border);
+
+  /* ── No drop-shadow system. Use hairlines + inversion. ────── */
+  --shadow:      none;
+
+  /* ── Focus halo ───────────────────────────────────────────── */
+  --focus:       0 0 0 3px rgba(58,122,58,0.25);
+
+  /* ── Motion ───────────────────────────────────────────────── */
+  --t-fast:      0.15s ease;
+  --t-slow:      0.3s ease;
+  --t-bar:       0.6s ease;     /* score bar fills */
+  --pulse:       1.2s ease-in-out infinite;
+  --spin:        0.8s linear infinite;
+  --shimmer:     1.5s infinite;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Semantic typography classes — use these by name in HTML
+   rather than restating the same font + size + tracking inline.
+   ───────────────────────────────────────────────────────────── */
+
+/* ─────────────────────────────────────────────────────────────
+   Two-font system (locked):
+     · Libre Baskerville → display, heading, title, scores, labels,
+                           eyebrows, verdict pills, filter names —
+                           anything that reads as precision or authority.
+     · Inter             → body copy only. Paragraphs, subtitles,
+                           form field text, hint text.
+   The "mono" effect on labels comes from letter-spacing + uppercase +
+   weight in Libre Baskerville, not from a third typeface.
+   ───────────────────────────────────────────────────────────── */
+
+html, body { color: var(--ink); background: var(--paper); }
+
+body { font-family: var(--font-prose); -webkit-font-smoothing: antialiased; }
+
+/* Display — full-bleed page heads (sign-in, marketing-style). Libre Baskerville. */
+.t-display {
+  font-family: var(--font-serif);
+  font-size: clamp(36px, 7vw, 56px);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+
+/* Heading — scorecard role name, modal titles, mid-tier headings. Libre Baskerville. */
+.t-heading {
+  font-family: var(--font-serif);
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+}
+
+/* Title — section headers, card titles. Libre Baskerville. */
+.t-title {
+  font-family: var(--font-serif);
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--ink);
+}
+
+/* Subtitle — supporting context, card subtitles. Inter, lighter than the title above. */
+.t-subtitle {
+  font-family: var(--font-prose);
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.45;
+  color: var(--muted-deep);
+}
+
+/* Body — default prose. */
+.t-body {
+  font-family: var(--font-prose);
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--ink);
+}
+
+/* Body small — secondary copy. */
+.t-body-sm {
+  font-family: var(--font-prose);
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--muted-deep);
+}
+
+/* Eyebrow — mono ALL CAPS section/category label. */
+.t-eyebrow {
+  font-family: var(--font-serif);
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted-soft);
+}
+
+/* Section label — mono caps, used at the top of dashboard sections.
+   Differentiated from EYEBROW by weight (500 vs 400) and from MICRO by size (10 vs 8). */
+.t-section {
+  font-family: var(--font-serif);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted-soft);
+}
+
+.t-micro {
+  font-family: var(--font-serif);
+  font-size: 8px;
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted-soft);
+}
+
+.t-score {
+  font-family: var(--font-serif);
+  font-size: 48px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+
+.t-verdict {
+  font-family: var(--font-serif);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.t-data {
+  font-family: var(--font-serif);
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  color: var(--muted-soft);
+}
+
+/* RTL helper — apply Arabic font when dir="rtl". */
+[dir="rtl"] body,
+[dir="rtl"] .t-display,
+[dir="rtl"] .t-title,
+[dir="rtl"] .t-body { font-family: var(--font-arabic); }
