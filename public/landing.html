@@ -21,7 +21,7 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 
   <style>
     :root {
@@ -32,14 +32,14 @@
       --line: #e8e8e8;
       --paper: #ffffff;
       --cream: #fafaf7;
-      --serif: 'Libre Baskerville', Georgia, serif;
-      --sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      --mono: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+      --font-display: 'Libre Baskerville', Georgia, serif;
+      --font-prose: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-data: var(--font-display);
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
     body {
-      font-family: var(--sans);
+      font-family: var(--font-prose);
       color: var(--ink);
       background: var(--paper);
       line-height: 1.6;
@@ -51,14 +51,14 @@
     header { padding: 28px 0; border-bottom: 1px solid var(--line); }
     .header-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
     .wordmark {
-      font-family: var(--mono);
+      font-family: var(--font-data);
       font-size: 14px;
       font-weight: 500;
       letter-spacing: 0.32em;
       color: var(--green);
     }
     .nav-link {
-      font-family: var(--mono);
+      font-family: var(--font-data);
       font-size: 12px;
       letter-spacing: 0.22em;
       color: var(--mute);
@@ -69,7 +69,7 @@
 
     .hero { padding: 96px 0 80px; }
     .eyebrow {
-      font-family: var(--mono);
+      font-family: var(--font-data);
       font-size: 12px;
       letter-spacing: 0.32em;
       color: var(--mute);
@@ -77,7 +77,7 @@
       margin-bottom: 32px;
     }
     h1 {
-      font-family: var(--serif);
+      font-family: var(--font-display);
       font-weight: 700;
       font-size: clamp(48px, 8vw, 88px);
       line-height: 1.05;
@@ -86,7 +86,7 @@
       margin-bottom: 32px;
     }
     .subhead {
-      font-family: var(--serif);
+      font-family: var(--font-display);
       font-size: 22px;
       line-height: 1.5;
       color: var(--mute);
@@ -110,14 +110,14 @@
     .app-store-badge .badge-label { display: flex; flex-direction: column; line-height: 1.15; }
     .app-store-badge .badge-pre { font-size: 10px; letter-spacing: 0.04em; opacity: 0.85; }
     .app-store-badge .badge-name {
-      font-family: var(--sans);
+      font-family: var(--font-prose);
       font-size: 18px;
       font-weight: 600;
       letter-spacing: -0.01em;
     }
 
     .open-app {
-      font-family: var(--mono);
+      font-family: var(--font-data);
       font-size: 13px;
       letter-spacing: 0.22em;
       color: var(--green);
@@ -135,14 +135,14 @@
       gap: 56px;
     }
     .feature-num {
-      font-family: var(--mono);
+      font-family: var(--font-data);
       font-size: 12px;
       letter-spacing: 0.32em;
       color: var(--green);
       margin-bottom: 18px;
     }
     .feature-text {
-      font-family: var(--serif);
+      font-family: var(--font-display);
       font-size: 19px;
       line-height: 1.55;
       color: var(--ink);
@@ -162,7 +162,7 @@
       gap: 24px;
     }
     .company {
-      font-family: var(--mono);
+      font-family: var(--font-data);
       font-size: 12px;
       letter-spacing: 0.22em;
       color: var(--mute);
@@ -170,7 +170,7 @@
     }
     .footer-links { display: flex; gap: 28px; flex-wrap: wrap; }
     .footer-links a {
-      font-family: var(--mono);
+      font-family: var(--font-data);
       font-size: 12px;
       letter-spacing: 0.22em;
       color: var(--mute);
