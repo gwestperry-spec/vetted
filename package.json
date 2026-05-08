@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build && node scripts/postbuild-landing.mjs",
+    "sync:design": "node scripts/sync-design-system.mjs",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "playwright test",
