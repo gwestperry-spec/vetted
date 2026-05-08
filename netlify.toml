@@ -123,6 +123,24 @@
   # in the Netlify dashboard — they cannot be committed to this file.
   NODE_ENV = "production"
 
+# ── Public marketing landing page at root ────────────────────────────────────
+# Apple App Store review (Guideline 5.1.1 / 1.5) requires a publicly accessible
+# organization website with no auth wall. The React SPA (which gates on Sign in
+# with Apple) now lives at /app. The static landing page is served at / via
+# this rewrite. force=true is required to override Netlify's default behavior
+# of serving /index.html (the SPA bundle) for "/".
+[[redirects]]
+  from = "/"
+  to = "/landing.html"
+  status = 200
+  force = true
+
+# Legacy /signin entry point → app
+[[redirects]]
+  from = "/signin"
+  to = "/app"
+  status = 302
+
 [[redirects]]
   from = "/privacy"
   to = "/privacy.html"

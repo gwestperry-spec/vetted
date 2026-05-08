@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vetted: Career Intelligence — Filter The Noise</title>
+  <meta name="description" content="AI-powered career intelligence for executives. Score opportunities against your framework before you apply." />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://tryvettedai.com/" />
+
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="apple-touch-icon" href="/app-icon.png" />
+  <meta name="apple-itunes-app" content="app-id=6761249955" />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://tryvettedai.com/" />
+  <meta property="og:title" content="Vetted: Career Intelligence — Filter The Noise" />
+  <meta property="og:description" content="AI-powered career intelligence for executives. Score opportunities against your framework before you apply." />
+  <meta property="og:image" content="https://tryvettedai.com/og-image.png" />
+  <meta property="og:site_name" content="Vetted: Career Intelligence" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --green: #0d5c2e;
+      --green-deep: #094021;
+      --ink: #1a1a1a;
+      --mute: #6b6b6b;
+      --line: #e8e8e8;
+      --paper: #ffffff;
+      --cream: #fafaf7;
+      --serif: 'Libre Baskerville', Georgia, serif;
+      --sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --mono: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+    body {
+      font-family: var(--sans);
+      color: var(--ink);
+      background: var(--paper);
+      line-height: 1.6;
+    }
+    a { color: inherit; text-decoration: none; }
+
+    .container { max-width: 960px; margin: 0 auto; padding: 0 24px; }
+
+    header { padding: 28px 0; border-bottom: 1px solid var(--line); }
+    .header-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+    .wordmark {
+      font-family: var(--mono);
+      font-size: 14px;
+      font-weight: 500;
+      letter-spacing: 0.32em;
+      color: var(--green);
+    }
+    .nav-link {
+      font-family: var(--mono);
+      font-size: 12px;
+      letter-spacing: 0.22em;
+      color: var(--mute);
+      text-transform: uppercase;
+      transition: color .2s;
+    }
+    .nav-link:hover { color: var(--green); }
+
+    .hero { padding: 96px 0 80px; }
+    .eyebrow {
+      font-family: var(--mono);
+      font-size: 12px;
+      letter-spacing: 0.32em;
+      color: var(--mute);
+      text-transform: uppercase;
+      margin-bottom: 32px;
+    }
+    h1 {
+      font-family: var(--serif);
+      font-weight: 700;
+      font-size: clamp(48px, 8vw, 88px);
+      line-height: 1.05;
+      letter-spacing: -0.02em;
+      color: var(--ink);
+      margin-bottom: 32px;
+    }
+    .subhead {
+      font-family: var(--serif);
+      font-size: 22px;
+      line-height: 1.5;
+      color: var(--mute);
+      max-width: 620px;
+      margin-bottom: 48px;
+    }
+    .cta-row { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; }
+
+    .app-store-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      background: #000;
+      color: #fff;
+      border-radius: 10px;
+      padding: 12px 20px;
+      transition: transform .15s ease;
+    }
+    .app-store-badge:hover { transform: translateY(-1px); }
+    .app-store-badge .apple-logo { width: 26px; height: 26px; flex-shrink: 0; }
+    .app-store-badge .badge-label { display: flex; flex-direction: column; line-height: 1.15; }
+    .app-store-badge .badge-pre { font-size: 10px; letter-spacing: 0.04em; opacity: 0.85; }
+    .app-store-badge .badge-name {
+      font-family: var(--sans);
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+
+    .open-app {
+      font-family: var(--mono);
+      font-size: 13px;
+      letter-spacing: 0.22em;
+      color: var(--green);
+      text-transform: uppercase;
+      border-bottom: 1px solid var(--green);
+      padding-bottom: 3px;
+      transition: opacity .2s;
+    }
+    .open-app:hover { opacity: 0.7; }
+
+    .features { border-top: 1px solid var(--line); padding: 80px 0; }
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 56px;
+    }
+    .feature-num {
+      font-family: var(--mono);
+      font-size: 12px;
+      letter-spacing: 0.32em;
+      color: var(--green);
+      margin-bottom: 18px;
+    }
+    .feature-text {
+      font-family: var(--serif);
+      font-size: 19px;
+      line-height: 1.55;
+      color: var(--ink);
+    }
+    @media (max-width: 720px) {
+      .features-grid { grid-template-columns: 1fr; gap: 40px; }
+      .hero { padding: 72px 0 56px; }
+      .features { padding: 56px 0; }
+    }
+
+    footer { border-top: 1px solid var(--line); padding: 40px 0 56px; }
+    .footer-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 24px;
+    }
+    .company {
+      font-family: var(--mono);
+      font-size: 12px;
+      letter-spacing: 0.22em;
+      color: var(--mute);
+      text-transform: uppercase;
+    }
+    .footer-links { display: flex; gap: 28px; flex-wrap: wrap; }
+    .footer-links a {
+      font-family: var(--mono);
+      font-size: 12px;
+      letter-spacing: 0.22em;
+      color: var(--mute);
+      text-transform: uppercase;
+      transition: color .2s;
+    }
+    .footer-links a:hover { color: var(--green); }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container header-row">
+      <span class="wordmark">VETTED</span>
+      <a href="/app" class="nav-link">Open app →</a>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="container">
+        <div class="eyebrow">Vetted: Career Intelligence</div>
+        <h1>Filter The Noise.</h1>
+        <p class="subhead">AI-powered career intelligence for executives. Score opportunities against your framework before you apply.</p>
+        <div class="cta-row">
+          <a class="app-store-badge" href="https://apps.apple.com/app/id6761249955" aria-label="Download on the App Store">
+            <svg class="apple-logo" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M17.05 12.04c-.03-2.86 2.34-4.23 2.45-4.3-1.34-1.96-3.42-2.23-4.16-2.26-1.77-.18-3.46 1.04-4.36 1.04-.91 0-2.3-1.02-3.78-.99-1.94.03-3.74 1.13-4.74 2.86-2.02 3.5-.52 8.68 1.45 11.53.96 1.39 2.1 2.96 3.6 2.9 1.45-.06 2-.94 3.74-.94 1.74 0 2.24.94 3.78.91 1.56-.03 2.55-1.42 3.51-2.82 1.1-1.62 1.56-3.19 1.58-3.27-.03-.01-3.03-1.16-3.07-4.66zM14.4 4.42c.81-.99 1.36-2.34 1.21-3.7-1.17.05-2.6.78-3.43 1.76-.74.86-1.4 2.25-1.22 3.57 1.31.1 2.63-.66 3.44-1.63z"/>
+            </svg>
+            <span class="badge-label">
+              <span class="badge-pre">Download on the</span>
+              <span class="badge-name">App Store</span>
+            </span>
+          </a>
+          <a href="/app" class="open-app">Open app →</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="features">
+      <div class="container">
+        <div class="features-grid">
+          <div>
+            <div class="feature-num">01</div>
+            <p class="feature-text">Score any role in seconds against your personal framework.</p>
+          </div>
+          <div>
+            <div class="feature-num">02</div>
+            <p class="feature-text">Get a Pursue, Monitor, or Pass verdict with full reasoning.</p>
+          </div>
+          <div>
+            <div class="feature-num">03</div>
+            <p class="feature-text">Track your pipeline with live market compensation data.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container footer-row">
+      <span class="company">Vetted AI LLC</span>
+      <nav class="footer-links" aria-label="Footer">
+        <a href="/privacy">Privacy</a>
+        <a href="/terms">Terms</a>
+        <a href="/blog">Blog</a>
+        <a href="mailto:support@tryvettedai.com">Support</a>
+      </nav>
+    </div>
+  </footer>
+</body>
+</html>
