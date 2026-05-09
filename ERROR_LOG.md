@@ -1259,3 +1259,38 @@ LOCATION SCORING RULE: If the role is remote, fully remote, or remote-first, tre
 **Root cause:** Toggle labels were styled independently from other settings rows during Sprint 4 implementation without checking the existing settings row style pattern. The `settingsNotificationsHint` translation key carried over a "COMING SOON" placeholder from before the feature was built.
 **Fix:** (1) Toggle label style changed to `fontFamily: "var(--font-display)", fontSize: 17, fontWeight: 500` with `letterSpacing: "0.08em"` on desc — matches all other settings rows exactly. (2) "COMING SOON" subtitle div removed entirely from the Notifications section header. (3) `settingsNotificationsHint` translation key updated in all 7 languages to "Manage push alerts" equivalents (kept in translations.js for future use even though the hint is no longer rendered).
 **Files:** `src/App.jsx`, `src/i18n/translations.js`
+
+---
+
+## Error 111 — tryvettedai.com/ had no public marketing page (App Store Guideline 5.1.1 / 1.5 risk)
+**Build:** Web (post Build 28 approval)
+**Side:** Website / marketing — not the iOS app binary.
+**Symptom:** `https://tryvettedai.com/` loaded the React SPA which immediately mounted `SignInGate.jsx` and gated on Sign in with Apple. Apple App Store review (Guideline 5.1.1 — Privacy / Data Collection and Storage; Guideline 1.5 — Developer Information) requires a publicly accessible organization website with no auth wall. Build 28 had cleared review (the issue surfaced post-approval as a forward-looking exposure — any future build would have hit it), but the site was non-compliant and would have flagged on Build 29 or any 5.1.1 audit.
+**Root cause:** The product launched with a single SPA entry at `/`. There was no separate static marketing surface; the React app was the only thing the domain served.
+**Fix:** Three layered changes.
+(1) **Routing:** new netlify.toml redirect topology — `/` serves a static landing, SPA moves to `/app`, `/signin` 302s to `/app`. Old `/* → /index.html` SPA fallback scoped to `/app/*` only.
+(2) **Build pipeline:** added `scripts/postbuild-landing.mjs` that runs after `vite build`. It moves the Vite-emitted SPA from `dist/index.html` to `dist/app/index.html`, then copies the canonical landing source (`design/landing/Landing Page.html`, `design/landing/assets/`, `design/landing/reel/`) verbatim into `dist/`. The landing committed to the repo IS the design-system spec — no template, no framework, no "improvements." `npm run sync:design` walks `~/Downloads` for the newest `Vetted Design System*.zip` containing `Landing Page.html` and refreshes `design/landing/` from it.
+(3) **Asset namespace collision:** the design system's landing references `assets/tokens.css`, `assets/vetted-logo.svg`, etc., expecting them at `/assets/`. Vite's default `build.assetsDir` was also `assets`, so the SPA's hashed bundle would have collided with the landing's static assets. Set `build.assetsDir = '_assets'` in `vite.config.js`. SPA bundle now lives at `/_assets/index-XXX.js`; landing keeps `/assets/`.
+**CSP changes for the demo reels:** the landing embeds three React+Babel JSX iframes from `/reel/*.html` that load React/ReactDOM/@babel/standalone from `https://unpkg.com`. The site's top-level CSP had `frame-src 'none'` and `script-src 'self' 'unsafe-inline'` — would have blocked both the iframes and the unpkg scripts. Top-level CSP relaxed to `frame-src 'self'` (same-origin iframes only). Added a scoped `[[headers]] for = "/reel/*"` block with `script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com` (Babel standalone needs eval). Homepage CSP stays strict.
+**Verification:** `dist/index.html` is byte-identical to `design/landing/Landing Page.html` (`diff -q` reports IDENTICAL). All five anchor sections present. App Store / mailto / LinkedIn / TikTok external links resolve. All three inline-script systems (industries-counter, trust-counter, reel loader, sticky-CTA hide-near-footer) preserved.
+**Files:** `design/landing/**` (new — 21 files committed verbatim), `scripts/postbuild-landing.mjs` (new), `scripts/sync-design-system.mjs` (new), `vite.config.js`, `package.json`, `netlify.toml`. Removed `public/landing.html` (placeholder from earlier in the session). Also: blog index header renamed `The Blog` → `Notes from the founder team` (`public/blog/index.html`, plus footer link on the LinkedIn-scoring post page).
+
+---
+
+## Error 112 — Netlify CLI 25.6.0 crashes parsing multi-line CSP header during local dev
+**Build:** Web tooling (no production impact)
+**Side:** Developer tooling on the marketing site only.
+**Symptom:** Running `netlify dev --dir=dist` to verify redirect/CSP behavior locally crashed on every request with `TypeError: Invalid character in header content ["Content-Security-Policy"]` at `node_modules/netlify-cli/src/utils/proxy.ts:729`. All `curl` probes returned status 000, no body.
+**Root cause:** The CLI's proxy layer concatenates the multi-line TOML `Content-Security-Policy = """ ... """` string and passes it to `ServerResponse.setHeader()` without stripping the embedded newlines first. Newlines are illegal in HTTP header values per RFC 7230. Production Netlify edge handles this fine — the CLI's local proxy is the only thing affected.
+**Fix:** None at the code level — the CSP is correct. Workaround for local verification: a small redirect-emulator script that parses `[[redirects]]` from `netlify.toml` and walks them against `dist/` to confirm `/`, `/app`, `/signin`, `/privacy`, `/terms`, `/blog` all resolve as expected. Final end-to-end verification (live CSP, anchor scrolls, reel iframe playback, Lighthouse) happens on the Netlify branch-deploy preview URL that PR #2 generates.
+**Files:** None modified — documented so future debugging doesn't re-discover the bug.
+
+---
+
+## Error 113 — Stale `npx serve` process kept returning old SPA after dist rebuild
+**Build:** Local dev workflow (no production impact)
+**Side:** Operational — neither blog nor app code; just a `serve` process behavior.
+**Symptom:** Started `npx serve dist -p 5174` to preview the new landing. Browser showed a blank page. `curl http://localhost:5174/` returned 12867 bytes (the old SPA bundle) instead of the 55583-byte landing — even though `dist/index.html` on disk WAS the landing.
+**Root cause:** The `serve` process had been started before `npm run build` ran with the new postbuild script. It was holding ETag/file-handle references to the prior `dist/index.html` (the SPA). `serve` doesn't watch the directory for replacements; it reuses cached metadata until the process restarts.
+**Fix:** `lsof -ti:5174 | xargs kill && npx serve dist -p 5174` — restart serve after every rebuild. Documented so the "blank page after rebuild" symptom isn't misdiagnosed as a real landing/build problem in the future.
+**Files:** None.
