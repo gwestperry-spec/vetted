@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Vetted — Reel</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; padding: 0; height: 100%; background: #0e120f; overflow: hidden; }
+  body { font-family: 'Inter', system-ui, sans-serif; color: #F4F1E8; }
+  /* usage chip */
+  .usage {
+    position: fixed; top: 14px; right: 16px; z-index: 50;
+    padding: 8px 14px; border-radius: 999px;
+    background: rgba(244,241,232,0.08); color: #F4F1E8;
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
+    border: 1px solid rgba(244,241,232,0.18);
+    backdrop-filter: blur(6px);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .usage .bar {
+    width: 60px; height: 3px; background: rgba(244,241,232,0.18); border-radius: 2px; overflow: hidden;
+  }
+  .usage .bar > i { display:block; height:100%; width: 75%; background: #B8945A; }
+</style>
+</head>
+<body>
+
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="animations.jsx"></script>
+<script type="text/babel" src="01-original.jsx"></script>
+
+<script type="text/babel">
+  const { Stage } = window;
+  function App() {
+    return (
+      <Stage
+        width={window.REEL_W}
+        height={window.REEL_H}
+        duration={window.REEL_D}
+        fps={60}
+        loop={true}
+        autoplay={true}
+        background={window.REEL_BG}
+        persistKey="vetted-reel">
+        <window.ActDirector/>
+      </Stage>
+    );
+  }
+  ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+
+</body>
+</html>

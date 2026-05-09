@@ -35,10 +35,30 @@
         https://celebrated-gelato-56d525.netlify.app
         https://appleid.apple.com;
       img-src 'self' data: https://images.unsplash.com;
-      frame-src 'none';
+      frame-src 'self';
       object-src 'none';
       base-uri 'self';
       form-action 'self';
+    """
+
+# ── Reel iframes — scoped CSP loosening ───────────────────────────────────────
+# The reel pages under /reel/*.html are React+Babel JSX animations that load
+# react / react-dom / @babel/standalone from unpkg.com. Babel standalone
+# requires 'unsafe-eval' to compile JSX in the browser. This loosening is
+# scoped to /reel/* only — the homepage CSP at / stays strict.
+[[headers]]
+  for = "/reel/*"
+  [headers.values]
+    Content-Security-Policy = """
+      default-src 'self';
+      script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com;
+      style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+      font-src 'self' https://fonts.gstatic.com;
+      img-src 'self' data:;
+      connect-src 'self';
+      frame-src 'self';
+      object-src 'none';
+      base-uri 'self';
     """
 
 # ── Cache-Control: HTML always revalidated, hashed assets cached forever ──────
@@ -47,10 +67,17 @@
   [headers.values]
     Cache-Control = "public, max-age=0, must-revalidate"
 
+# Vite-built SPA bundle (hashed filenames) — cache forever
+[[headers]]
+  for = "/_assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Landing page assets (logo, tokens.css) — short cache, not content-hashed
 [[headers]]
   for = "/assets/*"
   [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
+    Cache-Control = "public, max-age=3600, must-revalidate"
 
 [[headers]]
   for = "/blog/*"
@@ -123,6 +150,19 @@
   # in the Netlify dashboard — they cannot be committed to this file.
   NODE_ENV = "production"
 
+# ── Public marketing landing page at root ────────────────────────────────────
+# Apple App Store review (Guideline 5.1.1 / 1.5) requires a publicly accessible
+# organization website with no auth wall. After the postbuild swap:
+#   - dist/index.html   → static landing (served at /)
+#   - dist/app/         → React SPA (served at /app)
+# No rewrite needed at /; Netlify serves dist/index.html automatically.
+
+# Legacy /signin entry point → /app
+[[redirects]]
+  from = "/signin"
+  to = "/app"
+  status = 302
+
 [[redirects]]
   from = "/privacy"
   to = "/privacy.html"
@@ -168,9 +208,12 @@
   status = 200
   force = true
 
-# ── SPA fallback — serves index.html for all React routes ─────────────────────
-# Must be last so static files (blog HTML, sitemap, robots.txt) are served first.
+# ── SPA fallback — serves the React app for all /app/* routes ────────────────
+# The SPA lives at dist/app/index.html. Any in-app client-side route
+# (e.g. /app/dashboard) must rewrite to /app/index.html so the app's
+# router can take over. Scoped to /app/* so unknown top-level paths
+# correctly 404 instead of silently serving the SPA.
 [[redirects]]
-  from = "/*"
-  to = "/index.html"
+  from = "/app/*"
+  to = "/app/index.html"
   status = 200
