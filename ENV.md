@@ -10,6 +10,9 @@ Set in: Netlify → Site Settings → Environment Variables
 | `ANTHROPIC_API_KEY` | `netlify/functions/anthropic.js` | All VQ scoring fails silently |
 | `VETTED_SECRET` | `netlify/functions/anthropic.js`, `apple-auth.js`, `supabase.js` | All API calls return 403 Forbidden |
 | `VITE_VETTED_SECRET` | `src/App.jsx` (baked in at build time) | Frontend sends empty token, all API calls blocked |
+| `DASHBOARD_PASSWORD` | `netlify/functions/dashboard-data.js` | `/dashboard` 401s on every request. Internal-only password gate; not user-facing. Set to a long random string. |
+| `POSTHOG_API_KEY` | `netlify/functions/dashboard-data.js` (optional) | Dashboard PostHog cards show "Not configured" — non-fatal. Personal API key from PostHog → Project settings → Personal API keys. |
+| `POSTHOG_PROJECT_ID` | `netlify/functions/dashboard-data.js` (optional) | Same as above — required alongside the API key. PostHog project numeric ID from URL or Project settings. |
 
 cat > ~/Desktop/vetted/DEPLOY.md << 'EOF'
 # Vetted AI — Release Checklist

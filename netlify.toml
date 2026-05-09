@@ -163,6 +163,13 @@
   to = "/app"
   status = 302
 
+# Internal KPI dashboard — no in-app nav, password-gated by the
+# dashboard-data Netlify function. /dashboard → /dashboard/index.html.
+[[redirects]]
+  from = "/dashboard"
+  to = "/dashboard/index.html"
+  status = 200
+
 [[redirects]]
   from = "/privacy"
   to = "/privacy.html"

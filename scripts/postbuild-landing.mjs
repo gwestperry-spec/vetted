@@ -36,6 +36,7 @@ function copyDir(src, dest) {
 }
 
 const spaSrc = path.join(dist, 'index.html');
+const dashboardSrc = path.join(dist, 'dashboard.html');
 if (!fs.existsSync(spaSrc)) {
   console.error('postbuild-landing: dist/index.html not found — did vite build run?');
   process.exit(1);
@@ -50,19 +51,27 @@ const appDir = path.join(dist, 'app');
 fs.mkdirSync(appDir, { recursive: true });
 fs.renameSync(spaSrc, path.join(appDir, 'index.html'));
 
-// 2. Copy landing HTML verbatim → dist/index.html
+// 2. Move dashboard.html → dist/dashboard/index.html (internal KPI dashboard)
+if (fs.existsSync(dashboardSrc)) {
+  const dashboardDir = path.join(dist, 'dashboard');
+  fs.mkdirSync(dashboardDir, { recursive: true });
+  fs.renameSync(dashboardSrc, path.join(dashboardDir, 'index.html'));
+}
+
+// 3. Copy landing HTML verbatim → dist/index.html
 fs.copyFileSync(landingHtml, path.join(dist, 'index.html'));
 
-// 3. Copy landing's assets/ → dist/assets/
+// 4. Copy landing's assets/ → dist/assets/
 copyDir(landingAssets, path.join(dist, 'assets'));
 
-// 4. Copy landing's reel/ → dist/reel/
+// 5. Copy landing's reel/ → dist/reel/
 if (fs.existsSync(landingReel)) {
   copyDir(landingReel, path.join(dist, 'reel'));
 }
 
 console.log('postbuild-landing: ok');
-console.log('  dist/index.html       → landing (verbatim)');
-console.log('  dist/app/index.html   → SPA');
-console.log('  dist/assets/          → landing bundle');
-console.log('  dist/reel/            → reel iframes');
+console.log('  dist/index.html             → landing (verbatim)');
+console.log('  dist/app/index.html         → SPA');
+console.log('  dist/dashboard/index.html   → internal KPI dashboard');
+console.log('  dist/assets/                → landing bundle');
+console.log('  dist/reel/                  → reel iframes');
