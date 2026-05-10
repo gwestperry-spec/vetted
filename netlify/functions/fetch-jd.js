@@ -150,16 +150,14 @@ async function tryScrapingBee(safeUrl) {
   const apiKey = process.env.SCRAPINGBEE_API_KEY;
   if (!apiKey) return { ok: false, error: "no_api_key" };
 
+  // Minimum-viable request: let ScrapingBee return raw HTML, strip tags
+  // below. Earlier attempts to use extract_rules + block_resources returned
+  // 400 (parameter validation issue with that combination on the free tier).
   const params = new URLSearchParams({
     api_key: apiKey,
     url: safeUrl,
     render_js: "true",
     premium_proxy: "true",
-    block_resources: "true", // skip images/fonts to reduce credits
-    extract_rules: JSON.stringify({
-      title:    { selector: "h1, h2", type: "text" },
-      body:     { selector: "main, article, [role='main'], body", type: "text" },
-    }),
   });
 
   const result = await new Promise((resolve, reject) => {
@@ -206,18 +204,6 @@ async function tryScrapingBee(safeUrl) {
 
 // ─── handler ──────────────────────────────────────────────────────────────────
 exports.handler = async (event) => {
-  // TEMP debug — verify env var visibility at function runtime. Safe to log
-  // because we only emit presence + length, never the value itself. Remove
-  // after diagnosing the SCRAPINGBEE_API_KEY-not-firing issue.
-  console.log("[fetch_jd] env_diag", JSON.stringify({
-    sb_key_set: !!process.env.SCRAPINGBEE_API_KEY,
-    sb_key_len: (process.env.SCRAPINGBEE_API_KEY || "").length,
-    ppx_key_set: !!process.env.PERPLEXITY_API_KEY,
-    ppx_key_len: (process.env.PERPLEXITY_API_KEY || "").length,
-    node_env: process.env.NODE_ENV || null,
-    context: process.env.CONTEXT || null,
-  }));
-
   const origin  = event.headers?.origin || event.headers?.Origin || "";
   const headers = corsHeaders(origin);
 
