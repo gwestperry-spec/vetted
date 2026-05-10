@@ -206,6 +206,18 @@ async function tryScrapingBee(safeUrl) {
 
 // ─── handler ──────────────────────────────────────────────────────────────────
 exports.handler = async (event) => {
+  // TEMP debug — verify env var visibility at function runtime. Safe to log
+  // because we only emit presence + length, never the value itself. Remove
+  // after diagnosing the SCRAPINGBEE_API_KEY-not-firing issue.
+  console.log("[fetch_jd] env_diag", JSON.stringify({
+    sb_key_set: !!process.env.SCRAPINGBEE_API_KEY,
+    sb_key_len: (process.env.SCRAPINGBEE_API_KEY || "").length,
+    ppx_key_set: !!process.env.PERPLEXITY_API_KEY,
+    ppx_key_len: (process.env.PERPLEXITY_API_KEY || "").length,
+    node_env: process.env.NODE_ENV || null,
+    context: process.env.CONTEXT || null,
+  }));
+
   const origin  = event.headers?.origin || event.headers?.Origin || "";
   const headers = corsHeaders(origin);
 
