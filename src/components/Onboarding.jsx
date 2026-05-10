@@ -349,15 +349,17 @@ function FieldInput({ step, value, onChange, onSubmit, t, currency }) {
           style={{ ...bigInputStyle(), padding: "10px 0", resize: "none" }}
         />
       );
-    case "money":
+    case "money": {
+      const rawDigits = (value || "").replace(/[^\d]/g, "").slice(0, 8);
+      const formatted = rawDigits ? Number(rawDigits).toLocaleString("en-US") : "";
       return (
         <div style={{ display: "flex", alignItems: "baseline", gap: 8, borderBottom: "1.5px solid var(--border)", paddingBottom: 4 }}>
           <span style={{ fontFamily: "var(--font-display)", fontSize: 32, color: "#8A9A8A" }}>$</span>
           <input
             autoFocus
             inputMode="numeric"
-            value={value || ""}
-            onChange={e => onChange(e.target.value.replace(/[^\d]/g, ""))}
+            value={formatted}
+            onChange={e => onChange(e.target.value.replace(/[^\d]/g, "").slice(0, 8))}
             onKeyDown={e => { if (e.key === "Enter") onSubmit(); }}
             placeholder={step.placeholder}
             style={{
@@ -366,9 +368,9 @@ function FieldInput({ step, value, onChange, onSubmit, t, currency }) {
               color: "var(--ink)", letterSpacing: "-0.02em", padding: 0,
             }}
           />
-          <span style={{ fontFamily: "var(--font-data)", fontSize: 11, letterSpacing: "0.10em", color: "#8A9A8A", textTransform: "uppercase" }}>K {currency || "USD"}</span>
         </div>
       );
+    }
     case "tags":
       return <TagsInput value={value || []} onChange={onChange} placeholder={step.placeholder} />;
     case "threshold":

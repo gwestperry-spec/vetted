@@ -212,13 +212,13 @@ export default function ScoreEntry({
           <div style={{
             fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: "0.12em",
             color: "#8A9A8A", textTransform: "uppercase",
-          }}>VS. STLW</div>
+          }}>{t.scoreVsStlw || "VS. LAST WK"}</div>
         </div>
 
         <div style={{ padding: "4px 16px 18px", display: "flex", gap: 6 }}>
-          <KpiTile big={avgVq}           delta={null}   label="AVG VQ"/>
-          <KpiTile big={String(weekRoles.length)} delta={null}   label="SCORED"/>
-          <KpiTile big={pursueRate}       delta={null}   label="PURSUE"/>
+          <KpiTile big={avgVq}                    delta={null} label={t.scoreAvgVq      || "AVG VQ"}/>
+          <KpiTile big={String(weekRoles.length)} delta={null} label={t.scoreScored     || "SCORED"}/>
+          <KpiTile big={pursueRate}               delta={null} label={t.scorePursueLabel || "PURSUE"}/>
         </div>
 
         {/* PURSUE COHORT */}
@@ -236,7 +236,7 @@ export default function ScoreEntry({
               <div style={{
                 fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: "0.12em",
                 color: "#8A9A8A", textTransform: "uppercase",
-              }}>{pursueCount} ROLE{pursueCount !== 1 ? "S" : ""}</div>
+              }}>{pursueCount} {pursueCount !== 1 ? (t.scoreRoleMany || "ROLES") : (t.scoreRoleOne || "ROLE")}</div>
             </div>
             <div style={{ padding: "4px 16px 22px" }}>
               {workspaceRoles
@@ -258,7 +258,7 @@ export default function ScoreEntry({
                         fontFamily: "var(--font-display)", fontSize: 14, fontWeight: 500,
                         color: "var(--ink)", lineHeight: 1.2,
                         whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-                      }}>{r.title || "Untitled"}</div>
+                      }}>{r.title || (t.scoreUntitled || "Untitled")}</div>
                       <div style={{
                         fontFamily: "var(--font-data)", fontSize: 9, color: "#8A9A8A",
                         letterSpacing: "0.06em", textTransform: "uppercase", marginTop: 2,

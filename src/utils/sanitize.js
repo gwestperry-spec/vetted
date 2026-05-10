@@ -19,12 +19,13 @@ const INJECTION_SUBS = [
 export function sanitizeText(value, maxLen = MAX_SHORT) {
   if (typeof value !== "string") return "";
   // Strip HTML/XML tags, control chars, and carriage returns
+  // Note: no .trim() here — callers that need trimming (submit handlers) do it explicitly.
+  // Trimming inside onChange strips trailing spaces while the user is still typing.
   let s = value
     .replace(/[\x00-\x1F\x7F]/g, " ")
     .replace(/<[^>]{0,500}>/g, "")
     .replace(/\r/g, "")
-    .slice(0, maxLen)
-    .trim();
+    .slice(0, maxLen);
   // Neutralize prompt injection phrases
   for (const [pattern, replacement] of INJECTION_SUBS) {
     s = s.replace(pattern, replacement);

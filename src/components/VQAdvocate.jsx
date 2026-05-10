@@ -734,12 +734,14 @@ export function VQAdvocateCard({ opportunities, profile, onOpen, t = {} }) {
             fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: "0.12em",
             color: "#8A9A8A", textTransform: "uppercase",
           }}>
-            {remaining > 0 ? `${remaining} MORE IN MENU` : "ALL IN MENU"}
+            {remaining > 0
+              ? (t?.vqaMoreInMenu || "{n} MORE IN MENU").replace("{n}", remaining)
+              : (t?.vqaAllInMenu  || "ALL IN MENU")}
           </div>
           <span style={{
             fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: "0.14em",
             color: "var(--accent)", textTransform: "uppercase",
-          }}>OPEN →</span>
+          }}>{t?.vqaOpen || "OPEN →"}</span>
         </div>
       </div>
     </div>

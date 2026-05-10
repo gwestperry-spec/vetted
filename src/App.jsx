@@ -185,6 +185,9 @@ export default function App() {
   const [step, setStep] = useState("onboard");
   const [activeTab, setActiveTab] = useState("workspace");
   const [menuOpen, setMenuOpen] = useState(false);
+  const [presentationMode, setPresentationMode] = useState(
+    () => localStorage.getItem("vetted_presentation_mode") === "true"
+  );
   const [editingProfile, setEditingProfile] = useState(false);
   const [editProfileStep, setEditProfileStep] = useState(null);
   const [profile, setProfile] = useState({
@@ -1064,6 +1067,7 @@ export default function App() {
                 onEditProfile={(stepId) => { setEditingProfile(true); setEditProfileStep(stepId || null); setStep("onboard"); }}
                 onUpgrade={() => { setShowPaywall(true); }}
                 onOpenMenu={() => setMenuOpen(true)}
+                presentationMode={presentationMode}
               />
             )}
             {activeTab === "settings" && (
@@ -1071,6 +1075,12 @@ export default function App() {
                 t={t} lang={lang} onLangChange={handleLangChange}
                 onSignOut={handleSignOut}
                 onOpenMenu={() => setMenuOpen(true)}
+                presentationMode={presentationMode}
+                onTogglePresentationMode={() => setPresentationMode(prev => {
+                  const next = !prev;
+                  localStorage.setItem("vetted_presentation_mode", String(next));
+                  return next;
+                })}
               />
             )}
 
@@ -1097,7 +1107,7 @@ export default function App() {
         {step === "result" && (
           <>
             <AppHeader t={t} lang={lang} setLang={setLang} noBorder />
-            {authUser && (
+            {authUser && !presentationMode && (
               <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 12, marginBottom: 8, marginTop: 4 }}>
                 <span style={{ fontSize: 12, color: "var(--muted)", fontFamily: "var(--font-data)" }}>
                   {(authUser.displayName && authUser.displayName !== "User" ? authUser.displayName : null) || authUser.email || "Signed in"}
@@ -1213,14 +1223,14 @@ function FiltersTab({ t, lang, filters, setFilters, userTier, onUpgrade, onSave 
   );
 }
 
-function ProfileTab({ t, lang, setLang, profile, authUser, userTier, onSignOut, onEditProfile, onUpgrade, onOpenMenu }) {
+function ProfileTab({ t, lang, setLang, profile, authUser, userTier, onSignOut, onEditProfile, onUpgrade, onOpenMenu, presentationMode }) {
   const isVantage = userTier === "vantage" || userTier === "vantage_lifetime";
   const isSignal  = userTier === "signal"  || userTier === "signal_lifetime";
   const tierLabel = isVantage ? "VANTAGE" : isSignal ? "SIGNAL" : "FREE";
   const tierColor = isVantage ? "var(--gold)" : isSignal ? "var(--accent)" : "var(--muted)";
 
   const rawDisplayName = authUser?.displayName;
-  const name = (rawDisplayName && rawDisplayName !== "User") ? rawDisplayName : (profile.name || "You");
+  const name = presentationMode ? "You" : ((rawDisplayName && rawDisplayName !== "User") ? rawDisplayName : (profile.name || "You"));
   const title = profile.currentTitle || "";
 
   return (
@@ -1258,7 +1268,7 @@ function ProfileTab({ t, lang, setLang, profile, authUser, userTier, onSignOut, 
             {title}
           </div>
         )}
-        {authUser?.email && (
+        {authUser?.email && !presentationMode && (
           <div style={{ fontFamily: "var(--font-data)", fontSize: 11, color: "#8A9A8A", marginTop: 6, letterSpacing: "0.04em" }}>
             {authUser.email}
           </div>
@@ -1378,7 +1388,7 @@ function useNotifPrefs() {
   return { get, toggle };
 }
 
-function SettingsTab({ t, lang, onLangChange, onSignOut, onOpenMenu }) {
+function SettingsTab({ t, lang, onLangChange, onSignOut, onOpenMenu, presentationMode, onTogglePresentationMode }) {
   const [showLangPicker, setShowLangPicker] = React.useState(false);
   const notif = useNotifPrefs();
 
@@ -1525,6 +1535,37 @@ function SettingsTab({ t, lang, onLangChange, onSignOut, onOpenMenu }) {
             <div style={{ fontFamily: "var(--font-display)", fontSize: 17, fontWeight: 500, color: "var(--ink)", lineHeight: 1.2 }}>{t.settingsTerms || "Terms of Service"}</div>
             <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M3 1.5L7 5L3 8.5" stroke="#8A9A8A" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
           </a>
+        </div>
+
+        {/* Presentation Mode */}
+        <div style={{ padding: "0 20px" }}>
+          <button
+            onClick={onTogglePresentationMode}
+            style={{
+              width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
+              gap: 12, padding: "20px 0",
+              borderTop: "0.5px solid var(--border)", borderBottom: "none",
+              background: "transparent", cursor: "pointer", textAlign: "left",
+            }}
+          >
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <div style={{ fontFamily: "var(--font-display)", fontSize: 17, fontWeight: 500, color: "var(--ink)", lineHeight: 1.2 }}>Presentation Mode</div>
+              <div style={{ fontFamily: "var(--font-data)", fontSize: 10, letterSpacing: "0.08em", color: "#8A9A8A", textTransform: "uppercase", marginTop: 4 }}>Hides name and email for screen recording</div>
+            </div>
+            <div style={{
+              width: 51, height: 31, borderRadius: 999, flexShrink: 0,
+              background: presentationMode ? "#1A3A1A" : "#D0D8D0",
+              transition: "background .2s", position: "relative",
+            }}>
+              <div style={{
+                position: "absolute", top: 3,
+                left: presentationMode ? 23 : 3,
+                width: 25, height: 25, borderRadius: 999,
+                background: "#fff", boxShadow: "0 1px 3px rgba(0,0,0,.2)",
+                transition: "left .2s",
+              }} />
+            </div>
+          </button>
         </div>
 
         {/* App version */}

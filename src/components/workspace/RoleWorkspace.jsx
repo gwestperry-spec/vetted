@@ -403,9 +403,9 @@ export default function RoleWorkspace({
 
         {/* Stat strip */}
         <div style={{ padding: "0 20px 18px", display: "flex", gap: 6 }}>
-          <WsKpiTile value={String(pursueRoles.length)} label="PURSUE" color="var(--accent)" />
-          <WsKpiTile value={String(totalScored)} label="SCORED" />
-          <WsKpiTile value={profile.threshold ? String(profile.threshold) : "—"} label="THRESHOLD" color="var(--gold)" />
+          <WsKpiTile value={String(pursueRoles.length)} label={(t?.pursue || "pursue").toUpperCase()} color="var(--accent)" />
+          <WsKpiTile value={String(totalScored)} label={t?.wsScored || "SCORED"} />
+          <WsKpiTile value={profile.threshold ? String(profile.threshold) : "—"} label={t?.wsThreshold || "THRESHOLD"} color="var(--gold)" />
         </div>
 
         {/* VQ Advocate card */}
@@ -419,14 +419,14 @@ export default function RoleWorkspace({
         {/* Hero card — top match */}
         {scoredRoles[0] && (
           <div style={{ padding: "0 20px 22px" }}>
-            <p style={{ fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase", color: "#8A9A8A", marginBottom: 8 }}>TOP MATCH</p>
+            <p style={{ fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase", color: "#8A9A8A", marginBottom: 8 }}>{t?.wsTopMatch || "TOP MATCH"}</p>
             <div
               onClick={() => handleResume(scoredRoles[0])}
               style={{ background: "var(--ink)", borderRadius: 12, padding: "16px 18px 18px", cursor: "pointer" }}
             >
               <div style={{ display: "flex", justifyContent: "center", marginBottom: 10 }}>
                 <div style={{ width: "66%", textAlign: "center", paddingBottom: 8, borderBottom: "0.5px solid rgba(168,192,168,0.35)", fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: "0.14em", color: "#A8C0A8", textTransform: "uppercase" }}>
-                  TOP MATCH · {(scoredRoles[0].company || "").toUpperCase()} · {wsAgoLabel(scoredRoles[0].created_at)}
+                  {t?.wsTopMatch || "TOP MATCH"} · {(scoredRoles[0].company || "").toUpperCase()} · {wsAgoLabel(scoredRoles[0].created_at, t)}
                 </div>
               </div>
               <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 12 }}>
@@ -445,15 +445,18 @@ export default function RoleWorkspace({
         {/* Score history header */}
         <div style={{ padding: "0 20px 8px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <p style={{ fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--muted)", margin: 0 }}>
-            SCORE HISTORY · {allVisible.length}
+            {t?.wsScoreHistory || "SCORE HISTORY"} · {allVisible.length}
           </p>
           {isVantage && (
             <button
               onClick={() => setCompareMode(x => !x)}
               style={{ fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: "0.10em", textTransform: "uppercase", color: compareMode ? "var(--accent)" : "var(--muted)", background: "transparent", border: "none", cursor: "pointer", padding: 0 }}
-            >{compareMode ? "DONE" : "COMPARE"}</button>
+            >{compareMode ? (t?.wsDone || "DONE") : (t?.wsCompare || "COMPARE")}</button>
           )}
         </div>
+
+        {/* Scrollable role history container */}
+        <div style={{ maxHeight: 630, overflowY: "auto", overflowX: "hidden", WebkitOverflowScrolling: "touch" }}>
 
         {/* Search + filter bar */}
         <div style={{ padding: "4px 20px 12px" }}>
@@ -466,7 +469,7 @@ export default function RoleWorkspace({
               type="text"
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              placeholder="Search roles…"
+              placeholder={t?.wsSearchPlaceholder || "Search roles…"}
               style={{ flex: 1, border: "none", outline: "none", background: "transparent", fontFamily: "var(--font-prose)", fontSize: 14, color: "var(--ink)", padding: 0 }}
             />
             {searchQuery && (
@@ -477,10 +480,10 @@ export default function RoleWorkspace({
           </div>
           <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 2 }}>
             {[
-              { id: "ALL", label: "ALL" },
-              { id: "pursue", label: "PURSUE" },
-              { id: "monitor", label: "MONITOR" },
-              { id: "pass", label: "PASS" },
+              { id: "ALL",     label: (t?.wsAll    || "ALL").toUpperCase() },
+              { id: "pursue",  label: (t?.pursue   || "pursue").toUpperCase() },
+              { id: "monitor", label: (t?.monitor  || "monitor").toUpperCase() },
+              { id: "pass",    label: (t?.pass     || "pass").toUpperCase() },
             ].map(chip => {
               const active = filterVerdict === chip.id;
               const count  = verdictCounts[chip.id === "ALL" ? "ALL" : chip.id];
@@ -512,7 +515,7 @@ export default function RoleWorkspace({
         {/* THIS WEEK */}
         {thisWeekRoles.length > 0 && (
           <>
-            <WsSubHeader label="THIS WEEK" count={thisWeekRoles.length} />
+            <WsSubHeader label={t?.wsThisWeek || "THIS WEEK"} count={thisWeekRoles.length} />
             <WsOppsList roles={thisWeekRoles} onResume={handleResume} compareMode={compareMode} onToggleCompare={toggleCompare} selectedForCompare={selectedForCompare} t={t} />
           </>
         )}
@@ -520,7 +523,7 @@ export default function RoleWorkspace({
         {/* EARLIER */}
         {earlierRoles.length > 0 && (
           <>
-            <WsSubHeader label="EARLIER" count={earlierRoles.length} />
+            <WsSubHeader label={t?.wsEarlier || "EARLIER"} count={earlierRoles.length} />
             <WsOppsList roles={earlierRoles} onResume={handleResume} faded compareMode={compareMode} onToggleCompare={toggleCompare} selectedForCompare={selectedForCompare} t={t} />
           </>
         )}
@@ -531,10 +534,12 @@ export default function RoleWorkspace({
         )}
         {filteredRoles.length === 0 && allVisible.length > 0 && (
           <div style={{ padding: "32px 24px", textAlign: "center" }}>
-            <p style={{ fontFamily: "var(--font-prose)", fontSize: 15, color: "var(--ink)", marginBottom: 14 }}>No matches found.</p>
-            <button onClick={() => { setSearchQuery(""); setFilterVerdict("ALL"); }} style={{ padding: "8px 16px", borderRadius: 999, background: "transparent", border: "0.5px solid var(--border)", color: "var(--ink)", cursor: "pointer", fontFamily: "var(--font-data)", fontSize: 10, fontWeight: 500, letterSpacing: "0.14em", textTransform: "uppercase" }}>CLEAR FILTERS</button>
+            <p style={{ fontFamily: "var(--font-prose)", fontSize: 15, color: "var(--ink)", marginBottom: 14 }}>{t?.wsNoMatches || "No matches found."}</p>
+            <button onClick={() => { setSearchQuery(""); setFilterVerdict("ALL"); }} style={{ padding: "8px 16px", borderRadius: 999, background: "transparent", border: "0.5px solid var(--border)", color: "var(--ink)", cursor: "pointer", fontFamily: "var(--font-data)", fontSize: 10, fontWeight: 500, letterSpacing: "0.14em", textTransform: "uppercase" }}>{(t?.wsClearFilters || "CLEAR FILTERS").toUpperCase()}</button>
           </div>
         )}
+
+        </div>{/* end scrollable role history */}
 
         {/* Archived (collapsible) */}
         {archivedRoles.length > 0 && (
@@ -617,25 +622,31 @@ function wsScoreColor(score) {
   return "#5A6A5A";
 }
 
-function wsAgoLabel(dateStr) {
+function wsAgoLabel(dateStr, t) {
   if (!dateStr) return "";
   const days = Math.floor((Date.now() - new Date(dateStr).getTime()) / (24 * 3600 * 1000));
-  if (days < 1)  return "TODAY";
-  if (days < 7)  return `${days}D AGO`;
-  if (days < 14) return "1W AGO";
-  if (days < 30) return `${Math.round(days / 7)}W AGO`;
-  if (days < 60) return "1MO AGO";
-  return `${Math.round(days / 30)}MO AGO`;
+  if (days < 1)  return t?.wsToday || "TODAY";
+  if (days < 7)  return (t?.wsDaysAgo  || "{n}D AGO").replace("{n}", days);
+  if (days < 14) return t?.ws1WeekAgo  || "1W AGO";
+  if (days < 30) return (t?.wsWeeksAgo || "{n}W AGO").replace("{n}", Math.round(days / 7));
+  if (days < 60) return t?.ws1MonthAgo || "1MO AGO";
+  return (t?.wsMonthsAgo || "{n}MO AGO").replace("{n}", Math.round(days / 30));
 }
 
-function WsVerdictPill({ rec }) {
+function WsVerdictPill({ rec, t }) {
   const r = (rec || "").toLowerCase();
   const s = r === "pursue"
     ? { bg: "#EAF3DE", color: "#27500A" }
     : r === "monitor"
     ? { bg: "#FAEEDA", color: "#633806" }
     : { bg: "#F4F4F0", color: "#5A6A5A" };
-  const label = r === "pursue" ? "PURSUE" : r === "monitor" ? "MONITOR" : r ? "PASS" : "—";
+  const label = r === "pursue"
+    ? (t?.pursue || "pursue").toUpperCase()
+    : r === "monitor"
+    ? (t?.monitor || "monitor").toUpperCase()
+    : r
+    ? (t?.pass || "pass").toUpperCase()
+    : "—";
   return (
     <span style={{ flexShrink: 0, fontFamily: "var(--font-data)", fontSize: 9, fontWeight: 500, letterSpacing: "0.10em", textTransform: "uppercase", background: s.bg, color: s.color, padding: "4px 10px", borderRadius: 999 }}>{label}</span>
   );
@@ -670,12 +681,12 @@ function WsOppsList({ roles, onResume, faded = false, compareMode, onToggleCompa
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontFamily: "var(--font-display)", fontSize: 15, fontWeight: 500, color: "var(--ink)", lineHeight: 1.2, marginBottom: 3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{role.title || "Scoring…"}</div>
               <div style={{ fontFamily: "var(--font-data)", fontSize: 10, color: "#8A9A8A", letterSpacing: "0.06em", textTransform: "uppercase" }}>
-                {(role.company || "").toUpperCase()}{role.created_at ? ` · ${wsAgoLabel(role.created_at)}` : ""}
+                {(role.company || "").toUpperCase()}{role.created_at ? ` · ${wsAgoLabel(role.created_at, t)}` : ""}
                 {role.status === "applied" && <span style={{ marginLeft: 6, background: "#DFF0DF", color: "#27500A", padding: "1px 7px", borderRadius: 999, fontSize: 8, letterSpacing: "0.08em" }}>APPLIED</span>}
               </div>
             </div>
             {/* Verdict pill */}
-            {!isQueued && <WsVerdictPill rec={rec} />}
+            {!isQueued && <WsVerdictPill rec={rec} t={t} />}
           </li>
         );
       })}

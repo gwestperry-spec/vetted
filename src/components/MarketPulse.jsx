@@ -360,6 +360,7 @@ export default function MarketPulseCard({ t, profile, authUser, userTier, opport
   salaryCache: externalSalaryCache, setSalaryCache: setExternalSalaryCache,
   insightsCache: externalInsightsCache, setInsightsCache: setExternalInsightsCache,
   citationsCache: externalCitationsCache, setCitationsCache: setExternalCitationsCache,
+  onOpenMenu,
 }) {
   const cur = currency || profile.currency || "USD";
   const profileTitle = profile.currentTitle || (profile.targetRoles?.[0]) || "";
@@ -507,7 +508,7 @@ export default function MarketPulseCard({ t, profile, authUser, userTier, opport
     <main id="main-content" aria-label="Market pulse" style={{ background: "var(--paper)", minHeight: "100%" }}>
 
       {/* Header */}
-      <header style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "54px 20px 0" }}>
+      <header style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "54px 8px 0 20px" }}>
         <div style={{ fontFamily: "var(--font-data)", fontSize: 11, letterSpacing: "0.18em", color: "var(--ink)", textTransform: "uppercase" }}>
           VETTED
         </div>
@@ -521,6 +522,15 @@ export default function MarketPulseCard({ t, profile, authUser, userTier, opport
               letterSpacing: ".10em", textTransform: "uppercase",
               background: "var(--gold)", color: "#fff", padding: "2px 8px", borderRadius: 20,
             }}>Vantage</span>
+          )}
+          {onOpenMenu && (
+            <button onClick={onOpenMenu} aria-label="Open menu" style={{ width: 44, height: 44, display: "inline-flex", alignItems: "center", justifyContent: "center", background: "transparent", border: "none", cursor: "pointer", color: "var(--ink)", padding: 0 }}>
+              <svg width="20" height="20" viewBox="0 0 22 22" fill="none">
+                <line x1="3.5" y1="7"  x2="18.5" y2="7"  stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+                <line x1="3.5" y1="11" x2="18.5" y2="11" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+                <line x1="3.5" y1="15" x2="18.5" y2="15" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+              </svg>
+            </button>
           )}
         </div>
       </header>
