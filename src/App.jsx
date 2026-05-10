@@ -810,14 +810,19 @@ export default function App() {
       const detail = err?.message ? ` (${err.message})` : "";
       setError(`${t.scoringError}${detail}`);
       announce(t.scoringError);
-      // Keep the queued workspace card visible with error info
+      // Clean up the pre-queued workspace card on failure so the UI doesn't
+      // leave a permanent "Scoring..." row. Hard-delete the DB row too; if
+      // that request errors, the hourly workspace-sweep cron is the backstop.
       if (pendingWorkspaceRoleId.current) {
-        upsertWorkspaceRoleLocal({
-          role_id:    pendingWorkspaceRoleId.current,
-          status:     "queued",
-          notes:      `Scoring failed: ${err?.message || "unknown error"}`,
-          updated_at: new Date().toISOString(),
-        });
+        const failedRoleId = pendingWorkspaceRoleId.current;
+        setWorkspaceRoles(prev => prev.filter(r => r.role_id !== failedRoleId));
+        if (authUser?.id) {
+          dbCall("deleteWorkspaceRole", {
+            action: "deleteWorkspaceRole",
+            appleId: authUser.id,
+            roleId: failedRoleId,
+          }).catch(() => { /* swept on next cron run */ });
+        }
         pendingWorkspaceRoleId.current = null;
       }
     } finally {
