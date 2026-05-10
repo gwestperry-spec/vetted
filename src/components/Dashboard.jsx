@@ -62,10 +62,6 @@ const STAGE_STYLE = {
   withdrew:     { bg: "#F0F4F0", color: "#1A2E1A" },
 };
 
-// ─── Guide slides (built inside component using t) ─────────────────────────
-// GUIDE_SLIDES is now a function that returns slides based on the current t.
-// See buildGuideSlides(t) inside Dashboard component.
-
 // ─── Date formatter → "MON · APR 14 · 2026" ───────────────────────────────
 function formatDashDate() {
   const d = new Date();
@@ -127,15 +123,6 @@ export default function Dashboard({
   const fn = (field) => resolveLang(field, lang);
   const isVantage = userTier === "vantage" || userTier === "vantage_lifetime";
 
-  // ── Guide slides (language-aware) ─────────────────────────────────────────
-  const GUIDE_SLIDES = [
-    { icon: "◎",   title: t.guide1Title, body: t.guide1Body },
-    { icon: "⊟",   title: t.guide2Title, body: t.guide2Body },
-    { icon: "3.8", title: t.guide3Title, body: t.guide3Body, mono: true },
-    { icon: "→",   title: t.guide4Title, body: t.guide4Body },
-    { icon: "◫",   title: t.guide5Title, body: t.guide5Body },
-  ];
-
   // ── Dev unlock: 7-tap on VETTED wordmark ──────────────────────────────────
   const devTapRef      = useRef(0);
   const devTapTimerRef = useRef(null);
@@ -145,22 +132,6 @@ export default function Dashboard({
     devTapTimerRef.current = setTimeout(() => { devTapRef.current = 0; }, 1500);
     if (devTapRef.current >= 7) { devTapRef.current = 0; onDevUnlock?.(); }
   }
-
-  // ── Guide ─────────────────────────────────────────────────────────────────
-  const [showGuide, setShowGuide] = useState(() => {
-    try { return !localStorage.getItem("vetted_guide_seen"); } catch { return false; }
-  });
-  const [guideStep, setGuideStep] = useState(0);
-  function openGuide()  { setGuideStep(0); setShowGuide(true); }
-  function closeGuide() {
-    setShowGuide(false);
-    try { localStorage.setItem("vetted_guide_seen", "1"); } catch {}
-  }
-  function guideNext() {
-    if (guideStep < GUIDE_SLIDES.length - 1) setGuideStep(s => s + 1);
-    else closeGuide();
-  }
-  function guidePrev() { if (guideStep > 0) setGuideStep(s => s - 1); }
 
   // ── Compare mode ──────────────────────────────────────────────────────────
   const [compareMode, setCompareMode]               = useState(false);
@@ -330,16 +301,6 @@ export default function Dashboard({
               fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: ".08em",
               color: "#1A2E1A", textTransform: "uppercase",
             }}>{formatDashDate()}</span>
-            <button
-              onClick={openGuide}
-              aria-label="Open dashboard guide"
-              style={{
-                width: 28, height: 28, borderRadius: "50%",
-                background: "#F0F4F0", border: "1px solid #D8E8D8",
-                color: "#1A2E1A", fontSize: 12, fontWeight: 600,
-                cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-              }}
-            >?</button>
           </div>
         </div>
 
@@ -1084,92 +1045,6 @@ export default function Dashboard({
         )}
       </div>
 
-      {/* ── Dashboard Guide overlay ─────────────────────────────────────── */}
-      {showGuide && (() => {
-        const slide  = GUIDE_SLIDES[guideStep];
-        const isLast = guideStep === GUIDE_SLIDES.length - 1;
-        return (
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-label="Dashboard guide"
-            style={{
-              position: "fixed", inset: 0, zIndex: 1000,
-              background: "rgba(10,20,10,0.7)",
-              display: "flex", alignItems: "flex-end", justifyContent: "center",
-              padding: "0 0 env(safe-area-inset-bottom, 0)",
-            }}
-            onClick={e => { if (e.target === e.currentTarget) closeGuide(); }}
-          >
-            <div style={{
-              background: "#FAFAF8", borderRadius: "16px 16px 0 0",
-              width: "100%", maxWidth: 480,
-              padding: "28px 24px 36px",
-              boxShadow: "0 -4px 32px rgba(0,0,0,0.18)",
-            }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-                <span style={{
-                  fontFamily: "var(--font-data)", fontSize: 11,
-                  letterSpacing: ".18em", textTransform: "uppercase", color: "#1A2E1A",
-                }}>{guideStep + 1} of {GUIDE_SLIDES.length}</span>
-                <button onClick={closeGuide} aria-label="Close guide" style={{ background: "none", border: "none", cursor: "pointer", color: "#1A2E1A", fontSize: 20, lineHeight: 1, padding: 4 }}>✕</button>
-              </div>
-              <div style={{ textAlign: "center", marginBottom: 32 }}>
-                <div style={{
-                  fontFamily: slide.mono ? "var(--font-data)" : "var(--font-prose)",
-                  fontSize: slide.mono ? 36 : 40, fontWeight: 700,
-                  color: "#1A2E1A", marginBottom: 16, lineHeight: 1,
-                }}>{slide.icon}</div>
-                <h3 style={{
-                  fontFamily: "var(--font-prose)", fontSize: 20, fontWeight: 700,
-                  color: "#1A2E1A", marginBottom: 12,
-                }}>{slide.title}</h3>
-                <p style={{
-                  fontFamily: "var(--font-prose)", fontSize: 15, color: "#1A2E1A",
-                  lineHeight: 1.7, maxWidth: 320, margin: "0 auto",
-                }}>{slide.body}</p>
-              </div>
-              <div style={{ display: "flex", justifyContent: "center", gap: 6, marginBottom: 24 }}>
-                {GUIDE_SLIDES.map((_, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setGuideStep(i)}
-                    aria-label={`Go to slide ${i + 1}`}
-                    style={{
-                      width: i === guideStep ? 20 : 8, height: 8, borderRadius: 4,
-                      background: i === guideStep ? "#1A2E1A" : "#D8E8D8",
-                      border: "none", cursor: "pointer", padding: 0,
-                      transition: "all 0.25s ease",
-                    }}
-                  />
-                ))}
-              </div>
-              <div style={{ display: "flex", gap: 10 }}>
-                {guideStep > 0 && (
-                  <button
-                    onClick={guidePrev}
-                    style={{
-                      flex: 1, minHeight: 48, borderRadius: 10,
-                      background: "#F0F4F0", color: "#1A2E1A",
-                      border: "1px solid #D8E8D8", fontSize: 15, fontWeight: 500,
-                      fontFamily: "var(--font-prose)", cursor: "pointer",
-                    }}
-                  >← Back</button>
-                )}
-                <button
-                  onClick={guideNext}
-                  style={{
-                    flex: 2, minHeight: 48, borderRadius: 10,
-                    background: "#1A2E1A", color: "#E8F0E8",
-                    border: "none", fontSize: 15, fontWeight: 500,
-                    fontFamily: "var(--font-prose)", cursor: "pointer",
-                  }}
-                >{isLast ? "Got it" : "Next →"}</button>
-              </div>
-            </div>
-          </div>
-        );
-      })()}
     </main>
   );
 }

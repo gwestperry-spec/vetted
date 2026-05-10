@@ -166,15 +166,6 @@ export default function RoleWorkspace({
   const isVantage = ["vantage","vantage_lifetime"].includes(effectiveTier);
   const isSignal  = ["signal","signal_lifetime","vantage","vantage_lifetime"].includes(effectiveTier);
 
-  // ── Guide slides ──────────────────────────────────────────────────────────
-  const GUIDE_SLIDES = [
-    { icon:"◎",   title: t?.guide1Title || "Score any role", body: t?.guide1Body || "Paste a job description or drop a URL — Vetted scores it against your framework." },
-    { icon:"⊟",   title: t?.guide2Title || "Filter-first scoring", body: t?.guide2Body || "Every score is weighted by the criteria that matter most to you." },
-    { icon:"3.8", title: t?.guide3Title || "The VQ Score", body: t?.guide3Body || "A single number that reflects fit against your framework. Above your threshold = pursue.", mono: true },
-    { icon:"→",   title: t?.guide4Title || "Track your search", body: t?.guide4Body || "Mark roles as Applied and follow your pipeline without leaving the app." },
-    { icon:"◫",   title: t?.guide5Title || "Compare roles", body: t?.guide5Body || "Stack two roles side-by-side to see exactly where one wins and the other falls short." },
-  ];
-
   // ── State ─────────────────────────────────────────────────────────────────
   const [searchQuery,        setSearchQuery]        = useState("");
   const [filterVerdict,      setFilterVerdict]      = useState("ALL");
@@ -191,16 +182,6 @@ export default function RoleWorkspace({
   const [carouselIdx,        setCarouselIdx]        = useState(0);
   const carouselStartX = useRef(0);
   const [editingStatusId,    setEditingStatusId]    = useState(null);
-
-  // Guide
-  const [showGuide, setShowGuide] = useState(() => {
-    try { return !localStorage.getItem("vetted_guide_seen"); } catch { return false; }
-  });
-  const [guideStep, setGuideStep] = useState(0);
-  function openGuide()  { setGuideStep(0); setShowGuide(true); }
-  function closeGuide() { setShowGuide(false); try { localStorage.setItem("vetted_guide_seen","1"); } catch {} }
-  function guideNext()  { if (guideStep < GUIDE_SLIDES.length - 1) setGuideStep(s => s+1); else closeGuide(); }
-  function guidePrev()  { if (guideStep > 0) setGuideStep(s => s-1); }
 
   // Dev tap
   const devTapRef = useRef(0);
@@ -565,33 +546,6 @@ export default function RoleWorkspace({
         />
       )}
 
-      {/* ── Guide modal ── */}
-      {showGuide && (() => {
-        const slide = GUIDE_SLIDES[guideStep];
-        const isLast = guideStep === GUIDE_SLIDES.length - 1;
-        return (
-          <div role="dialog" aria-modal="true" aria-label="Workspace guide" style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(10,20,10,0.7)", display: "flex", alignItems: "flex-end", justifyContent: "center" }} onClick={e => { if (e.target === e.currentTarget) closeGuide(); }}>
-            <div style={{ background: "var(--paper)", borderRadius: "16px 16px 0 0", width: "100%", maxWidth: 480, padding: "28px 24px 36px", boxShadow: "0 -4px 32px rgba(0,0,0,0.18)" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-                <span style={{ fontFamily: "var(--font-data)", fontSize: 11, letterSpacing: ".18em", textTransform: "uppercase", color: "var(--ink)" }}>{guideStep + 1} of {GUIDE_SLIDES.length}</span>
-                <button onClick={closeGuide} aria-label="Close guide" style={{ background: "none", border: "none", cursor: "pointer", color: "var(--ink)", fontSize: 20, lineHeight: 1, padding: 4 }}>✕</button>
-              </div>
-              <div style={{ textAlign: "center", marginBottom: 32 }}>
-                <div style={{ fontFamily: slide.mono ? "var(--font-data)" : "var(--font-prose)", fontSize: slide.mono ? 36 : 40, fontWeight: 700, color: "var(--ink)", marginBottom: 16, lineHeight: 1 }}>{slide.icon}</div>
-                <h3 style={{ fontFamily: "var(--font-prose)", fontSize: 20, fontWeight: 700, color: "var(--ink)", marginBottom: 12 }}>{slide.title}</h3>
-                <p style={{ fontFamily: "var(--font-prose)", fontSize: 15, color: "var(--ink)", lineHeight: 1.7, maxWidth: 320, margin: "0 auto" }}>{slide.body}</p>
-              </div>
-              <div style={{ display: "flex", justifyContent: "center", gap: 6, marginBottom: 24 }}>
-                {GUIDE_SLIDES.map((_, i) => (<button key={i} onClick={() => setGuideStep(i)} aria-label={`Slide ${i + 1}`} style={{ width: i === guideStep ? 20 : 8, height: 8, borderRadius: 4, background: i === guideStep ? "var(--ink)" : "var(--border)", border: "none", cursor: "pointer", padding: 0, transition: "all 0.25s ease" }} />))}
-              </div>
-              <div style={{ display: "flex", gap: 10 }}>
-                {guideStep > 0 && (<button onClick={guidePrev} style={{ flex: 1, minHeight: 48, borderRadius: 10, background: "var(--cream)", color: "var(--ink)", border: "0.5px solid var(--border)", fontSize: 15, fontFamily: "var(--font-prose)", cursor: "pointer" }}>← Back</button>)}
-                <button onClick={guideNext} style={{ flex: 2, minHeight: 48, borderRadius: 10, background: "var(--ink)", color: "#F4F8F0", border: "none", fontSize: 15, fontFamily: "var(--font-prose)", cursor: "pointer" }}>{isLast ? "Got it" : "Next →"}</button>
-              </div>
-            </div>
-          </div>
-        );
-      })()}
     </main>
   );
 }
