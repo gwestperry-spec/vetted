@@ -46,32 +46,32 @@ if (!fs.existsSync(landingHtml)) {
   process.exit(1);
 }
 
-// 1. Move SPA index.html → dist/app/index.html
-const appDir = path.join(dist, 'app');
-fs.mkdirSync(appDir, { recursive: true });
-fs.renameSync(spaSrc, path.join(appDir, 'index.html'));
+// IMPORTANT: dist/index.html stays as the SPA so Capacitor's iOS bundle
+// (webDir = "dist") loads the React app on launch. The landing is exposed
+// to web traffic via a force rewrite in netlify.toml (/ → /landing.html).
 
-// 2. Move dashboard.html → dist/dashboard/index.html (internal KPI dashboard)
+// 1. Move dashboard.html → dist/dashboard/index.html (internal KPI dashboard)
 if (fs.existsSync(dashboardSrc)) {
   const dashboardDir = path.join(dist, 'dashboard');
   fs.mkdirSync(dashboardDir, { recursive: true });
   fs.renameSync(dashboardSrc, path.join(dashboardDir, 'index.html'));
 }
 
-// 3. Copy landing HTML verbatim → dist/index.html
-fs.copyFileSync(landingHtml, path.join(dist, 'index.html'));
+// 2. Copy landing HTML verbatim → dist/landing.html
+//    (NOT dist/index.html — that would clobber the SPA for iOS).
+fs.copyFileSync(landingHtml, path.join(dist, 'landing.html'));
 
-// 4. Copy landing's assets/ → dist/assets/
+// 3. Copy landing's assets/ → dist/assets/
 copyDir(landingAssets, path.join(dist, 'assets'));
 
-// 5. Copy landing's reel/ → dist/reel/
+// 4. Copy landing's reel/ → dist/reel/
 if (fs.existsSync(landingReel)) {
   copyDir(landingReel, path.join(dist, 'reel'));
 }
 
 console.log('postbuild-landing: ok');
-console.log('  dist/index.html             → landing (verbatim)');
-console.log('  dist/app/index.html         → SPA');
+console.log('  dist/index.html             → SPA (Capacitor entry + /app on web)');
+console.log('  dist/landing.html           → marketing landing (rewritten from / on web)');
 console.log('  dist/dashboard/index.html   → internal KPI dashboard');
 console.log('  dist/assets/                → landing bundle');
 console.log('  dist/reel/                  → reel iframes');

@@ -158,12 +158,29 @@
   # in the Netlify dashboard — they cannot be committed to this file.
   NODE_ENV = "production"
 
-# ── Public marketing landing page at root ────────────────────────────────────
-# Apple App Store review (Guideline 5.1.1 / 1.5) requires a publicly accessible
-# organization website with no auth wall. After the postbuild swap:
-#   - dist/index.html   → static landing (served at /)
-#   - dist/app/         → React SPA (served at /app)
-# No rewrite needed at /; Netlify serves dist/index.html automatically.
+# ── Web ↔ iOS routing split ──────────────────────────────────────────────────
+# dist/index.html IS the React SPA — must stay there so Capacitor's iOS
+# bundle (webDir = "dist") loads the app on launch.
+# The marketing landing sits at dist/landing.html and is exposed to web
+# traffic via a force rewrite at /. force=true is required because Netlify
+# would otherwise serve dist/index.html (the SPA) for / by default.
+[[redirects]]
+  from = "/"
+  to = "/landing.html"
+  status = 200
+  force = true
+
+# Web users navigating to /app should land on the SPA. URL stays /app;
+# content is dist/index.html. Same for any client-side route under /app.
+[[redirects]]
+  from = "/app"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/app/*"
+  to = "/index.html"
+  status = 200
 
 # Legacy /signin entry point → /app
 [[redirects]]
@@ -223,12 +240,5 @@
   status = 200
   force = true
 
-# ── SPA fallback — serves the React app for all /app/* routes ────────────────
-# The SPA lives at dist/app/index.html. Any in-app client-side route
-# (e.g. /app/dashboard) must rewrite to /app/index.html so the app's
-# router can take over. Scoped to /app/* so unknown top-level paths
-# correctly 404 instead of silently serving the SPA.
-[[redirects]]
-  from = "/app/*"
-  to = "/app/index.html"
-  status = 200
+# (The /app and /app/* rewrites are defined at the top of the redirects
+# section, near the / rewrite, so the SPA routing is all in one place.)
