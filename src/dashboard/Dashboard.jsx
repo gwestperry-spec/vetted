@@ -529,6 +529,12 @@ export default function Dashboard() {
         {/* Activation */}
         <Section title="Activation">
           <Card
+            label="Total profiles"
+            value={fmt.num(data.supabase?.totalProfiles)}
+            note={`+${fmt.num(data.supabase?.profilesNew7d ?? 0)} / 7d`}
+            status="neutral"
+          />
+          <Card
             label="Install → sign-in"
             value={fmt.pct(m.installToSignin)}
             target={`${(TARGETS.installToSignin * 100).toFixed(0)}%`}
@@ -577,6 +583,12 @@ export default function Dashboard() {
 
         {/* Monetization */}
         <Section title="Monetization">
+          <Card
+            label="Paid profiles"
+            value={fmt.num(data.supabase?.paidProfiles)}
+            note={`${fmt.num(data.supabase?.totalProfiles)} total · ${fmt.num(m.activeSubs ?? 0)} active Stripe`}
+            status="neutral"
+          />
           <Card
             label="MRR"
             value={fmt.money(m.mrr)}
