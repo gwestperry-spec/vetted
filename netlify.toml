@@ -128,6 +128,14 @@
   schedule = "0 15 * * 0"
   timeout  = 60
 
+# Workspace sweep — hourly cleanup of stuck "Scoring…" rows
+# Deletes workspace_roles rows in (queued, scoring, in_progress, pending)
+# older than 5 minutes with vq_score IS NULL.
+# Manually invokable via POST with X-Vetted-Sweep-Secret = VETTED_SECRET.
+[functions."workspace-sweep"]
+  schedule = "0 * * * *"
+  timeout  = 30
+
 # ── Staging context ───────────────────────────────────────────────────────────
 # Deploy the `staging` branch to a separate Netlify environment with its own
 # env vars (set in Netlify dashboard → Site configuration → Environment variables
