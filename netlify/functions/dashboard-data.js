@@ -110,6 +110,14 @@ async function fetchSupabase() {
     })
   );
 
+  // JD fetch observability — last 7 days.
+  const [jdAttempts7d, jdSuccess7d, jdPerplexitySuccess7d, jdScrapingBeeSuccess7d] = await Promise.all([
+    sbCount(`/rest/v1/fetch_jd_log?select=id&created_at=gt.${sevenDaysAgo}`),
+    sbCount(`/rest/v1/fetch_jd_log?select=id&created_at=gt.${sevenDaysAgo}&success=is.true`),
+    sbCount(`/rest/v1/fetch_jd_log?select=id&created_at=gt.${sevenDaysAgo}&success=is.true&provider=eq.perplexity`),
+    sbCount(`/rest/v1/fetch_jd_log?select=id&created_at=gt.${sevenDaysAgo}&success=is.true&provider=eq.scrapingbee`),
+  ]);
+
   return {
     ok: SB_URL && SB_KEY ? true : false,
     totalProfiles,
@@ -126,6 +134,10 @@ async function fetchSupabase() {
     cancelledLast30d: null, // sourced from Stripe
     sevenDaysAgo,
     thirtyDaysAgo,
+    jdAttempts7d,
+    jdSuccess7d,
+    jdPerplexitySuccess7d,
+    jdScrapingBeeSuccess7d,
   };
 }
 
