@@ -1294,3 +1294,58 @@ LOCATION SCORING RULE: If the role is remote, fully remote, or remote-first, tre
 **Root cause:** The `serve` process had been started before `npm run build` ran with the new postbuild script. It was holding ETag/file-handle references to the prior `dist/index.html` (the SPA). `serve` doesn't watch the directory for replacements; it reuses cached metadata until the process restarts.
 **Fix:** `lsof -ti:5174 | xargs kill && npx serve dist -p 5174` — restart serve after every rebuild. Documented so the "blank page after rebuild" symptom isn't misdiagnosed as a real landing/build problem in the future.
 **Files:** None.
+
+---
+
+## Error 114 — Local source tree drifted from git for ~6 weeks; broke Netlify builds
+**Build:** Discovered May 9–10, 2026.
+**Side:** Repo hygiene + deploy pipeline.
+**Symptom:** PR #2's Netlify deploy preview failed with `[UNRESOLVED_IMPORT] Could not resolve '../i18n/coachingPairs.js' in src/components/VQLoadingScreen.jsx`. Audit after committing that single file revealed eleven more modified files sitting uncommitted in the working tree — together representing all the iOS app behavior shipped in Build 28 (Presentation Mode in App.jsx, workspace KPI tiles + scrollable history in RoleWorkspace.jsx, sanitize.js trim removal, FiltersStep/MarketPulse/Onboarding/ScoreEntry/VQAdvocate component edits, Podfile push-notifications pod registration, pbxproj `CURRENT_PROJECT_VERSION 27→28`).
+**Root cause:** The team's manual deploy workflow was `edit locally → npm run build → npx cap copy ios → Xcode archive → upload to App Store`. The web SPA had been deployed via `netlify deploy` CLI to `preeminent-torrone-a2b6be` (no GitHub wiring). Nothing in either loop required a `git commit`, and recurring `git status` warnings became habitual to ignore. The result: eight commits' worth of Build 28 source survived only on the founder's Mac, invisible to git history.
+**Fix:** One-shot commit "Sync local source tree with Build 28" (`2e874d9`) put everything back in git. Going forward, all deploys flow through the GitHub-linked `celebrated-gelato-56d525` site → `git push` → Netlify auto-builds → production. Manual CLI deploys are now actively discouraged.
+**Lesson:** Whenever a Netlify site has `repo_url: null` (i.e. no GitHub integration), production becomes reproducible only from one specific local machine. Audit all Netlify sites in a team for this field once per quarter; any site without `repo_url` is a future "works on my machine" incident.
+**Files:** `src/i18n/coachingPairs.js`, `src/App.jsx`, `src/utils/sanitize.js`, `src/components/{FiltersStep,MarketPulse,Onboarding,ScoreEntry,VQAdvocate,workspace/RoleWorkspace}.jsx`, `ios/App/Podfile`, `ios/App/Podfile.lock`, `ios/App/App.xcodeproj/project.pbxproj`.
+
+---
+
+## Error 115 — Dual Netlify site drift caused 3-day Stripe webhook outage
+**Build:** Web infrastructure, May 6–9, 2026.
+**Side:** Hosting + DNS.
+**Symptom:** Stripe sent an alert on May 9: 19 failed webhook delivery attempts since May 6 02:42 UTC against `celebrated-gelato.netlify.app/.netlify/functions/stripe-webhook`. Simultaneously, the production landing page hadn't picked up source changes for weeks despite multiple `git push` events.
+**Root cause:** Two Netlify sites coexisted in the Vetted team. (a) `celebrated-gelato-56d525` — wired to the GitHub repo, all PR merges auto-deployed here, the destination Stripe webhooks were configured against. (b) `preeminent-torrone-a2b6be` — no GitHub wiring, manually deployed via `netlify deploy` from the founder's Mac, this is where `tryvettedai.com` was actually pointing as its custom domain. Web traffic went to `preeminent-torrone` (stale code); Stripe webhooks went to `celebrated-gelato` (where the auto-deployed code lived, but where something in the function failed — likely an env var that was only set on one of the two sites and rotated). The two sites drifted apart for months without anyone noticing.
+**Fix:** Moved the `tryvettedai.com` custom domain (and `www`) from `preeminent-torrone` → `celebrated-gelato` in the Netlify dashboard. Force HTTPS enabled at Netlify; Cloudflare SSL mode confirmed at Full (strict). Stripe webhook deliveries recovered automatically once main started successfully deploying again. Deleted three orphan Netlify sites (`preeminent-torrone`, `tiny-cassata`, `benevolent-bavarois`) — all had `repo_url: null`, all had zero references in the codebase or DNS.
+**Lesson:** "Production runs from THIS Netlify site, period" should be a written fact in the repo's ENV.md or DEPLOY.md, audited monthly. When you can't answer it in one sentence, you've drifted. Pair every custom domain with a single Netlify site name written somewhere git-tracked.
+**Files:** None (config-only). Netlify dashboard, Cloudflare DNS panel.
+
+---
+
+## Error 116 — Cloudflare proxy + Netlify edge served stale HTML after deploy
+**Build:** Web infra, May 9, 2026.
+**Side:** Hosting / CDN.
+**Symptom:** After merging PR #2 and confirming a successful Netlify production deploy, `tryvettedai.com/` continued to return 12772 bytes (the old SPA). Direct hits to the canonical Netlify URL `celebrated-gelato.netlify.app` correctly returned 55980 bytes (the new landing). Adding `?v=<timestamp>` query strings made no difference.
+**Root cause:** Largely a symptom of Error 115 (dual-site drift). `tryvettedai.com` was on the wrong Netlify site, so the "successful deploy" never invalidated *its* edge cache. Cloudflare was also in the path (DNS resolves to CF IPs `104.21.x.x`, `172.67.x.x`) but inspection showed `cf-cache-status: DYNAMIC` — Cloudflare was passing through, the staleness was at Netlify's edge for the wrong-site mapping.
+**Fix:** Once the domain was moved to the correct Netlify site (Error 115's fix), the edge cache invalidated on the next deploy and content went live within ~60s.
+**Lesson:** "Cache is stale" can be one of three layers — Cloudflare CDN, Netlify Edge, or browser. Always check headers (`cache-status`, `cf-cache-status`, `age`) before assuming the obvious one. In this case the symptom looked like CF caching, but the actual fault was a misrouted Netlify site upstream.
+**Files:** None.
+
+---
+
+## Error 117 — Capacitor iOS app loaded the marketing landing instead of the React SPA
+**Build:** Discovered May 10, 2026 during a Build 29 Xcode test.
+**Side:** iOS / Capacitor.
+**Symptom:** Running the app on a physical iPhone via Xcode showed the marketing landing page (tryvettedai.com hero content) inside the WKWebView, instead of the Sign in with Apple gate / React SPA.
+**Root cause:** The PR #2 postbuild script (`scripts/postbuild-landing.mjs`) moved the Vite-built SPA from `dist/index.html` to `dist/app/index.html`, then copied the design-system landing into `dist/index.html`. This was correct for the web — Netlify serves `dist/index.html` at `/` natively, and `/app` rewrites to the SPA. But Capacitor's `webDir: "dist"` config means `npx cap copy ios` copies `dist/` wholesale into `ios/App/App/public/`, and the WKWebView always loads `public/index.html` as the launch entry. The iOS bundle's "first paint" became the marketing landing, with the SPA buried in an `app/` subdirectory the iOS app never navigates to.
+**Fix:** Reverted the postbuild swap. `dist/index.html` stays as the SPA (Capacitor-friendly). The landing now lives at `dist/landing.html`. `netlify.toml` gained `/ → /landing.html` force rewrite and `/app + /app/* → /index.html` rewrites so the web routing matches the iOS bundle's reality. Verified `ios/App/App/public/index.html` returns to 13048 bytes with `id="root"` after `npx cap copy ios`.
+**Lesson:** Every change that touches `dist/index.html` needs to be evaluated against BOTH the Netlify edge AND the Capacitor iOS bundle. They consume the same artifact directory but expect different entry points. After any postbuild change, run `npx cap copy ios` and inspect `ios/App/App/public/index.html` — that's the iOS launch HTML. If it's not the SPA, you have a Build-29-or-it-stays-broken bug on your hands.
+**Files:** `scripts/postbuild-landing.mjs`, `netlify.toml`.
+
+---
+
+## Error 118 — Stuck "Scoring…" workspace_roles rows on any scoring failure
+**Build:** Latent in Build 28; discovered May 10, 2026 during ScrapingBee testing.
+**Side:** iOS app + Supabase backend.
+**Symptom:** Any fetch-jd or Anthropic-scoring failure left a `workspace_roles` row with `status="queued"` in the database. The workspace UI rendered such rows as a permanent "Scoring..." spinner. Multiple stuck rows accumulated across sessions — 9 from prior days, plus 1 new each time a LinkedIn URL paste failed.
+**Root cause:** `src/App.jsx#scoreOpportunity`'s catch block (line ~815) explicitly upserted the pre-queued row with `status="queued"` and a `notes` field describing the failure. The original intent had been "preserve the card with error info" but the workspace UI doesn't render `notes` for queued-status rows — it just shows the spinner. So failures were silently invisible to the user.
+**Fix:** Two layers, both committed today. (a) **Server-side backstop:** new `netlify/functions/workspace-sweep.js`, cron'd hourly, deletes `workspace_roles` where status ∈ (queued, scoring, in_progress, pending) AND `created_at < now() - 5min` AND `vq_score IS NULL`. Manually invokable via `POST /.netlify/functions/workspace-sweep` with `X-Vetted-Sweep-Secret: VETTED_SECRET` header for the one-time cleanup of pre-existing stuck rows. (b) **Client-side proper fix:** rewrote the catch block to filter the role out of local React state AND fire `dbCall("deleteWorkspaceRole", …)` to hard-delete the Supabase row. Web `/app` users get the client fix on the next Netlify deploy; iOS users get it when Build 29 is archived + uploaded.
+**Lesson:** UI state branches that persist an "in-progress" marker after a caught failure are a known anti-pattern. Always pair "exception caught" with "intermediate state cleaned up." For shared state (DB rows that drive UI), always pair a client-side mutation path with a server-side sweep so transient client crashes don't leave orphan rows visible to other devices on next sync.
+**Files:** `src/App.jsx`, `netlify/functions/workspace-sweep.js` (new), `netlify.toml`.
