@@ -30,6 +30,7 @@ const TARGETS = {
   mrr: 1000,            // $1,000 MRR
   paidConversion: 0.05, // 5%
   monthlyChurn: 0.10,   // <10%
+  jdFetchSuccess: 0.85, // 85% across all providers
 };
 
 // Status: green if >= target, amber if within 20% below, red if further below.
@@ -375,6 +376,14 @@ export default function Dashboard() {
           Math.max(1, stripe.activeSubscriptions + stripe.cancelledLast30d)
         : null;
 
+    // JD fetch observability
+    const jdAttempts = supa.jdAttempts7d ?? 0;
+    const jdSuccessRate = jdAttempts > 0 ? (supa.jdSuccess7d ?? 0) / jdAttempts : null;
+    const jdPerplexityShare = jdAttempts > 0 ? (supa.jdPerplexitySuccess7d ?? 0) / jdAttempts : 0;
+    const jdScrapingBeeShare = jdAttempts > 0 ? (supa.jdScrapingBeeSuccess7d ?? 0) / jdAttempts : 0;
+    const jdFailedShare =
+      jdAttempts > 0 ? Math.max(0, 1 - jdPerplexityShare - jdScrapingBeeShare) : 0;
+
     return {
       installToSignin,
       firstScoreRate,
@@ -392,6 +401,11 @@ export default function Dashboard() {
       stripeOk: stripe.ok,
       posthogOk: posthog.ok,
       posthogReason: posthog.reason,
+      jdAttempts,
+      jdSuccessRate,
+      jdPerplexityShare,
+      jdScrapingBeeShare,
+      jdFailedShare,
     };
   }, [data, appStoreDownloads]);
 
@@ -515,6 +529,12 @@ export default function Dashboard() {
         {/* Activation */}
         <Section title="Activation">
           <Card
+            label="Total profiles"
+            value={fmt.num(data.supabase?.totalProfiles)}
+            note={`+${fmt.num(data.supabase?.profilesNew7d ?? 0)} / 7d`}
+            status="neutral"
+          />
+          <Card
             label="Install → sign-in"
             value={fmt.pct(m.installToSignin)}
             target={`${(TARGETS.installToSignin * 100).toFixed(0)}%`}
@@ -563,6 +583,12 @@ export default function Dashboard() {
 
         {/* Monetization */}
         <Section title="Monetization">
+          <Card
+            label="Paid profiles"
+            value={fmt.num(data.supabase?.paidProfiles)}
+            note={`${fmt.num(data.supabase?.totalProfiles)} total · ${fmt.num(m.activeSubs ?? 0)} active Stripe`}
+            status="neutral"
+          />
           <Card
             label="MRR"
             value={fmt.money(m.mrr)}
@@ -615,9 +641,25 @@ export default function Dashboard() {
           />
           <Card
             label="JD fetch success"
-            value="—"
-            note="Not yet instrumented — wire to fetch-jd.js error rate in Sentry"
-            status="neutral"
+            value={m.jdAttempts > 0 ? fmt.pct(m.jdSuccessRate) : "—"}
+            target={`${(TARGETS.jdFetchSuccess * 100).toFixed(0)}%`}
+            status={statusFor(m.jdSuccessRate, TARGETS.jdFetchSuccess)}
+            note={
+              m.jdAttempts > 0
+                ? `${fmt.num(m.jdAttempts)} attempts / 7d`
+                : "No fetch attempts in last 7 days"
+            }
+          />
+          <Card
+            label="JD providers used (7d)"
+            value={
+              <ProvidersGrid
+                perplexity={m.jdPerplexityShare}
+                scrapingbee={m.jdScrapingBeeShare}
+                failed={m.jdFailedShare}
+              />
+            }
+            note={`${fmt.num(m.jdAttempts)} attempts · Perplexity is tier-1, ScrapingBee is fallback`}
           />
           <Card
             label="Founding seats remaining"
@@ -714,6 +756,45 @@ function TierGrid({ tiers, total }) {
           </div>
         );
       })}
+    </div>
+  );
+}
+
+function ProvidersGrid({ perplexity, scrapingbee, failed }) {
+  const rows = [
+    { name: "Perplexity", v: perplexity, color: C.brand },
+    { name: "ScrapingBee", v: scrapingbee, color: C.warn },
+    { name: "Failed", v: failed, color: C.bad },
+  ];
+  return (
+    <div style={{ marginTop: 4 }}>
+      {rows.map((r) => (
+        <div key={r.name} style={{ marginBottom: 6 }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              fontFamily: F.mono,
+              fontSize: 11,
+              color: C.muted,
+              letterSpacing: "0.04em",
+              marginBottom: 2,
+            }}
+          >
+            <span>{r.name}</span>
+            <span style={{ color: C.ink, fontWeight: 600 }}>{fmt.pct(r.v, 0)}</span>
+          </div>
+          <div style={{ height: 4, background: C.border, borderRadius: 2, overflow: "hidden" }}>
+            <div
+              style={{
+                width: `${Math.max(0, Math.min(100, (r.v || 0) * 100))}%`,
+                height: "100%",
+                background: r.color,
+              }}
+            />
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

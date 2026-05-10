@@ -13,6 +13,7 @@ Set in: Netlify → Site Settings → Environment Variables
 | `DASHBOARD_PASSWORD` | `netlify/functions/dashboard-data.js` | `/dashboard` 401s on every request. Internal-only password gate; not user-facing. Set to a long random string. |
 | `POSTHOG_API_KEY` | `netlify/functions/dashboard-data.js` (optional) | Dashboard PostHog cards show "Not configured" — non-fatal. Personal API key from PostHog → Project settings → Personal API keys. |
 | `POSTHOG_PROJECT_ID` | `netlify/functions/dashboard-data.js` (optional) | Same as above — required alongside the API key. PostHog project numeric ID from URL or Project settings. |
+| `SCRAPINGBEE_API_KEY` | `netlify/functions/fetch-jd.js` (tier-2 fallback) | Without it, LinkedIn-style auth-walled JD URLs return 422. Perplexity (tier-1) keeps working. Get from https://app.scrapingbee.com — pay-per-call (~$0.005/JD with JS render + premium proxy). |
 
 cat > ~/Desktop/vetted/DEPLOY.md << 'EOF'
 # Vetted AI — Release Checklist
