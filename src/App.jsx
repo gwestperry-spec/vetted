@@ -691,7 +691,18 @@ export default function App() {
       setScoringPhase(3);
       const cleanedText = text.replace(/```json|```/g, "").trim();
       const jsonMatch = cleanedText.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) throw new Error("Could not parse scoring response — no JSON found");
+      if (!jsonMatch) {
+        // TEMP debug — capture what Anthropic actually returned when JSON
+        // parsing fails so we can see the failure mode in Xcode console.
+        // Remove once the no-JSON-found root cause is identified.
+        console.error("[score_opportunity] no_json_found — raw response diag", {
+          length: text.length,
+          first_300: text.slice(0, 300),
+          last_300: text.slice(-300),
+          cleaned_first_300: cleanedText.slice(0, 300),
+        });
+        throw new Error("Could not parse scoring response — no JSON found");
+      }
       const raw = JSON.parse(jsonMatch[0]);
 
       // Build filter_scores first so we can calculate the weighted average
