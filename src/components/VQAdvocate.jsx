@@ -11,11 +11,14 @@ function fmt(s, vars = {}) {
 }
 
 // ─── Severity ────────────────────────────────────────────────────────────────
+// sortKey: higher number = higher urgency. Use to sort patterns desc so
+// WORTH PAUSING (3) appears above NOTICED (2) above OBSERVATION (1).
 function sevMeta(sev, t = {}) {
-  if (sev === 3) return { dot: "#B86A2C", label: t.advocateSev3 || "WORTH PAUSING", sevLabel: "SEV 3" };
-  if (sev === 2) return { dot: "#C9A227", label: t.advocateSev2 || "NOTICED",       sevLabel: "SEV 2" };
-  return               { dot: "#6B8E6B", label: t.advocateSev1 || "OBSERVATION",   sevLabel: "SEV 1" };
+  if (sev === 3) return { dot: "#B86A2C", label: t.advocateSev3 || "WORTH PAUSING", sortKey: 3 };
+  if (sev === 2) return { dot: "#C9A227", label: t.advocateSev2 || "NOTICED",       sortKey: 2 };
+  return               { dot: "#6B8E6B", label: t.advocateSev1 || "OBSERVATION",   sortKey: 1 };
 }
+const sevSortKey = (p) => (p?.severity ?? 0);
 
 function scoreColor(v) {
   if (v >= 4.0) return "var(--score-high)";
@@ -345,13 +348,13 @@ function PatternDetail({ pattern, onDismiss, onNavigate, t = {} }) {
       padding: "18px 18px 16px",
       marginTop: 8,
     }}>
-      {/* Severity rail */}
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-        <span style={{ width: 6, height: 6, borderRadius: "50%", background: sev.dot }} />
+      {/* Severity rail — eyebrow color matches severity tier */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+        <span style={{ width: 7, height: 7, borderRadius: "50%", background: sev.dot, flexShrink: 0 }} />
         <span style={{
-          fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: "0.14em",
-          color: "#6B7B6B", textTransform: "uppercase",
-        }}>{sev.label} · {sev.sevLabel}</span>
+          fontFamily: "var(--font-data)", fontSize: 11, letterSpacing: "0.16em",
+          color: sev.dot, textTransform: "uppercase", fontWeight: 600,
+        }}>{sev.label}</span>
       </div>
 
       {/* Headline + sub */}
@@ -466,7 +469,10 @@ export default function VQAdvocateScreen({ onClose, onNavigate, opportunities, p
 
   const [dismissed, setDismissed] = useState([]);
   const [notifyOn, setNotifyOn]   = useState(true);
-  const active = patterns.filter(p => !dismissed.includes(p.id));
+  const active = patterns
+    .filter(p => !dismissed.includes(p.id))
+    .slice()
+    .sort((a, b) => sevSortKey(b) - sevSortKey(a));
   const [activeId, setActiveId]   = useState(active[0]?.id);
   const activePattern = active.find(p => p.id === activeId);
 
@@ -659,7 +665,11 @@ export function VQAdvocateCard({ opportunities, profile, onOpen, t = {} }) {
     [opportunities, profile, t]
   );
   const [dismissed, setDismissed] = useState(readDismissed);
-  const active = patterns.filter(p => !dismissed.includes(p.id)).slice(0, 1);
+  const active = patterns
+    .filter(p => !dismissed.includes(p.id))
+    .slice()
+    .sort((a, b) => sevSortKey(b) - sevSortKey(a))
+    .slice(0, 1);
 
   if (active.length === 0) return null;
 
@@ -685,14 +695,14 @@ export function VQAdvocateCard({ opportunities, profile, onOpen, t = {} }) {
           display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10,
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ width: 6, height: 6, borderRadius: "50%", background: sev.dot }} />
+            <span style={{ width: 7, height: 7, borderRadius: "50%", background: sev.dot, flexShrink: 0 }} />
             <span style={{
               fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: "0.16em",
               color: "var(--ink)", textTransform: "uppercase", fontWeight: 500,
             }}>{t.advocateTitle || "VQ ADVOCATE"}</span>
             <span style={{
-              fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: "0.10em",
-              color: "#8A9A8A", textTransform: "uppercase",
+              fontFamily: "var(--font-data)", fontSize: 11, letterSpacing: "0.16em",
+              color: sev.dot, textTransform: "uppercase", fontWeight: 600,
             }}>· {sev.label}</span>
           </div>
           <button
