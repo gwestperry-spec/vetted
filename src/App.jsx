@@ -360,10 +360,24 @@ export default function App() {
     checkPendingShare();
     const onVisibility = () => { if (!document.hidden) checkPendingShare(); };
     document.addEventListener("visibilitychange", onVisibility);
+    // Custom event fired by AppDelegate's evaluateJavaScript immediately
+    // after writing to localStorage — covers the cold-launch case where
+    // the React tree has already mounted and visibilitychange won't fire
+    // (app is already visible when the write lands).
+    const onShareUrl = (e) => {
+      const url = e?.detail || "";
+      if (!url) return;
+      console.log("[vetted-share-url event] received:", url);
+      setActiveTab("score");
+      setStep("workspace");
+      setScorePrefill({ url, autoTrigger: true, at: Date.now() });
+    };
+    window.addEventListener("vetted-share-url", onShareUrl);
 
     return () => {
       removeHandle?.remove?.();
       document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("vetted-share-url", onShareUrl);
     };
   }, []);
 

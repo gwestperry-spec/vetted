@@ -119,7 +119,17 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 let escaped = pending
                     .replacingOccurrences(of: "\\", with: "\\\\")
                     .replacingOccurrences(of: "'", with: "\\'")
-                let js = "try{localStorage.setItem('vetted_pending_share_url','\(escaped)');console.log('[native] wrote pending share url');'ok';}catch(e){console.log('[native] write failed',e);'err';}"
+                // setItem + dispatch a custom event so App.jsx picks it up
+                // without waiting for visibilitychange or a remount. Both are
+                // wrapped in a try so the result sentinel still returns.
+                let js = """
+                (function(){try{
+                  localStorage.setItem('vetted_pending_share_url','\(escaped)');
+                  window.dispatchEvent(new CustomEvent('vetted-share-url',{detail:'\(escaped)'}));
+                  console.log('[native] wrote pending share url + dispatched event');
+                  return 'ok';
+                }catch(e){console.log('[native] write failed',e);return 'err';}})()
+                """
                 webView.evaluateJavaScript(js) { result, error in
                     if let error = error {
                         os_log("evaluateJavaScript failed: %{public}@ — retrying", log: shareLog, type: .error, "\(error)")
