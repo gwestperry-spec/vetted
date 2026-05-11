@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { resolveLang } from "../utils/langUtils.js";
 import { sanitizeText, MAX_SHORT, MAX_LONG } from "../utils/sanitize.js";
+import FrameworkPicker from "./FrameworkPicker.jsx";
+
+const PICKER_SEEN_KEY = "vetted_framework_picker_seen";
 
 const WEIGHT_STEPS = [
   { value: 1.0, labelKey: "weightNotImportant" },
@@ -18,6 +21,22 @@ function weightToIdx(w) {
 export default function FiltersStep({ t, lang, filters, setFilters, onBack, onNext, userTier, onUpgrade, onOpenMenu }) {
   const [newName, setNewName] = useState("");
   const [newDesc, setNewDesc] = useState("");
+  const [showPicker, setShowPicker] = useState(() => {
+    try { return !localStorage.getItem(PICKER_SEEN_KEY); } catch { return false; }
+  });
+
+  function applyTemplate(template) {
+    setFilters(prev => prev.map(f => ({
+      ...f,
+      weight: template?.weights?.[f.id] ?? f.weight,
+    })));
+    try { localStorage.setItem(PICKER_SEEN_KEY, "1"); } catch {}
+    setShowPicker(false);
+  }
+  function skipPicker() {
+    try { localStorage.setItem(PICKER_SEEN_KEY, "1"); } catch {}
+    setShowPicker(false);
+  }
 
   const fn = (field) => resolveLang(field, lang);
   const isPaid = userTier && userTier !== "free";
@@ -78,6 +97,18 @@ export default function FiltersStep({ t, lang, filters, setFilters, onBack, onNe
 
       {/* Scrollable content */}
       <div style={{ paddingBottom: 110 }}>
+
+        {/* Framework picker — shown on first visit only; can be skipped */}
+        {showPicker && (
+          <div style={{ padding: "0 20px 18px" }}>
+            <FrameworkPicker
+              t={t}
+              lang={lang}
+              onApply={applyTemplate}
+              onSkip={skipPicker}
+            />
+          </div>
+        )}
 
         {/* CORE section */}
         <FfSection title={t.coreFilters?.toUpperCase() || "CORE"} hint={String(coreFilters.length)} first />

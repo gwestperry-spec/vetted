@@ -4,6 +4,34 @@
 import { useState, useEffect, useRef } from "react";
 import { ENDPOINTS } from "../config.js";
 
+// Sample senior-role JD used for the "Try a sample role" button on first
+// run. Lets users feel scoring without finding/pasting their own JD.
+// Realistic VP-tier role with comp range + scope signals so it scores
+// meaningfully against most senior frameworks.
+const SAMPLE_JD = `VP of Operations
+TechCo · Remote (US)
+
+About the role
+We're hiring a Vice President of Operations to lead end-to-end operational excellence for our B2B SaaS platform, currently serving 12,000+ businesses across 40 countries.
+
+Responsibilities
+- Own all operational systems and processes across customer success, support, billing, and post-sales onboarding
+- Lead a team of 25+ across 4 sub-functions, growing to 40 within 18 months
+- Partner with the CEO and executive team on quarterly operating reviews and 3-year planning
+- Drive 25% YoY efficiency gains while maintaining 95+ CSAT
+- Own a $12M operating budget; report weekly to the CEO and quarterly to the board
+
+Requirements
+- 10+ years operational leadership in B2B SaaS
+- Experience scaling a function from $20M to $100M+ ARR
+- Strong P&L ownership and cross-functional partnership skills
+- Track record of building and retaining diverse, high-performing teams
+
+Compensation
+$280,000-$340,000 base + 0.5-1.0% equity + standard benefits package. Remote-friendly with quarterly team off-sites.
+
+Reports to: CEO`;
+
 // Minimal URL sanitizer — mirrors Dashboard.jsx's check. Returns trimmed
 // URL string if it's a valid http(s) URL pointing at a public host;
 // returns "" otherwise.
@@ -125,6 +153,17 @@ export default function ScoreEntry({
     if (e.key === "Enter" && e.metaKey) handleSubmit();
   }
 
+  // Try a sample role — pre-fills the input with SAMPLE_JD and immediately
+  // triggers scoring. Lets new users feel the product in 10 seconds without
+  // finding or pasting their own JD.
+  function handleTrySample() {
+    if (busy) return;
+    setFetchError("");
+    setVal(SAMPLE_JD);
+    // Defer to next tick so React flushes setVal before submit reads state.
+    setTimeout(() => handleSubmit(SAMPLE_JD), 0);
+  }
+
   return (
     <div style={{
       background: "var(--paper)",
@@ -205,16 +244,31 @@ export default function ScoreEntry({
               gap: 12, marginTop: 6, paddingTop: 10,
               borderTop: "0.5px solid var(--border)",
             }}>
-              <div style={{
-                fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: "0.10em",
-                color: "#8A9A8A", textTransform: "uppercase",
-              }}>
-                {!val
-                  ? "AUTO-DETECTS URL OR TEXT"
-                  : isUrl
-                  ? "↳ URL DETECTED"
-                  : `↳ ${val.trim().split(/\s+/).length} WORDS`}
-              </div>
+              {!val ? (
+                <button
+                  onClick={handleTrySample}
+                  disabled={busy}
+                  style={{
+                    background: "transparent", border: "none", padding: 0,
+                    cursor: busy ? "not-allowed" : "pointer",
+                    fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: "0.10em",
+                    color: busy ? "#8A9A8A" : "var(--accent)", textTransform: "uppercase",
+                    fontWeight: 500, opacity: busy ? 0.5 : 1,
+                  }}
+                  aria-label="Try a sample role"
+                >
+                  {t.scoreTrySample || "↳ TRY A SAMPLE ROLE"}
+                </button>
+              ) : (
+                <div style={{
+                  fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: "0.10em",
+                  color: "#8A9A8A", textTransform: "uppercase",
+                }}>
+                  {isUrl
+                    ? "↳ URL DETECTED"
+                    : `↳ ${val.trim().split(/\s+/).length} WORDS`}
+                </div>
+              )}
               <button
                 disabled={!ready}
                 onClick={handleSubmit}
