@@ -1427,3 +1427,30 @@ LOCATION SCORING RULE: If the role is remote, fully remote, or remote-first, tre
 **Lesson:** When accepting a visual redesign from an outside collaborator, diff capability — not just style. Native iOS subsystems are easy to break in ways that don't show up at compile time. Always retain the working open path + backup channel and only swap presentation.
 **Files:** `ios/App/VettedShareExtension/ShareViewController.swift`
 **Commit:** 0a97c8a
+
+## Error 126 — `ReferenceError: Can't find variable: currency` on Edit Profile (iOS crash)
+**Build:** Discovered April 27, 2026 (back-ported to canonical log May 11, 2026).
+**Side:** iOS app and web /app.
+**Symptom:** App crashed on iOS immediately after tapping "Edit Profile" from the profile tab. Red error overlay in the WebView surfaced "ReferenceError: Can't find variable: currency".
+**Root cause:** `FieldCard` component in `Onboarding.jsx` referenced `currency` in its JSX (for the compensation/threshold steps) but did not list `currency` in its prop destructuring. The variable was implicitly `undefined` in the render scope, which Safari's strict-mode JIT flagged as a ReferenceError where a missing global would otherwise pass silently in other engines.
+**Fix:** Added `currency` to `FieldCard`'s destructured props: `function FieldCard({ step, value, onChange, onSubmit, direction, t, currency })`. Threaded `currency={currency}` from `OnboardStep` down to `FieldCard` in the JSX.
+**Lesson:** Prop-drilling between parent/child components without a TypeScript layer or PropTypes means missing destructures only surface at runtime on specific code paths. The compensation/threshold steps are deep in the onboarding flow, so this didn't trip during initial dev — only when Edit Profile re-entered those steps with `currency` actively referenced.
+**Files:** `src/components/Onboarding.jsx`
+
+## Error 127 — Sign-in / onboarding screen flash on cold launch for already-signed-in users
+**Build:** Discovered April 27, 2026 (back-ported to canonical log May 11, 2026).
+**Side:** iOS app and web /app.
+**Symptom:** Users who were already signed in briefly saw the onboarding or sign-in screen for ~200–500ms on cold launch before the app jumped to the workspace. Felt unprofessional and confusing.
+**Root cause:** `restoreSession()` in `useAuth.js` called `setAuthUser(...)` synchronously from cached credentials, but the async Supabase fetch (for the saved profile + workspace data) hadn't returned yet. During the in-flight fetch, `authUser` was truthy but `step` was still its default `"onboard"` — so the render path for "onboarding step" briefly fired before the loaded profile triggered the transition to `step === "workspace"`.
+**Fix:** Added a `sessionRestoring` state to `useAuth.js` that starts `true` and is set to `false` only in the `finally` block of the restore flow (covers both success and error paths). App.jsx renders a blank/branded splash while `sessionRestoring === true`, suppressing all other screens until the restore resolves.
+**Lesson:** Any auth/session restore that has both a sync cache hit and an async source-of-truth fetch will flash unless gated by an explicit "restoring" flag. Cheap, mandatory.
+**Files:** `src/hooks/useAuth.js`, `src/App.jsx`
+
+## Error 128 — Edit Profile opened legacy RegionGate screen instead of name step
+**Build:** Discovered April 27, 2026 (back-ported to canonical log May 11, 2026).
+**Side:** iOS app and web /app.
+**Symptom:** Tapping "Edit Profile" from the profile tab showed a legacy region-selection screen (US / Canada / UK chooser) before any field could be edited. User reaction: "delete/remove/obliterate it permanently."
+**Root cause:** The `RegionGate` component was the first thing rendered when `step === "onboard"`. It had been removed from the conditional logic in App.jsx in a prior refactor, but the component definition (84 lines) was still in `Onboarding.jsx` and the `OnboardStep` flow still routed to it on entry. There was also no mechanism to jump directly to a specific step.
+**Fix:** Deleted the entire 84-line `RegionGate` function from `Onboarding.jsx`. Added an `initialStep` prop to `OnboardStep` that uses `findIndex` to jump directly to any step by ID (used by all the per-field EDIT buttons later — see Error 80). Defaulted `profile.country` to `"us"` so the country wasn't an unresolved field after RegionGate's removal.
+**Lesson:** When deprecating a screen mid-flow, delete the component, not just its render-gate. Dead code in a render path will reattach itself the moment a new entry point is wired.
+**Files:** `src/components/Onboarding.jsx`, `src/App.jsx`
