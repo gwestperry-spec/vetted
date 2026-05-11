@@ -102,9 +102,13 @@ export default function ScoreEntry({
   const pursueRate   = weekRoles.length ? Math.round((pursueCount / weekRoles.length) * 100) + "%" : "—";
 
   async function handleSubmit(overrideVal) {
-    // overrideVal lets external callers (Share Extension prefill) pass the
-    // value directly without waiting for setVal to flush through React state.
-    const source = (overrideVal ?? val).trim();
+    // overrideVal lets external callers (Share Extension prefill, Try-a-Sample
+    // button) pass the value directly without waiting for setVal to flush.
+    // Guard against React passing the SyntheticEvent when this is bound as
+    // an onClick handler — only treat overrideVal as the source if it's a
+    // string, otherwise fall back to component state.
+    const sourceCandidate = typeof overrideVal === "string" ? overrideVal : val;
+    const source = sourceCandidate.trim();
     if (!source || source.length < 12) return;
     if (busy) return;
     const trimmed = source;
