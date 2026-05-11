@@ -61,10 +61,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             }
         }
 
-        // Consume — clear before dispatch so a synthesis crash doesn't loop.
-        defaults.removeObject(forKey: pendingShareKey)
-        defaults.removeObject(forKey: pendingShareTimestampKey)
-        defaults.synchronize()
+        // DO NOT consume yet. On first cold launch (app not running), the
+        // WebView may take >6s to come alive (auth, hydration, navigation
+        // through onboarding). If we clear here and injection fails, the URL
+        // is lost forever. Clear only after evaluateJavaScript succeeds.
 
         // Build the deep link the appUrlOpen handler expects.
         let allowed = CharacterSet(charactersIn: ":/?&=+%").inverted
@@ -104,8 +104,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     // 0.5s steps to ride out the cold-launch window where the bridge view
     // controller isn't installed yet or the web view hasn't finished loading.
     private func injectIntoWebView(_ pending: String, attempt: Int) {
-        guard attempt < 12 else {
-            os_log("injectIntoWebView: gave up after %d attempts", log: shareLog, type: .error, attempt)
+        // 60 attempts × 0.5s = 30s. Covers cold-launch through sign-in +
+        // onboarding hydration. We only clear the App Group entry after a
+        // confirmed successful inject so first-time cold launches don't lose
+        // the URL.
+        guard attempt < 60 else {
+            os_log("injectIntoWebView: gave up after %d attempts (URL retained in App Group for next launch)", log: shareLog, type: .error, attempt)
             return
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
@@ -115,13 +119,22 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 let escaped = pending
                     .replacingOccurrences(of: "\\", with: "\\\\")
                     .replacingOccurrences(of: "'", with: "\\'")
-                let js = "try{localStorage.setItem('vetted_pending_share_url','\(escaped)');console.log('[native] wrote pending share url');}catch(e){console.log('[native] write failed',e);}"
-                webView.evaluateJavaScript(js) { _, error in
+                let js = "try{localStorage.setItem('vetted_pending_share_url','\(escaped)');console.log('[native] wrote pending share url');'ok';}catch(e){console.log('[native] write failed',e);'err';}"
+                webView.evaluateJavaScript(js) { result, error in
                     if let error = error {
                         os_log("evaluateJavaScript failed: %{public}@ — retrying", log: shareLog, type: .error, "\(error)")
                         self.injectIntoWebView(pending, attempt: attempt + 1)
-                    } else {
+                    } else if let result = result as? String, result == "ok" {
                         os_log("injected pending URL into localStorage on attempt %d", log: shareLog, type: .info, attempt)
+                        // Inject succeeded — safe to clear the App Group now.
+                        if let defaults = UserDefaults(suiteName: self.appGroupID) {
+                            defaults.removeObject(forKey: self.pendingShareKey)
+                            defaults.removeObject(forKey: self.pendingShareTimestampKey)
+                            defaults.synchronize()
+                        }
+                    } else {
+                        os_log("evaluateJavaScript returned unexpected result, retrying", log: shareLog, type: .error)
+                        self.injectIntoWebView(pending, attempt: attempt + 1)
                     }
                 }
             } else {
