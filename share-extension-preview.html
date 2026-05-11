@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Share Extension — Direction A Preview</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink:        #1A2E1A;
+    --paper:      #FAFAF8;
+    --cream:      #F0F4F0;
+    --border:     #D8E8D8;
+    --muted-soft: #8A9A8A;
+    --muted-deep: #5A6A5A;
+    --on-dark:    #E8F0E8;
+    --serif: "Libre Baskerville", "Iowan Old Style", "Apple Garamond", Georgia, serif;
+    --sans:  "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+  }
+  html, body { margin: 0; padding: 0; background: #1c1c1e; color: var(--ink); font-family: var(--sans); }
+  .stage {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    gap: 32px;
+    flex-wrap: wrap;
+  }
+  .phone {
+    width: 390px;
+    height: 844px;
+    border-radius: 48px;
+    background: #f4f1ea; /* fake LinkedIn-ish host app behind */
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.5), 0 0 0 8px #111 inset, 0 0 0 1px rgba(255,255,255,0.04);
+    isolation: isolate;
+  }
+  .host-fade {
+    position: absolute; inset: 0;
+    background: rgba(0,0,0,0.42); /* matches viewDidLoad backgroundColor alpha 0.42 */
+    z-index: 1;
+  }
+  .sheet {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    background: var(--paper);
+    border-radius: 22px 22px 0 0;
+    padding: 8px 0 0;
+    z-index: 2;
+    font-family: var(--sans);
+  }
+  .grabber {
+    width: 36px; height: 5px;
+    background: rgba(26,46,26,0.18);
+    border-radius: 2.5px;
+    margin: 0 auto 14px;
+  }
+  .eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 28px;
+    margin-top: 8px;
+  }
+  .mark {
+    width: 26px; height: 26px;
+    border-radius: 6px;
+    overflow: hidden;
+    flex-shrink: 0;
+    box-shadow: 0 1px 0 rgba(0,0,0,0.06) inset;
+  }
+  .mark img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .wordmark {
+    font-family: var(--serif);
+    font-weight: 700;
+    font-size: 11px;
+    color: var(--ink);
+    letter-spacing: 0.22em;
+  }
+  .hairline {
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+  .kicker {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: 9px;
+    color: var(--muted-soft);
+    letter-spacing: 0.18em;
+  }
+  .title {
+    margin: 18px 28px 0;
+    font-family: var(--serif);
+    font-weight: 700;
+    font-size: 28px;
+    color: var(--ink);
+    letter-spacing: -0.005em;
+    line-height: 1.1;
+  }
+  .subhead {
+    margin: 8px 28px 0;
+    font-family: var(--sans);
+    font-weight: 400;
+    font-size: 14px;
+    color: var(--muted-deep);
+    line-height: 1.4;
+    max-width: 32ch;
+  }
+  .url-card {
+    margin: 18px 28px 0;
+    background: #fff;
+    border: 0.5px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .chip {
+    width: 28px; height: 28px;
+    background: var(--cream);
+    border-radius: 6px;
+    display: grid; place-items: center;
+    font-family: var(--serif);
+    font-weight: 700;
+    font-size: 12px;
+    color: var(--muted-deep);
+    letter-spacing: 0.12em;
+    flex-shrink: 0;
+  }
+  .url-host {
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--ink);
+    line-height: 1.2;
+  }
+  .url-path {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: 11px;
+    color: var(--muted-soft);
+    line-height: 1.2;
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 230px;
+  }
+  .primary {
+    margin: 20px 20px 0;
+    height: 52px;
+    background: var(--ink);
+    color: var(--on-dark);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--serif);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    gap: 10px;
+  }
+  .primary .arrow {
+    font-family: var(--sans);
+    font-weight: 400;
+    font-size: 14px;
+    letter-spacing: 0;
+  }
+  .cancel {
+    margin: 6px auto 32px;
+    text-align: center;
+    font-family: var(--sans);
+    font-weight: 400;
+    font-size: 14px;
+    color: var(--muted-soft);
+    padding: 12px;
+  }
+
+  /* Fake host app under the sheet */
+  .host-content {
+    position: absolute; inset: 0;
+    padding: 60px 24px 0;
+    font-family: var(--sans);
+    color: #555;
+    font-size: 12px;
+    line-height: 1.5;
+  }
+  .host-status {
+    position: absolute; top: 14px; left: 0; right: 0;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 600;
+    color: #111;
+  }
+  .host-content .row { display: flex; gap: 8px; align-items: center; margin-bottom: 14px; opacity: 0.55; }
+  .host-content .avatar { width: 32px; height: 32px; border-radius: 50%; background: #d6d3cc; flex-shrink: 0; }
+  .host-content .line { height: 8px; background: #d6d3cc; border-radius: 4px; flex: 1; }
+  .host-content .line.short { flex: 0 0 60%; }
+
+  /* Caption beneath each phone */
+  .label {
+    color: #f4f1ea;
+    font-family: var(--sans);
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    text-align: center;
+    margin-top: 14px;
+    opacity: 0.6;
+  }
+  .frame {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* Variant B: idle / resolving state */
+  .resolving .url-host { color: var(--muted-soft); }
+  .resolving .url-path { visibility: hidden; }
+  .resolving .primary { opacity: 0.5; }
+  .resolving .chip { color: var(--muted-soft); }
+
+</style>
+</head>
+<body>
+  <div class="stage">
+
+    <!-- Variant 1 — RESOLVED state -->
+    <div class="frame">
+      <div class="phone">
+        <div class="host-status">9:41</div>
+        <div class="host-content">
+          <div class="row"><div class="avatar"></div><div class="line"></div></div>
+          <div class="row"><div class="avatar"></div><div class="line short"></div></div>
+          <div class="row"><div class="avatar"></div><div class="line"></div></div>
+        </div>
+        <div class="host-fade"></div>
+        <div class="sheet">
+          <div class="grabber"></div>
+          <div class="eyebrow">
+            <div class="mark"><img src="ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon1024x1024.png" alt="Vetted" /></div>
+            <div class="wordmark">VETTED</div>
+            <div class="hairline"></div>
+            <div class="kicker">SHARE TO SCORE</div>
+          </div>
+          <div class="title">Score this role.</div>
+          <div class="subhead">We'll fetch the listing and run it through your filter framework.</div>
+          <div class="url-card">
+            <div class="chip">L</div>
+            <div>
+              <div class="url-host">linkedin.com</div>
+              <div class="url-path">/jobs/view/4402168681/</div>
+            </div>
+          </div>
+          <div class="primary">SCORE THIS ROLE <span class="arrow">→</span></div>
+          <div class="cancel">Cancel</div>
+        </div>
+      </div>
+      <div class="label">A · resolved</div>
+    </div>
+
+    <!-- Variant 2 — RESOLVING state -->
+    <div class="frame">
+      <div class="phone">
+        <div class="host-status">9:41</div>
+        <div class="host-content">
+          <div class="row"><div class="avatar"></div><div class="line"></div></div>
+          <div class="row"><div class="avatar"></div><div class="line short"></div></div>
+          <div class="row"><div class="avatar"></div><div class="line"></div></div>
+        </div>
+        <div class="host-fade"></div>
+        <div class="sheet resolving">
+          <div class="grabber"></div>
+          <div class="eyebrow">
+            <div class="mark"><img src="ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon1024x1024.png" alt="Vetted" /></div>
+            <div class="wordmark">VETTED</div>
+            <div class="hairline"></div>
+            <div class="kicker">SHARE TO SCORE</div>
+          </div>
+          <div class="title">Score this role.</div>
+          <div class="subhead">We'll fetch the listing and run it through your filter framework.</div>
+          <div class="url-card">
+            <div class="chip">•</div>
+            <div>
+              <div class="url-host">Resolving…</div>
+              <div class="url-path">&nbsp;</div>
+            </div>
+          </div>
+          <div class="primary">SCORE THIS ROLE <span class="arrow">→</span></div>
+          <div class="cancel">Cancel</div>
+        </div>
+      </div>
+      <div class="label">A · resolving (button disabled)</div>
+    </div>
+
+  </div>
+</body>
+</html>
