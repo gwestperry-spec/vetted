@@ -294,17 +294,53 @@ final class ShareViewController: UIViewController {
     private func resolveSharedURL() {
         guard
             let item = extensionContext?.inputItems.first as? NSExtensionItem,
-            let providers = item.attachments
-        else { return }
+            let providers = item.attachments, !providers.isEmpty
+        else {
+            os_log("no input items / attachments", log: log, type: .error)
+            return
+        }
 
         let urlType = UTType.url.identifier
+        let textType = UTType.text.identifier
+        let plainTextType = UTType.plainText.identifier
+
+        // Try URL type first across all providers — most apps share this way.
         for provider in providers where provider.hasItemConformingToTypeIdentifier(urlType) {
+            os_log("resolving as URL type", log: log, type: .info)
             provider.loadItem(forTypeIdentifier: urlType, options: nil) { [weak self] coded, _ in
-                guard let self, let url = coded as? URL else { return }
-                DispatchQueue.main.async { self.applyURL(url) }
+                guard let self else { return }
+                if let url = coded as? URL {
+                    DispatchQueue.main.async { self.applyURL(url) }
+                } else if let s = coded as? String, let url = URL(string: s.trimmingCharacters(in: .whitespacesAndNewlines)) {
+                    DispatchQueue.main.async { self.applyURL(url) }
+                } else {
+                    os_log("URL provider returned unexpected type", log: log, type: .error)
+                }
             }
             return
         }
+
+        // Fall back to text/plain-text — many apps (including some LinkedIn
+        // flows) share the URL embedded in a plain-text attachment.
+        for provider in providers {
+            let typeId: String? = provider.hasItemConformingToTypeIdentifier(textType) ? textType
+                : provider.hasItemConformingToTypeIdentifier(plainTextType) ? plainTextType : nil
+            guard let typeId else { continue }
+            os_log("resolving as text type: %{public}@", log: log, type: .info, typeId)
+            provider.loadItem(forTypeIdentifier: typeId, options: nil) { [weak self] coded, _ in
+                guard let self else { return }
+                let trimmed = (coded as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+                if let url = URL(string: trimmed), let scheme = url.scheme?.lowercased(),
+                   scheme == "http" || scheme == "https" {
+                    DispatchQueue.main.async { self.applyURL(url) }
+                } else {
+                    os_log("text payload was not a valid http(s) URL: %{public}@", log: log, type: .error, trimmed)
+                }
+            }
+            return
+        }
+
+        os_log("no compatible attachment type found", log: log, type: .error)
     }
 
     private func applyURL(_ url: URL) {
