@@ -1454,3 +1454,47 @@ LOCATION SCORING RULE: If the role is remote, fully remote, or remote-first, tre
 **Fix:** Deleted the entire 84-line `RegionGate` function from `Onboarding.jsx`. Added an `initialStep` prop to `OnboardStep` that uses `findIndex` to jump directly to any step by ID (used by all the per-field EDIT buttons later — see Error 80). Defaulted `profile.country` to `"us"` so the country wasn't an unresolved field after RegionGate's removal.
 **Lesson:** When deprecating a screen mid-flow, delete the component, not just its render-gate. Dead code in a render path will reattach itself the moment a new entry point is wired.
 **Files:** `src/components/Onboarding.jsx`, `src/App.jsx`
+
+## Error 129 — App Store Connect rejected Build 29 with NSExtensionActivationRule error 90362
+**Build:** Discovered May 11, 2026 during first Build 29 archive upload.
+**Side:** iOS Share Extension target (Info.plist).
+**Symptom:** Archive uploaded to App Store Connect, then rejected with: "Invalid Info.plist value. The value for the key 'NSExtensionActivationRule' in bundle App.app/PlugIns/VettedShareExtension.appex is invalid. Please refer to the App Extension Programming Guide" (error code 90362).
+**Root cause:** `NSExtensionActivationRule` was set to the string `"TRUEPREDICATE"`. That value is accepted by Xcode for development builds (so the extension shows in the share sheet for any content type during dev) but App Store submissions require an explicit dictionary listing the supported content types — never a wildcard predicate.
+**Fix:** Replaced the string with a dictionary listing the actual content types Vetted supports:
+```xml
+<key>NSExtensionActivationRule</key>
+<dict>
+  <key>NSExtensionActivationSupportsWebURLWithMaxCount</key>
+  <integer>1</integer>
+  <key>NSExtensionActivationSupportsWebPageWithMaxCount</key>
+  <integer>1</integer>
+  <key>NSExtensionActivationSupportsText</key>
+  <true/>
+</dict>
+```
+Build number stayed at 29 — Apple's validation rejection happens before the binary is accepted, so the number isn't consumed.
+**Lesson:** TRUEPREDICATE is a dev-only convenience. Before every archive, audit Info.plist for any wildcard activation values. Also: list-the-types-you-mean is the right pattern anyway — Vetted shouldn't appear when sharing photos, contacts, or files.
+**Files:** `ios/App/VettedShareExtension/Info.plist`
+**Commit:** 8a7259d
+
+## Error 130 — Indeed share URL produced misleading 1.0 score with `UNABLE_TO_EVALUATE` title
+**Build:** Discovered May 11, 2026 during Build 29 testing.
+**Side:** Netlify function `fetch-jd.js` + UI rendering in App.jsx.
+**Symptom:** User shared a Bilingual Quality Manager job from the Indeed iOS app via the new Share Extension. URL: `https://www.indeed.com/viewjob?jk=5e4cc8ded44c1827&from=appshareios`. Share flow worked end-to-end (URL prefilled, scoring auto-triggered) but the result card showed:
+- VQ score: 1.0
+- Title: "UNABLE_TO_EVALUATE"
+- Company: "UNABLE_TO_EVALUATE"
+- Rationale: "Job description content is unavailable. No evaluation possible without access to role details, scope, reporting structure, success metrics, or financial accountability language."
+- Real gap: "Job posting content failed to load; cannot assess against any filter criteria"
+
+**Root cause:** Three compounding issues. (1) `fetch-jd` had no Indeed-specific Perplexity prompt — only LinkedIn was special-cased. Perplexity returned thin/apologetic prose for Indeed. (2) ScrapingBee tier-2 returned content (likely an anti-bot challenge page) that was non-empty but useless. The only length check (`text.length < 80`) was too lenient — the anti-bot page had hundreds of chars of buttons, footer text, etc. (3) The model received the garbage content, correctly declined to evaluate, and used the string `"UNABLE_TO_EVALUATE"` for the `role_title` and `company` fields. The UI rendered them raw. (4) The Indeed mobile-app share URL has `?from=appshareios` which routes the scrapers to a different (lighter, harder-to-parse) view than the canonical URL.
+
+**Fix (four parts):**
+- Strip noisy share-source query params (`from`, `trk`, `gh_src`, `utm_*`, `ref`) before fetching so we always hit the canonical job URL.
+- Add `looksLikeJobDescription()` heuristic: text must be ≥400 chars, contain ≥2 JD keywords (responsibilities, qualifications, experience, etc.), and contain no anti-bot blockers (verify-you-are-human, captcha, please enable javascript, etc.). Applied to both Perplexity and ScrapingBee outputs. Failure returns a clear "not_a_job_description" error so the user sees a paste-the-text prompt instead of a misleading score.
+- Added Indeed-aware Perplexity prompt (parallel to LinkedIn-aware) so Perplexity knows what JD structure to extract.
+- `cleanString()` helper in App.jsx scrubs JSON-key-looking tokens (`UNABLE_TO_EVALUATE`, `NOT_PROVIDED`, etc.) from `role_title`/`company` before render — if a bad fetch ever slips through, the UI still shows "Unknown Role" / "Unknown Company" instead of raw uppercase tokens.
+
+**Lesson:** Length-based validation alone is insufficient for anti-bot detection. Real JDs share a small set of keywords across all sources; checking for them catches captcha pages, login walls, and apology prose that all pass naive length floors. Also: any time the model can return non-spec values (like `"UNABLE_TO_EVALUATE"` instead of one of the documented recommendations), the UI must defensively map them to safe defaults.
+**Files:** `netlify/functions/fetch-jd.js`, `src/App.jsx`
+**Commit:** 9702db9

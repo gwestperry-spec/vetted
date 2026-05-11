@@ -46,7 +46,16 @@ Pre-filled VP of Operations JD that runs the full scoring pipeline in 10 seconds
 ### 9. Internal KPI dashboard at `/dashboard`
 Password-gated (`DASHBOARD_PASSWORD` env var). In-memory rate limiting (5 fails per IP per 15-min sliding window → 15-min lockout). Optional PostHog cards via `POSTHOG_API_KEY` + `POSTHOG_PROJECT_ID` — non-fatal if absent.
 
-### 10. Security hardening (from cybersecurity audit)
+### 10. App Store submission readiness
+- `NSExtensionActivationRule` replaced from `TRUEPREDICATE` (dev-only, rejected by App Store with error 90362) to an explicit dictionary listing supported content types (`SupportsWebURLWithMaxCount=1`, `SupportsWebPageWithMaxCount=1`, `SupportsText=true`). (Error 129, `8a7259d`)
+
+### 11. URL fetch hardening
+- Strip noisy share-source params (`from`, `trk`, `gh_src`, `utm_*`, `ref`) before fetching so share-sheet URLs route to the canonical job page, not mobile-only variants.
+- `looksLikeJobDescription()` heuristic: text must be ≥400 chars with ≥2 JD keywords and no anti-bot blockers. Catches captchas, login-walls, apology prose. Applied to both Perplexity (tier 1) and ScrapingBee (tier 2). User gets a clear paste-the-text prompt instead of a misleading score.
+- Indeed-aware Perplexity prompt (parallel to LinkedIn-aware).
+- `cleanString()` helper scrubs JSON-key-looking tokens (`UNABLE_TO_EVALUATE`, `NOT_PROVIDED`) from `role_title`/`company` before render. (Error 130, `9702db9`)
+
+### 12. Security hardening (from cybersecurity audit)
 - `WORKSPACE_SWEEP_SECRET` env var added, falls back to `VETTED_SECRET` for backward compat. Cron sweep function no longer reuses the master HMAC key.
 - Share Extension URL scheme validation: only http/https schemes accepted, rejects `javascript:`, `data:`, `file:`, custom schemes.
 - Dashboard rate limit prevents password brute-force.
@@ -65,7 +74,7 @@ Password-gated (`DASHBOARD_PASSWORD` env var). In-memory rate limiting (5 fails 
 
 - **Build size:** unchanged at ~733KB SPA bundle (gzip ~219KB)
 - **Languages supported:** 7 (en/es/zh-Hans/fr/ar/vi/pt)
-- **Error log entries closed in this build:** 8 (Errors 121–128)
+- **Error log entries closed in this build:** 10 (Errors 121–130)
 - **Outstanding error log entries:** 0 unresolved
 - **Net commits since Build 28:** ~30
 - **VQ scoring latency (URL path):** ~25–50s end-to-end (fetch 15–30s + Claude scoring 8–20s)
