@@ -24,12 +24,20 @@
     <dict>
         <key>NSExtensionAttributes</key>
         <dict>
-            <!-- Only accept ONE URL share. No images, PDFs, contacts, or
-                 documents — Vetted is JD-only. Reduces share-sheet noise. -->
+            <!-- App Store-valid activation rule. TRUEPREDICATE is dev-only;
+                 submission requires an explicit dictionary of supported
+                 content types. Vetted accepts: one URL (LinkedIn share),
+                 one web page (Safari share), one text payload (apps that
+                 share the URL as plain text). No images, PDFs, contacts,
+                 or documents — Vetted is JD-only. -->
             <key>NSExtensionActivationRule</key>
             <dict>
                 <key>NSExtensionActivationSupportsWebURLWithMaxCount</key>
                 <integer>1</integer>
+                <key>NSExtensionActivationSupportsWebPageWithMaxCount</key>
+                <integer>1</integer>
+                <key>NSExtensionActivationSupportsText</key>
+                <true/>
             </dict>
         </dict>
         <key>NSExtensionPointIdentifier</key>
