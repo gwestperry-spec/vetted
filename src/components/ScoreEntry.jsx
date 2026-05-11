@@ -73,18 +73,36 @@ export default function ScoreEntry({
   const ready  = val.trim().length > 12 && !busy;
 
   // Consume any incoming prefill (from the Share Extension deep link).
+  // Two sources, checked in order:
+  //   1. prefill prop — set by App.jsx's appUrlOpen handler in real time.
+  //   2. localStorage("vetted_pending_share_url") — written by the same
+  //      handler as a belt-and-suspenders fallback for cases where this
+  //      component (re)mounts AFTER the deep-link event has already fired,
+  //      e.g. a cold-launch race where the SCORE tab activates but
+  //      ScoreEntry isn't yet in the tree when the prefill is set.
   const lastPrefillKey = useRef(null);
   useEffect(() => {
-    if (!prefill?.url) return;
-    // Guard against re-firing for the same prefill payload.
-    const key = `${prefill.url}|${prefill.at || ""}`;
+    let pendingUrl = prefill?.url || "";
+    let pendingAt = prefill?.at || "";
+    if (!pendingUrl) {
+      try {
+        const stored = localStorage.getItem("vetted_pending_share_url");
+        if (stored) {
+          pendingUrl = stored;
+          pendingAt = "ls";
+          console.log("[ScoreEntry] consuming localStorage prefill:", stored);
+        }
+      } catch {}
+    }
+    if (!pendingUrl) return;
+    const key = `${pendingUrl}|${pendingAt}`;
     if (lastPrefillKey.current === key) return;
     lastPrefillKey.current = key;
-    setVal(prefill.url);
+    setVal(pendingUrl);
+    try { localStorage.removeItem("vetted_pending_share_url"); } catch {}
     onPrefillConsumed?.();
-    if (prefill.autoTrigger) {
-      // Defer to the next tick so the val state lands before submit runs.
-      setTimeout(() => handleSubmit(prefill.url), 0);
+    if (prefill?.autoTrigger || pendingAt === "ls") {
+      setTimeout(() => handleSubmit(pendingUrl), 0);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [prefill?.url, prefill?.at]);

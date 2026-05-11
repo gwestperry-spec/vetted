@@ -59,11 +59,17 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             .union(.alphanumerics)
             .union(CharacterSet(charactersIn: "._~-"))
         let encoded = pending.addingPercentEncoding(withAllowedCharacters: allowed) ?? pending
-        guard let deepLink = URL(string: "https://tryvettedai.com/score?url=\(encoded)") else { return }
+        // Use the custom URL scheme — ApplicationDelegateProxy.application(_:open:options:)
+        // routes custom-scheme opens directly to the Capacitor appUrlOpen
+        // event. Universal Links (https://) instead require
+        // application(_:continue:restorationHandler:) with an NSUserActivity,
+        // which is the wrong shape here since we're synthesizing the open
+        // ourselves from a backup channel, not handling a real OS hand-off.
+        guard let deepLink = URL(string: "vetted://score?url=\(encoded)") else { return }
 
-        // Defer one runloop turn so Capacitor's web view is fully attached
-        // before the event fires.
-        DispatchQueue.main.async {
+        // Defer two runloop turns so Capacitor's bridge + JS listener are
+        // both attached before the event fires (cold-launch race).
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
             _ = ApplicationDelegateProxy.shared.application(application, open: deepLink, options: [:])
         }
     }

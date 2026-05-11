@@ -311,26 +311,28 @@ export default function App() {
       "appUrlOpen",
       (event) => {
         const raw = event?.url || "";
+        console.log("[appUrlOpen] received:", raw);
         try {
           const parsed = new URL(raw);
-          // Recognize three forms:
-          //   custom scheme: vetted://score?url=…           (host = "score")
-          //   custom scheme alt: vetted:/score?url=…        (pathname starts with /score)
-          //   Universal Link: https://tryvettedai.com/score?url=… (pathname = "/score")
           const isScoreDeepLink =
             parsed.host === "score" ||
             parsed.pathname === "/score" ||
             parsed.pathname.startsWith("//score");
-          if (!isScoreDeepLink) return;
+          if (!isScoreDeepLink) { console.log("[appUrlOpen] not score deeplink"); return; }
 
           const sharedUrl = parsed.searchParams.get("url") || "";
           const decoded = sharedUrl ? decodeURIComponent(sharedUrl) : "";
+          console.log("[appUrlOpen] decoded url:", decoded);
           if (decoded) {
+            // Belt-and-suspenders: stash to localStorage too, so if ScoreEntry
+            // remounts (e.g. user toggles tabs) or if React batching drops the
+            // prefill prop, ScoreEntry can still pick it up.
+            try { localStorage.setItem("vetted_pending_share_url", decoded); } catch {}
             setActiveTab("score");
-            setStep("workspace"); // SCORE tab lives inside the main "workspace" app step
+            setStep("workspace");
             setScorePrefill({ url: decoded, autoTrigger: true, at: Date.now() });
           }
-        } catch { /* ignore malformed deep links */ }
+        } catch (e) { console.log("[appUrlOpen] parse failed:", e?.message); }
       }
     );
     if (sub && typeof sub.then === "function") {
