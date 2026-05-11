@@ -1,5 +1,6 @@
 import UIKit
 import Capacitor
+import WebKit
 import os.log
 
 private let shareLog = OSLog(subsystem: "com.vettedai.app", category: "share-fallback")
@@ -78,13 +79,72 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
         // Defer so Capacitor's bridge + JS listener are both attached before
         // the event fires (cold-launch race).
+        // Two paths, both fire — whichever wins the race:
+        //
+        // PATH A (1.2s): synthetic appUrlOpen via ApplicationDelegateProxy.
+        //   Works on warm-foreground when JS bridge is already listening.
+        //
+        // PATH B (retry loop): inject directly into the WebView's
+        //   localStorage via evaluateJavaScript. ScoreEntry reads
+        //   "vetted_pending_share_url" on mount as a fallback. Survives the
+        //   cold-launch race where JS isn't ready when path A fires.
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
             let ok = ApplicationDelegateProxy.shared.application(application, open: deepLink, options: [:])
             os_log("ApplicationDelegateProxy.open returned: %d", log: shareLog, type: .info, ok ? 1 : 0)
         }
+        injectIntoWebView(pending, attempt: 0)
     }
 
     func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
         return ApplicationDelegateProxy.shared.application(app, open: url, options: options)
+    }
+
+    // Walk the view hierarchy to find the CAPBridgeViewController's WKWebView
+    // and write the pending URL into its localStorage. Retries up to ~6s in
+    // 0.5s steps to ride out the cold-launch window where the bridge view
+    // controller isn't installed yet or the web view hasn't finished loading.
+    private func injectIntoWebView(_ pending: String, attempt: Int) {
+        guard attempt < 12 else {
+            os_log("injectIntoWebView: gave up after %d attempts", log: shareLog, type: .error, attempt)
+            return
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+            guard let self = self else { return }
+            let webView = self.findWebView()
+            if let webView = webView {
+                let escaped = pending
+                    .replacingOccurrences(of: "\\", with: "\\\\")
+                    .replacingOccurrences(of: "'", with: "\\'")
+                let js = "try{localStorage.setItem('vetted_pending_share_url','\(escaped)');console.log('[native] wrote pending share url');}catch(e){console.log('[native] write failed',e);}"
+                webView.evaluateJavaScript(js) { _, error in
+                    if let error = error {
+                        os_log("evaluateJavaScript failed: %{public}@ — retrying", log: shareLog, type: .error, "\(error)")
+                        self.injectIntoWebView(pending, attempt: attempt + 1)
+                    } else {
+                        os_log("injected pending URL into localStorage on attempt %d", log: shareLog, type: .info, attempt)
+                    }
+                }
+            } else {
+                self.injectIntoWebView(pending, attempt: attempt + 1)
+            }
+        }
+    }
+
+    private func findWebView() -> WKWebView? {
+        guard let root = window?.rootViewController else { return nil }
+        var stack: [UIViewController] = [root]
+        while !stack.isEmpty {
+            let vc = stack.removeFirst()
+            // Walk the view subtree for any WKWebView.
+            var views: [UIView] = [vc.view]
+            while !views.isEmpty {
+                let v = views.removeFirst()
+                if let wv = v as? WKWebView { return wv }
+                views.append(contentsOf: v.subviews)
+            }
+            stack.append(contentsOf: vc.children)
+            if let presented = vc.presentedViewController { stack.append(presented) }
+        }
+        return nil
     }
 }

@@ -340,7 +340,31 @@ export default function App() {
     } else {
       removeHandle = sub;
     }
-    return () => removeHandle?.remove?.();
+
+    // Belt-and-suspenders for the Share Extension path: AppDelegate also
+    // writes the pending URL directly into localStorage via
+    // evaluateJavaScript (covers the cold-launch race where appUrlOpen
+    // fires before the JS listener is attached). Check on mount AND on
+    // every foreground (visibilitychange) so we catch URLs injected after
+    // the user manually returns to the app.
+    function checkPendingShare() {
+      try {
+        const stored = localStorage.getItem("vetted_pending_share_url");
+        if (!stored) return;
+        console.log("[checkPendingShare] found:", stored);
+        setActiveTab("score");
+        setStep("workspace");
+        setScorePrefill({ url: stored, autoTrigger: true, at: Date.now() });
+      } catch {}
+    }
+    checkPendingShare();
+    const onVisibility = () => { if (!document.hidden) checkPendingShare(); };
+    document.addEventListener("visibilitychange", onVisibility);
+
+    return () => {
+      removeHandle?.remove?.();
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
   }, []);
 
   // ── Load workspace on sign-in ─────────────────────────────────────────────
