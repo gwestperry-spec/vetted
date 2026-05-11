@@ -249,11 +249,19 @@ export default function ScoreEntry({
                   onClick={handleTrySample}
                   disabled={busy}
                   style={{
-                    background: "transparent", border: "none", padding: 0,
+                    // 44pt minimum tap target on mobile (iOS guideline)
+                    minHeight: 36,
+                    padding: "8px 12px",
+                    margin: "-8px -12px", // negative margins keep visual flush while expanding hit area
+                    background: busy ? "transparent" : "rgba(60,90,60,0.06)",
+                    border: `0.5px solid ${busy ? "transparent" : "rgba(60,90,60,0.18)"}`,
+                    borderRadius: 6,
                     cursor: busy ? "not-allowed" : "pointer",
-                    fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: "0.10em",
+                    fontFamily: "var(--font-data)", fontSize: 10, letterSpacing: "0.10em",
                     color: busy ? "#8A9A8A" : "var(--accent)", textTransform: "uppercase",
-                    fontWeight: 500, opacity: busy ? 0.5 : 1,
+                    fontWeight: 600, opacity: busy ? 0.5 : 1,
+                    WebkitTapHighlightColor: "rgba(60,90,60,0.20)",
+                    transition: "background 120ms ease",
                   }}
                   aria-label="Try a sample role"
                 >
