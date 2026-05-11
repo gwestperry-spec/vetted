@@ -86,7 +86,7 @@ function logAttempt({ host, provider, success, durationMs, errorCode }) {
 }
 
 // ─── Tier 1: Perplexity Sonar ────────────────────────────────────────────────
-async function tryPerplexity(safeUrl, isLinkedIn) {
+async function tryPerplexity(safeUrl, isLinkedIn, isIndeed) {
   const apiKey = process.env.PERPLEXITY_API_KEY;
   if (!apiKey) return { ok: false, error: "no_api_key" };
 
@@ -102,6 +102,8 @@ async function tryPerplexity(safeUrl, isLinkedIn) {
         role: "user",
         content: isLinkedIn
           ? `Find and extract the full job description posted at this LinkedIn URL: ${safeUrl}. Search for the job posting content including title, company, responsibilities, and qualifications.`
+          : isIndeed
+          ? `Find and extract the full job description posted at this Indeed URL: ${safeUrl}. Indeed listings include the job title, hiring company, location, job summary, full responsibilities, qualifications, and typically pay range. Return all of that content.`
           : `Extract the job description from this URL: ${safeUrl}`,
       },
     ],
@@ -141,6 +143,11 @@ async function tryPerplexity(safeUrl, isLinkedIn) {
   const text = result.data?.choices?.[0]?.message?.content?.trim() || "";
   if (!text || text === "FETCH_FAILED" || text.length < 80) {
     return { ok: false, error: "fetch_failed_or_short", text };
+  }
+  // Perplexity sometimes returns apology prose ("I cannot access this URL")
+  // that passes the length floor but isn't a JD. Drop through to tier 2.
+  if (!looksLikeJobDescription(text)) {
+    return { ok: false, error: "perplexity_returned_non_jd" };
   }
   return { ok: true, text };
 }
@@ -199,7 +206,37 @@ async function tryScrapingBee(safeUrl) {
   if (!text || text.length < 80) {
     return { ok: false, error: "short_response" };
   }
+  // Anti-bot pages (CAPTCHA, login-walls, "verify you're human") can return
+  // hundreds of chars of useless markup. Treat as failure if the text shows
+  // none of the markers a real JD always contains.
+  if (!looksLikeJobDescription(text)) {
+    return { ok: false, error: "not_a_job_description" };
+  }
   return { ok: true, text };
+}
+
+// Heuristic: a real JD almost always contains a JD-shaped keyword AND has
+// enough body content. If neither condition holds, the fetch most likely
+// returned an anti-bot/login/captcha stub.
+function looksLikeJobDescription(text) {
+  if (!text || text.length < 400) return false;
+  const lower = text.toLowerCase();
+  const jdKeywords = [
+    "responsibilit", "qualification", "requirement", "experience",
+    "we are looking", "you will", "the role", "the position",
+    "what you'll do", "what you will do", "duties", "skills",
+    "compensation", "salary", "benefits", "preferred",
+  ];
+  const hits = jdKeywords.filter((k) => lower.includes(k)).length;
+  if (hits < 2) return false;
+  // Anti-bot indicators trump positive hits when present
+  const blockers = [
+    "verify you are human", "verify you're human", "press & hold",
+    "are you a robot", "complete this security check",
+    "please enable javascript", "captcha",
+  ];
+  if (blockers.some((b) => lower.includes(b))) return false;
+  return true;
 }
 
 // ─── handler ──────────────────────────────────────────────────────────────────
@@ -233,18 +270,31 @@ exports.handler = async (event) => {
   }
 
   // ── Validate URL ───────────────────────────────────────────────────────────
-  const safeUrl = sanitizeUrl(url);
+  let safeUrl = sanitizeUrl(url);
   if (!safeUrl) {
     return { statusCode: 400, headers, body: JSON.stringify({ error: "Invalid URL" }) };
   }
+  // Strip common tracking/source params that turn share-sheet URLs into
+  // mobile-only or A/B-tested variants the scrapers don't handle as well.
+  // Indeed: ?from=appshareios. LinkedIn: ?trk=…. Greenhouse: ?gh_src=….
+  try {
+    const parsed = new URL(safeUrl);
+    const noisy = ["from", "trk", "gh_src", "utm_source", "utm_medium", "utm_campaign", "utm_content", "ref"];
+    let mutated = false;
+    for (const key of noisy) {
+      if (parsed.searchParams.has(key)) { parsed.searchParams.delete(key); mutated = true; }
+    }
+    if (mutated) safeUrl = parsed.toString();
+  } catch { /* keep original */ }
   const host = urlHost(safeUrl);
   const isLinkedIn = /linkedin\.com\/jobs/i.test(safeUrl);
+  const isIndeed   = /indeed\.com\/viewjob/i.test(safeUrl);
 
   // ── Tier 1: Perplexity ─────────────────────────────────────────────────────
   const t1Start = Date.now();
   let perplexityResult;
   try {
-    perplexityResult = await tryPerplexity(safeUrl, isLinkedIn);
+    perplexityResult = await tryPerplexity(safeUrl, isLinkedIn, isIndeed);
   } catch (e) {
     perplexityResult = { ok: false, error: `exception_${e.message?.slice(0, 40) || "unknown"}` };
   }

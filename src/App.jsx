@@ -855,9 +855,18 @@ export default function App() {
         ? "monitor"
         : "pass";
 
+      // Sanitize JSON-key-looking strings the model sometimes returns as
+      // role_title/company when it can't read the JD (e.g. "UNABLE_TO_EVALUATE",
+      // "NOT_PROVIDED"). Replace with friendly placeholders so the UI never
+      // shows raw underscore-uppercase tokens.
+      const cleanString = (s, fallback) => {
+        const v = sanitizeText(String(s || ""));
+        if (!v || /^[A-Z_]{4,}$/.test(v)) return fallback;
+        return v;
+      };
       const result = {
-        role_title: sanitizeText(String(raw.role_title || "Unknown Role")),
-        company: sanitizeText(String(raw.company || "Unknown Company")),
+        role_title: cleanString(raw.role_title, "Unknown Role"),
+        company: cleanString(raw.company, "Unknown Company"),
         overall_score,
         recommendation,
         recommendation_rationale: sanitizeText(String(raw.recommendation_rationale || ""), 600),
