@@ -1371,3 +1371,59 @@ LOCATION SCORING RULE: If the role is remote, fully remote, or remote-first, tre
 **Fix:** Rewrote `handleSubmit` to mirror the Dashboard pattern. URL inputs now call `/.netlify/functions/fetch-jd`, await the response, and pass `data.jd` (the actual scraped JD text) to onScore. Plain text inputs unchanged. Added visible "FETCHING…" spinner and inline error banner. Threaded `authUser` through from App.jsx so session-auth on the function runs.
 **Lesson:** Three components in the same product (Dashboard, RoleWorkspace, ScoreEntry) all accept URL or text input and trigger scoring. They share zero code. When one is fixed (Dashboard added fetch-jd long ago), the others can silently drift. Worth extracting a shared `useScoreSubmit(jd|url) → handler` hook so the URL→fetch-jd→onScore path lives in one place. Queued as cleanup, not blocking.
 **Files:** `src/components/ScoreEntry.jsx`, `src/App.jsx` (added `authUser` prop wiring).
+
+## Error 121 — GET MY VQ for URL silently failed (SyntheticEvent passed as overrideVal)
+**Build:** Discovered May 11, 2026 in Build 29.
+**Side:** iOS app and web /app.
+**Symptom:** User pasted a LinkedIn URL into the SCORE tab, tapped GET MY VQ → nothing happened. The "Try a sample role" button worked fine. URL was visibly in the textbox, button was enabled, but tap produced no scoring, no fetch, no error.
+**Root cause:** `<button onClick={handleSubmit}>` in `ScoreEntry.jsx` caused React to pass a SyntheticEvent as the first argument (`overrideVal`). The function had `const source = (overrideVal ?? val).trim()`. The event object is truthy so `??` returned the event, and `.trim()` threw a `TypeError` silently inside the async handler — no console error reached the surface because no error boundary caught async throws from event handlers. Sample button worked because `handleTrySample` called `handleSubmit(SAMPLE_JD)` with a string explicitly.
+**Fix:** Type-guard the override: `const sourceCandidate = typeof overrideVal === "string" ? overrideVal : val;`. Only treat overrideVal as the source if it's actually a string; otherwise fall back to component state.
+**Lesson:** Async event handlers bound to onClick that accept positional args are a footgun in React. Either bind with `() => handleSubmit()` to suppress the event arg, or type-guard the first parameter at the top of the function. The latter is safer for handlers also called externally (prefill flow, sample button).
+**Files:** `src/components/ScoreEntry.jsx`
+**Commit:** c5a53f3
+
+## Error 122 — Phantom filter cards (Compensation, Location) appeared in VQ results
+**Build:** Discovered May 11, 2026 in Build 29.
+**Side:** iOS app and web /app.
+**Symptom:** Score result FILTERS tab showed 6 cards (Compensation 1.0, Location 1.0, Financial Accountability, Clear Success Measures, Role Integrity, Access to Leadership) even though the user's framework had only 5 filters. The two phantoms also silently skewed the weighted VQ score because they fell through `filters.find()` to weight 1.0. A first-pass strict-id filter (commit 688f0ba) then dropped *all* cards because the canonical IDs didn't match the model's invented IDs — FILTERS tab went empty.
+**Root cause:** Two compounding issues. (1) The Anthropic prompt sent filter *names* but not the canonical `filter_id` — the model invented its own IDs (e.g. `financial_accountability` instead of `pl_ownership`). (2) The candidate profile section explicitly mentions compensation and location preferences, so the model "helpfully" added scoring cards for those even though they weren't in the framework. The strict-id filter blocked everything because names matched but IDs didn't.
+**Fix:** Three layers. (a) Include `filter_id: "pl_ownership"` etc. in each prompt filter definition so the model echoes the canonical ID back. (b) Add an explicit prompt instruction: "Score ONLY the filters listed above. Do not invent additional filters." (c) Client-side match by filter_id first, fall back to filter_name against any localized name in the framework. Drop anything that doesn't match. Applied identically to streaming + buffered paths.
+**Lesson:** When the prompt mentions context fields (comp, location) and the response shape is a free-form array, the model will fill the array with what it has context to score — not what you asked. Always send canonical IDs in the prompt definitions AND filter the response shape on the client to a known allowlist.
+**Files:** `src/App.jsx`
+**Commits:** 688f0ba, 9f7a4a0
+
+## Error 123 — `advocateNotifyHint` still said WORTH-PAUSING after sev3 renamed to HEADWIND
+**Build:** Discovered May 11, 2026 in Build 29.
+**Side:** iOS app and web /app.
+**Symptom:** VQ Advocate notification preference still read "WORTH-PAUSING ONLY" (and equivalent severity-style strings in 6 other languages) even though `advocateSev3` itself had been renamed to HEADWIND across all 7 languages two builds prior.
+**Root cause:** Incomplete rename. The previous PR updated only `advocateSev3` and skipped the parallel `advocateNotifyHint` strings in `src/i18n/translations.js`.
+**Fix:** Updated `advocateNotifyHint` in all 7 languages (en/es/zh/fr/ar/vi/pt) to match HEADWIND terminology.
+**Lesson:** Translation refactors should grep for *all* strings referencing the renamed concept, not just the most obvious one. `advocateSev3` and `advocateNotifyHint` were both downstream of the same conceptual change.
+**Files:** `src/i18n/translations.js`
+**Commit:** ac9a4d3
+
+## Error 124 — Share Extension URL didn't auto-prefill on first try (cold-launch race)
+**Build:** Discovered May 11, 2026 in Build 29.
+**Side:** iOS app (Share Extension target + main app target).
+**Symptom:** Share a LinkedIn URL from another app → tap Vetted → tap "Score in Vetted →" → return to Vetted manually → SCORE tab activated but URL not in textbox, no auto-scoring. Worked on 2nd and later shares within the same session.
+**Root cause:** Multi-part cold-launch race. (1) `extensionContext.open()` returns false on iOS 26 from Share Extensions even when called from a user-initiated button tap. (2) The backup channel was App Group UserDefaults read in `AppDelegate.applicationDidBecomeActive`, which then synthesized a custom-scheme deep link via `ApplicationDelegateProxy.application(_:open:options:)` — but the JS `appUrlOpen` listener wasn't attached yet when this fired (React tree still mounting on cold launch). (3) Initial retry window for WebView discovery was only 6s, not enough to cover sign-in + onboarding hydration. (4) AppDelegate cleared the App Group entry before injection was confirmed; on timeout the URL was lost forever.
+**Fix (layered, in order shipped):**
+- App Group write in Share Extension + `applicationDidBecomeActive` reader in main app's AppDelegate (`d347a3d`)
+- localStorage fallback in App.jsx + diagnostic console logs (`7eae906`)
+- OSLog diagnostics in AppDelegate (`7da67cc`)
+- AppDelegate walks view tree for WKWebView, `evaluateJavaScript` writes URL to `localStorage` + dispatches `CustomEvent('vetted-share-url')`. ScoreEntry reads localStorage on mount; App.jsx listens for the custom event + visibilitychange (`15de509`, `aad0a75`)
+- Extended retry window from 6s to 30s (60 × 0.5s); only clear App Group after JS write returns "ok" sentinel (`9a1b5c8`)
+- Direction A visual redesign initially only handled `UTType.url`; added fallback to `UTType.text` / `UTType.plainText` (LinkedIn often shares plain text containing the URL) (`54b2be4`)
+**Lesson:** Share Extensions on iOS 26 cannot reliably open the host app from any path — Apple's intended pattern is "user manually returns to host app, host app discovers the share via App Group." Build for that pattern from the start. Custom events + localStorage + a long retry window proved more reliable than trying to synthesize URL opens. Also: when grafting a third-party visual redesign onto working logic, audit for capabilities the redesign dropped (here: App Group write + text-type fallback).
+**Files:** `ios/App/App/AppDelegate.swift`, `ios/App/VettedShareExtension/ShareViewController.swift`, `src/App.jsx`, `src/components/ScoreEntry.jsx`
+**Commits:** d347a3d, 7eae906, 7da67cc, 15de509, 9a1b5c8, aad0a75, 54b2be4
+
+## Error 125 — Direction A Share Extension redesign dropped App Group write
+**Build:** Discovered May 11, 2026 during Build 29 share-extension visual refresh.
+**Side:** iOS Share Extension target.
+**Symptom:** Incoming Direction A `ShareViewController.swift` (visual redesign authored separately) used a responder-chain `openURL:` hack to open the main app from the share extension. That selector is categorically blocked on iOS 26. The file also didn't write to App Group UserDefaults — so even if the responder-chain hack had worked on an older iOS, the main app's AppDelegate fallback (which depends on the App Group entry) had nothing to recover.
+**Root cause:** Visual redesigner was unaware of (a) iOS 26 share-extension open restrictions and (b) the App Group → AppDelegate fallback architecture already shipping in the prior version.
+**Fix:** Grafted the working open logic from the previous controller onto the new visual design: App Group write (URL + timestamp under `pending_share_url` key in `group.com.vettedai.app`) + `extensionContext.open()` (best-effort, works pre-iOS 26) + os_log diagnostics. Dropped the responder-chain hack entirely.
+**Lesson:** When accepting a visual redesign from an outside collaborator, diff capability — not just style. Native iOS subsystems are easy to break in ways that don't show up at compile time. Always retain the working open path + backup channel and only swap presentation.
+**Files:** `ios/App/VettedShareExtension/ShareViewController.swift`
+**Commit:** 0a97c8a
