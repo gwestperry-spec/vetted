@@ -613,7 +613,9 @@ export default function App() {
         `Market: ${safeProfile.country.toUpperCase()} · Currency: ${safeProfile.currency}`,
       ].filter(Boolean).join("\n");
       const fn = (field) => resolveLang(field, lang);
-      const filterDefs = filters.map(f => `- ${sanitizeText(fn(f.name))} (weight: ${f.weight}x): ${sanitizeText(fn(f.description), MAX_LONG)}`).join("\n");
+      // Include filter_id so the model echoes it back in filter_scores —
+      // otherwise it invents ids and we can't map weights or filter phantoms.
+      const filterDefs = filters.map(f => `- filter_id: "${f.id}" | ${sanitizeText(fn(f.name))} (weight: ${f.weight}x): ${sanitizeText(fn(f.description), MAX_LONG)}`).join("\n");
       // Escape the closing delimiter so a crafted JD can't break out of
       // the <job_description>...</job_description> prompt structure.
       const safeJd = sanitizeText(jd, MAX_JD)
@@ -681,11 +683,25 @@ export default function App() {
         // Stream body is available — consume it
         if (streamResponse.body) {
           // streaming path active
-          const knownIdsForStream = new Set(filters.map(f => f.id));
+          const normLocal = (s) => String(s || "").trim().toLowerCase();
+          const isKnownStreamFilter = (f) => {
+            if (!f) return false;
+            const id = normLocal(f.filter_id);
+            const name = normLocal(f.filter_name);
+            return filters.some(def => {
+              if (normLocal(def.id) === id) return true;
+              if (!name) return false;
+              if (typeof def.name === "string") return normLocal(def.name) === name;
+              if (typeof def.name === "object") {
+                return Object.values(def.name).some(v => normLocal(v) === name);
+              }
+              return false;
+            });
+          };
           text = await consumeStream(streamResponse, (filter) => {
             // Drop phantom filters mid-stream so the loading screen doesn't
             // flicker in invented categories the user never selected.
-            if (filter && knownIdsForStream.has(String(filter.filter_id || ""))) {
+            if (isKnownStreamFilter(filter)) {
               setStreamingFilters(prev => [...prev, filter]);
             }
           });
@@ -750,19 +766,39 @@ export default function App() {
       const raw = JSON.parse(jsonMatch[0]);
 
       // Build filter_scores first so we can calculate the weighted average.
-      // Drop any filter_id the model invents (e.g. "compensation", "location")
+      // Drop any filter the model invents (e.g. "compensation", "location")
       // that isn't part of the candidate's actual framework — otherwise they
       // render as phantom cards with weight 1.0 and skew the weighted VQ.
-      const knownFilterIds = new Set(filters.map(f => f.id));
+      // Match by filter_id first, then fall back to filter_name against any
+      // localized name in the framework (the model sometimes returns the
+      // translated name but drops the id).
+      const norm = (s) => String(s || "").trim().toLowerCase();
+      function findFrameworkFilter(fs) {
+        const id = norm(fs.filter_id);
+        const name = norm(fs.filter_name);
+        return filters.find(f => {
+          if (norm(f.id) === id) return true;
+          if (!name) return false;
+          if (typeof f.name === "string") return norm(f.name) === name;
+          if (typeof f.name === "object") {
+            return Object.values(f.name).some(v => norm(v) === name);
+          }
+          return false;
+        });
+      }
       const filter_scores = Array.isArray(raw.filter_scores) ? raw.filter_scores
-        .filter(fs => fs && knownFilterIds.has(String(fs.filter_id || "")))
-        .map(fs => ({
-          filter_id: sanitizeText(String(fs.filter_id || "")),
-          filter_name: sanitizeText(String(fs.filter_name || "")),
-          score: Math.min(5, Math.max(1, Number(fs.score) || 1)),
-          rationale: sanitizeText(String(fs.rationale || ""), MAX_LONG),
-          weight: filters.find(f => f.id === fs.filter_id)?.weight || 1.0,
-        })) : [];
+        .map(fs => {
+          const match = findFrameworkFilter(fs || {});
+          if (!match) return null;
+          return {
+            filter_id: match.id,
+            filter_name: sanitizeText(String(fs.filter_name || resolveLang(match.name, lang) || "")),
+            score: Math.min(5, Math.max(1, Number(fs.score) || 1)),
+            rationale: sanitizeText(String(fs.rationale || ""), MAX_LONG),
+            weight: match.weight || 1.0,
+          };
+        })
+        .filter(Boolean) : [];
 
       // ── Weighted VQ Score: Σ(score × weight) / Σ(weight) ─────────────────
       // Overrides Claude's overall_score so weights are mathematically enforced,
