@@ -2,17 +2,41 @@
 // Editorial input + THIS WEEK KPI strip + Pursue Cohort.
 
 import { useState } from "react";
+import { ENDPOINTS } from "../config.js";
+
+// Minimal URL sanitizer — mirrors Dashboard.jsx's check. Returns trimmed
+// URL string if it's a valid http(s) URL pointing at a public host;
+// returns "" otherwise.
+const MAX_URL = 2048;
+function sanitizeUrl(value) {
+  const trimmed = (value || "").trim().slice(0, MAX_URL);
+  try {
+    const u = new URL(trimmed);
+    if (u.protocol !== "https:" && u.protocol !== "http:") return "";
+    const host = u.hostname.toLowerCase();
+    if (
+      host === "localhost" || host === "127.0.0.1" ||
+      host.startsWith("192.168.") || host.startsWith("10.") ||
+      host.endsWith(".internal")
+    ) return "";
+    return trimmed;
+  } catch { return ""; }
+}
 
 export default function ScoreEntry({
   onScore,
   loading = false,
   workspaceRoles = [],
   onOpenMenu,
+  authUser = null,
   t = {},
 }) {
   const [val, setVal] = useState("");
+  const [fetching, setFetching] = useState(false);
+  const [fetchError, setFetchError] = useState("");
   const isUrl  = /^https?:\/\//i.test(val.trim());
-  const ready  = val.trim().length > 12 && !loading;
+  const busy   = loading || fetching;
+  const ready  = val.trim().length > 12 && !busy;
 
   // Derive THIS WEEK KPIs from workspace roles scored in last 7 days
   const now = Date.now();
@@ -26,9 +50,46 @@ export default function ScoreEntry({
   const pursueCount  = weekRoles.filter(r => r.framework_snapshot?.recommendation === "pursue").length;
   const pursueRate   = weekRoles.length ? Math.round((pursueCount / weekRoles.length) * 100) + "%" : "—";
 
-  function handleSubmit() {
+  async function handleSubmit() {
     if (!ready) return;
-    onScore(val, isUrl ? val.trim() : "");
+    const trimmed = val.trim();
+
+    // URL: fetch the JD server-side first (Perplexity → ScrapingBee
+    // fallback). Only call onScore with real JD text — never the bare URL.
+    if (isUrl) {
+      const safeUrl = sanitizeUrl(trimmed);
+      if (!safeUrl) {
+        setFetchError(t?.urlFetchError || "That URL looks invalid.");
+        return;
+      }
+      setFetching(true);
+      setFetchError("");
+      try {
+        const res = await fetch(ENDPOINTS.fetchJd, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            url: safeUrl,
+            appleId: authUser?.id || "",
+            sessionToken: authUser?.sessionToken || "",
+          }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || (t?.urlFetchError || "Couldn't fetch this URL."));
+        if (!data.jd) throw new Error("empty_response");
+        onScore(data.jd, safeUrl);
+        setVal("");
+      } catch (err) {
+        setFetchError(err?.message || (t?.urlFetchError || "Couldn't fetch this URL."));
+      } finally {
+        setFetching(false);
+      }
+      return;
+    }
+
+    // Plain text → score directly with no source URL.
+    setFetchError("");
+    onScore(trimmed, "");
     setVal("");
   }
 
@@ -140,8 +201,11 @@ export default function ScoreEntry({
                   transition: "background 180ms ease",
                 }}
               >
-                {loading ? (
-                  <span className="spinner" style={{ width: 12, height: 12, borderWidth: 2 }} aria-hidden="true" />
+                {busy ? (
+                  <>
+                    <span className="spinner" style={{ width: 12, height: 12, borderWidth: 2 }} aria-hidden="true" />
+                    {fetching && <span>FETCHING…</span>}
+                  </>
                 ) : (
                   <>
                     GET MY VQ
@@ -154,6 +218,18 @@ export default function ScoreEntry({
                 )}
               </button>
             </div>
+            {fetchError && (
+              <div role="alert" style={{
+                marginTop: 10, padding: "10px 14px",
+                background: "rgba(176,69,69,0.08)",
+                border: "0.5px solid rgba(176,69,69,0.25)",
+                borderRadius: 6,
+                fontFamily: "var(--font-prose)", fontSize: 13,
+                color: "#9B2C2C", lineHeight: 1.5,
+              }}>
+                {fetchError}
+              </div>
+            )}
           </div>
 
           {/* Source chips */}
