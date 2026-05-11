@@ -66,7 +66,13 @@ exports.handler = async (event) => {
   const provided =
     event.headers?.["x-vetted-sweep-secret"] ||
     event.headers?.["X-Vetted-Sweep-Secret"];
-  const manualOk = provided && provided === process.env.VETTED_SECRET;
+  // Prefer a dedicated WORKSPACE_SWEEP_SECRET so the master VETTED_SECRET
+  // (used for iOS session HMAC validation) isn't reused for this surface.
+  // Falls back to VETTED_SECRET for backward compatibility during rollout
+  // — once WORKSPACE_SWEEP_SECRET is set in Netlify env, the fallback path
+  // is never reached and can eventually be removed.
+  const expectedSecret = process.env.WORKSPACE_SWEEP_SECRET || process.env.VETTED_SECRET;
+  const manualOk = provided && expectedSecret && provided === expectedSecret;
 
   if (!isScheduled && !manualOk) {
     return { statusCode: 401, body: JSON.stringify({ error: "Unauthorized" }) };

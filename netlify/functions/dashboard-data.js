@@ -251,6 +251,59 @@ async function fetchPostHog() {
   };
 }
 
+// ─── Rate limiting (in-memory, per warm instance) ─────────────────────────────
+// Throttles failed password attempts by client IP. Map keyed on IP →
+// { fails, lockedUntil }. The map resets on cold start, but with the
+// throttle settings below an attacker can't make enough attempts even
+// across cold starts to brute-force a 30+ char password.
+//
+//   - 5 failed attempts within 15min → 15-minute lockout for that IP
+//   - Successful auth wipes that IP's counter
+//   - Lockouts are best-effort (warm-instance scoped); good enough for
+//     this surface, which is gated by a strong password anyway.
+const RATE_BUCKET = new Map();
+const RATE_WINDOW_MS = 15 * 60 * 1000;
+const RATE_MAX_FAILS = 5;
+
+function clientIp(event) {
+  return (
+    event.headers["x-nf-client-connection-ip"] ||
+    event.headers["x-forwarded-for"]?.split(",")[0]?.trim() ||
+    event.headers["client-ip"] ||
+    "unknown"
+  );
+}
+
+function checkRateLimit(ip) {
+  const now = Date.now();
+  const entry = RATE_BUCKET.get(ip);
+  if (!entry) return { allowed: true };
+  if (entry.lockedUntil && entry.lockedUntil > now) {
+    return { allowed: false, retryAfterSec: Math.ceil((entry.lockedUntil - now) / 1000) };
+  }
+  // Reset window if last failure was outside the window
+  if (entry.lastFailAt && now - entry.lastFailAt > RATE_WINDOW_MS) {
+    RATE_BUCKET.delete(ip);
+    return { allowed: true };
+  }
+  return { allowed: true };
+}
+
+function recordFail(ip) {
+  const now = Date.now();
+  const entry = RATE_BUCKET.get(ip) || { fails: 0, lastFailAt: 0, lockedUntil: 0 };
+  entry.fails += 1;
+  entry.lastFailAt = now;
+  if (entry.fails >= RATE_MAX_FAILS) {
+    entry.lockedUntil = now + RATE_WINDOW_MS;
+  }
+  RATE_BUCKET.set(ip, entry);
+}
+
+function recordSuccess(ip) {
+  RATE_BUCKET.delete(ip);
+}
+
 // ─── handler ──────────────────────────────────────────────────────────────────
 exports.handler = async (event) => {
   const cors = {
@@ -260,10 +313,23 @@ exports.handler = async (event) => {
 
   if (event.httpMethod === "OPTIONS") return { statusCode: 204, headers: cors, body: "" };
 
+  // Rate-limit check before auth — denies known-bad IPs before doing work.
+  const ip = clientIp(event);
+  const rate = checkRateLimit(ip);
+  if (!rate.allowed) {
+    return {
+      statusCode: 429,
+      headers: { ...cors, "Retry-After": String(rate.retryAfterSec || 900) },
+      body: JSON.stringify({ error: "Too many attempts. Try again later.", retryAfterSec: rate.retryAfterSec }),
+    };
+  }
+
   const provided = event.headers["x-dashboard-password"] || event.headers["X-Dashboard-Password"];
   if (!provided || provided !== process.env.DASHBOARD_PASSWORD) {
+    recordFail(ip);
     return { statusCode: 401, headers: cors, body: JSON.stringify({ error: "Unauthorized" }) };
   }
+  recordSuccess(ip);
 
   // Run providers in parallel; each catches its own errors.
   const [supabase, stripe, posthog] = await Promise.all([
