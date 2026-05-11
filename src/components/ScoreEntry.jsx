@@ -1,7 +1,7 @@
 // Vetted — Score Entry screen (SCORE tab)
 // Editorial input + THIS WEEK KPI strip + Pursue Cohort.
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ENDPOINTS } from "../config.js";
 
 // Minimal URL sanitizer — mirrors Dashboard.jsx's check. Returns trimmed
@@ -29,6 +29,12 @@ export default function ScoreEntry({
   workspaceRoles = [],
   onOpenMenu,
   authUser = null,
+  // prefill — when set, populates the input and (optionally) auto-triggers
+  // scoring. Used by the iOS Share Extension deep-link flow: user shares
+  // a LinkedIn URL → main app receives vetted://score?url=… → App.jsx sets
+  // this prop → ScoreEntry consumes it and runs handleSubmit.
+  prefill = null,
+  onPrefillConsumed,
   t = {},
 }) {
   const [val, setVal] = useState("");
@@ -37,6 +43,23 @@ export default function ScoreEntry({
   const isUrl  = /^https?:\/\//i.test(val.trim());
   const busy   = loading || fetching;
   const ready  = val.trim().length > 12 && !busy;
+
+  // Consume any incoming prefill (from the Share Extension deep link).
+  const lastPrefillKey = useRef(null);
+  useEffect(() => {
+    if (!prefill?.url) return;
+    // Guard against re-firing for the same prefill payload.
+    const key = `${prefill.url}|${prefill.at || ""}`;
+    if (lastPrefillKey.current === key) return;
+    lastPrefillKey.current = key;
+    setVal(prefill.url);
+    onPrefillConsumed?.();
+    if (prefill.autoTrigger) {
+      // Defer to the next tick so the val state lands before submit runs.
+      setTimeout(() => handleSubmit(prefill.url), 0);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prefill?.url, prefill?.at]);
 
   // Derive THIS WEEK KPIs from workspace roles scored in last 7 days
   const now = Date.now();
@@ -50,13 +73,18 @@ export default function ScoreEntry({
   const pursueCount  = weekRoles.filter(r => r.framework_snapshot?.recommendation === "pursue").length;
   const pursueRate   = weekRoles.length ? Math.round((pursueCount / weekRoles.length) * 100) + "%" : "—";
 
-  async function handleSubmit() {
-    if (!ready) return;
-    const trimmed = val.trim();
+  async function handleSubmit(overrideVal) {
+    // overrideVal lets external callers (Share Extension prefill) pass the
+    // value directly without waiting for setVal to flush through React state.
+    const source = (overrideVal ?? val).trim();
+    if (!source || source.length < 12) return;
+    if (busy) return;
+    const trimmed = source;
+    const isUrlLocal = /^https?:\/\//i.test(trimmed);
 
     // URL: fetch the JD server-side first (Perplexity → ScrapingBee
     // fallback). Only call onScore with real JD text — never the bare URL.
-    if (isUrl) {
+    if (isUrlLocal) {
       const safeUrl = sanitizeUrl(trimmed);
       if (!safeUrl) {
         setFetchError(t?.urlFetchError || "That URL looks invalid.");

@@ -184,6 +184,11 @@ export default function App() {
   const [lang, setLang] = useState("en");
   const [step, setStep] = useState("onboard");
   const [activeTab, setActiveTab] = useState("workspace");
+
+  // Share-Extension deep-link prefill — when the iOS Share Extension fires a
+  // vetted://score?url=… deep link, the appUrlOpen listener (below) sets this
+  // and ScoreEntry consumes + auto-triggers scoring.
+  const [scorePrefill, setScorePrefill] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [presentationMode, setPresentationMode] = useState(
     () => localStorage.getItem("vetted_presentation_mode") === "true"
@@ -290,6 +295,40 @@ export default function App() {
       setShowWalkthrough(true);
     }
   }, [step]);
+
+  // ── Deep-link handler — vetted://score?url=… (Share Extension flow) ──────
+  // The iOS Share Extension launches the main app via this scheme when a user
+  // shares a URL from LinkedIn / Safari / etc. We parse out the URL, switch
+  // to the SCORE tab, and hand the URL to ScoreEntry which auto-triggers
+  // fetch-jd + scoring.
+  useEffect(() => {
+    if (!window.Capacitor?.isNativePlatform?.()) return;
+    let removeHandle = null;
+    const sub = window.Capacitor?.Plugins?.App?.addListener?.(
+      "appUrlOpen",
+      (event) => {
+        const raw = event?.url || "";
+        try {
+          const parsed = new URL(raw);
+          if (parsed.host === "score" || parsed.pathname.startsWith("//score")) {
+            const sharedUrl = parsed.searchParams.get("url") || "";
+            const decoded = sharedUrl ? decodeURIComponent(sharedUrl) : "";
+            if (decoded) {
+              setActiveTab("score");
+              setStep("workspace"); // SCORE tab lives inside the main "workspace" app step
+              setScorePrefill({ url: decoded, autoTrigger: true, at: Date.now() });
+            }
+          }
+        } catch { /* ignore malformed deep links */ }
+      }
+    );
+    if (sub && typeof sub.then === "function") {
+      sub.then((handle) => { removeHandle = handle; });
+    } else {
+      removeHandle = sub;
+    }
+    return () => removeHandle?.remove?.();
+  }, []);
 
   // ── Load workspace on sign-in ─────────────────────────────────────────────
   // Fires once when authUser is first set; re-fires on sign-out+sign-in.
@@ -983,6 +1022,8 @@ export default function App() {
                 workspaceRoles={workspaceRoles}
                 onOpenMenu={() => setMenuOpen(true)}
                 authUser={authUser}
+                prefill={scorePrefill}
+                onPrefillConsumed={() => setScorePrefill(null)}
                 t={t}
               />
             )}
