@@ -1,0 +1,15 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["5LW6SS8BBF.com.vettedai.app"],
+        "components": [
+          {
+            "/": "/score",
+            "comment": "Share Extension deep link — score a URL handed in from another iOS app's share sheet."
+          }
+        ]
+      }
+    ]
+  }
+}

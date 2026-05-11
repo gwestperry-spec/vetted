@@ -73,6 +73,17 @@
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
 
+# Apple App Site Association — Universal Links handshake file.
+# Apple requires Content-Type: application/json (not application/pkcs7-mime
+# in modern iOS). The file has no extension so Netlify wouldn't infer this
+# without an explicit header rule. Cache short so we can iterate on AASA
+# changes if needed; Apple's CDN caches it independently.
+[[headers]]
+  for = "/.well-known/apple-app-site-association"
+  [headers.values]
+    Content-Type = "application/json"
+    Cache-Control = "public, max-age=3600, must-revalidate"
+
 # Landing page assets (logo, tokens.css) — short cache, not content-hashed
 [[headers]]
   for = "/assets/*"
@@ -181,6 +192,18 @@
   from = "/app/*"
   to = "/index.html"
   status = 200
+
+# Universal Links handshake — /score?url=… is the Share Extension's
+# Universal Link target. On iOS devices WITH Vetted installed, iOS
+# intercepts this URL via the apple-app-site-association handshake
+# and opens the app instead of loading the page. On devices WITHOUT
+# Vetted installed, this redirect sends the visitor to the marketing
+# landing page so they can install the app.
+[[redirects]]
+  from = "/score"
+  to = "/landing.html"
+  status = 302
+  force = true
 
 # Legacy /signin entry point → /app
 [[redirects]]

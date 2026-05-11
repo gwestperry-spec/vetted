@@ -296,11 +296,14 @@ export default function App() {
     }
   }, [step]);
 
-  // ── Deep-link handler — vetted://score?url=… (Share Extension flow) ──────
-  // The iOS Share Extension launches the main app via this scheme when a user
-  // shares a URL from LinkedIn / Safari / etc. We parse out the URL, switch
-  // to the SCORE tab, and hand the URL to ScoreEntry which auto-triggers
-  // fetch-jd + scoring.
+  // ── Deep-link handler — Universal Link OR custom URL scheme  ────────────
+  // The iOS Share Extension hands a URL off via Universal Link:
+  //   https://tryvettedai.com/score?url=…
+  // (Routed to the app by iOS via the apple-app-site-association handshake.)
+  // The legacy custom URL scheme `vetted://score?url=…` is also still
+  // honored so Stripe + any pre-Build-29 deep links keep working.
+  // Either way, we switch to the SCORE tab and hand the URL to ScoreEntry
+  // which auto-triggers fetch-jd + scoring.
   useEffect(() => {
     if (!window.Capacitor?.isNativePlatform?.()) return;
     let removeHandle = null;
@@ -310,14 +313,22 @@ export default function App() {
         const raw = event?.url || "";
         try {
           const parsed = new URL(raw);
-          if (parsed.host === "score" || parsed.pathname.startsWith("//score")) {
-            const sharedUrl = parsed.searchParams.get("url") || "";
-            const decoded = sharedUrl ? decodeURIComponent(sharedUrl) : "";
-            if (decoded) {
-              setActiveTab("score");
-              setStep("workspace"); // SCORE tab lives inside the main "workspace" app step
-              setScorePrefill({ url: decoded, autoTrigger: true, at: Date.now() });
-            }
+          // Recognize three forms:
+          //   custom scheme: vetted://score?url=…           (host = "score")
+          //   custom scheme alt: vetted:/score?url=…        (pathname starts with /score)
+          //   Universal Link: https://tryvettedai.com/score?url=… (pathname = "/score")
+          const isScoreDeepLink =
+            parsed.host === "score" ||
+            parsed.pathname === "/score" ||
+            parsed.pathname.startsWith("//score");
+          if (!isScoreDeepLink) return;
+
+          const sharedUrl = parsed.searchParams.get("url") || "";
+          const decoded = sharedUrl ? decodeURIComponent(sharedUrl) : "";
+          if (decoded) {
+            setActiveTab("score");
+            setStep("workspace"); // SCORE tab lives inside the main "workspace" app step
+            setScorePrefill({ url: decoded, autoTrigger: true, at: Date.now() });
           }
         } catch { /* ignore malformed deep links */ }
       }
