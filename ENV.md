@@ -15,6 +15,9 @@ Set in: Netlify → Site Settings → Environment Variables
 | `POSTHOG_API_KEY` | `netlify/functions/dashboard-data.js` (optional) | Dashboard PostHog cards show "Not configured" — non-fatal. Personal API key from PostHog → Project settings → Personal API keys. |
 | `POSTHOG_PROJECT_ID` | `netlify/functions/dashboard-data.js` (optional) | Same as above — required alongside the API key. PostHog project numeric ID from URL or Project settings. |
 | `SCRAPINGBEE_API_KEY` | `netlify/functions/fetch-jd.js` (tier-2 fallback) | Without it, LinkedIn-style auth-walled JD URLs return 422. Perplexity (tier-1) keeps working. Get from https://app.scrapingbee.com — pay-per-call (~$0.005/JD with JS render + premium proxy). |
+| `VT_DB_URL` | `dashboard-data.js`, `supabase.js`, `fetch-jd.js`, `behavioral-intelligence.js`, `anthropic-stream.mjs`, `github-auth.js`, `workspace-sweep.js` | All Supabase-backed surfaces silently fail. Profile persistence, workspace, dashboard analytics, fetch-jd observability — all return empty. Set to your Supabase project URL (https://<project>.supabase.co). |
+| `VT_DB_KEY` | Same as `VT_DB_URL` | Same blast radius — Supabase auth fails, all reads/writes 401. Set to your Supabase service-role key (NOT the anon key — service-role bypasses RLS, required for server-side functions). |
+| `PERPLEXITY_API_KEY` | `netlify/functions/fetch-jd.js` (tier-1) | Tier-1 JD fetching disabled — every URL falls straight to ScrapingBee (slower, costlier). |
 
 cat > ~/Desktop/vetted/DEPLOY.md << 'EOF'
 # Vetted AI — Release Checklist
