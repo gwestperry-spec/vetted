@@ -1,9 +1,11 @@
 import UIKit
 import Capacitor
 import WebKit
+import UserNotifications
 import os.log
 
 private let shareLog = OSLog(subsystem: "com.vettedai.app", category: "share-fallback")
+private let pushLog = OSLog(subsystem: "com.vettedai.app", category: "push-diagnostic")
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -20,10 +22,39 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     private let pendingShareMaxAgeSeconds: TimeInterval = 300
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        // SignInWithApplePlugin, StoreKitPlugin, and PrintPlugin all conform to
-        // CAPBridgedPlugin, so Capacitor auto-registers them when the bridge
-        // initialises — no manual registerPluginInstance() needed or wanted.
+        // ─── BRAVO DIAGNOSTIC ──────────────────────────────────────────────
+        // Direct native push permission request, bypassing Capacitor.
+        // If iOS shows the prompt from this call, iOS layer is healthy and
+        // the bug is in the Capacitor bridge. If no prompt, iOS state is
+        // corrupted and only Reset Location & Privacy will fix it.
+        os_log("AppDelegate launching — about to request push auth directly", log: pushLog, type: .info)
+
+        UNUserNotificationCenter.current().getNotificationSettings { settings in
+            os_log("Existing notification settings: authStatus=%d", log: pushLog, type: .info, settings.authorizationStatus.rawValue)
+            // authStatus values: 0=notDetermined, 1=denied, 2=authorized, 3=provisional, 4=ephemeral
+        }
+
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { granted, error in
+            os_log("requestAuthorization completed: granted=%d error=%{public}@", log: pushLog, type: .info, granted ? 1 : 0, String(describing: error))
+            if granted {
+                DispatchQueue.main.async {
+                    os_log("Calling registerForRemoteNotifications", log: pushLog, type: .info)
+                    UIApplication.shared.registerForRemoteNotifications()
+                }
+            }
+        }
+
         return true
+    }
+
+    // APNs registration callbacks — confirm whether iOS issues a token at all
+    func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+        let tokenHex = deviceToken.map { String(format: "%02x", $0) }.joined()
+        os_log("✅ APNs token received: %{public}@", log: pushLog, type: .info, tokenHex)
+    }
+
+    func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
+        os_log("❌ APNs registration failed: %{public}@", log: pushLog, type: .error, error.localizedDescription)
     }
 
     func applicationWillResignActive(_ application: UIApplication) {}
