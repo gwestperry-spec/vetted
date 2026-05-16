@@ -15,8 +15,8 @@ const ALLOWED_ORIGINS = [
 ];
 
 const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY
+  process.env.VT_DB_URL || process.env.SUPABASE_URL,
+  process.env.VT_DB_KEY || process.env.SUPABASE_SERVICE_KEY
 );
 
 export default async function handler(req, context) {

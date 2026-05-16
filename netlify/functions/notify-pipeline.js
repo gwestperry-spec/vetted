@@ -18,8 +18,8 @@
 import apn from "apn";
 import { getCopy } from "./notif-copy.js";
 
-const SB_URL = process.env.SUPABASE_URL;
-const SB_KEY = process.env.SUPABASE_SERVICE_KEY;
+const SB_URL = process.env.VT_DB_URL || process.env.SUPABASE_URL;
+const SB_KEY = process.env.VT_DB_KEY || process.env.SUPABASE_SERVICE_KEY;
 
 // ── Supabase helpers ─────────────────────────────────────────────────────────
 
