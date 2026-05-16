@@ -594,7 +594,7 @@ export default function VQAdvocateScreen({ onClose, onNavigate, opportunities, p
                     background: h.resolved ? "var(--accent)" : "#B0B8B0",
                     flexShrink: 0,
                   }} />
-                  <div style={{ fontFamily: "var(--font-prose)", fontSize: 13, color: "var(--ink)", lineHeight: 1.4 }}>
+                  <div style={{ fontFamily: "var(--font-display)", fontSize: 13, fontWeight: 400, color: "var(--ink)", lineHeight: 1.35 }}>
                     {h.headline}
                   </div>
                 </div>

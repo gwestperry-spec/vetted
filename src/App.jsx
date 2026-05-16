@@ -1227,6 +1227,7 @@ export default function App() {
             {activeTab === "settings" && (
               <SettingsTab
                 t={t} lang={lang} onLangChange={handleLangChange}
+                authUser={authUser}
                 onSignOut={handleSignOut}
                 onOpenMenu={() => setMenuOpen(true)}
                 presentationMode={presentationMode}
@@ -1542,7 +1543,7 @@ function useNotifPrefs() {
   return { get, toggle };
 }
 
-function SettingsTab({ t, lang, onLangChange, onSignOut, onOpenMenu, presentationMode, onTogglePresentationMode }) {
+function SettingsTab({ t, lang, onLangChange, authUser, onSignOut, onOpenMenu, presentationMode, onTogglePresentationMode }) {
   const [showLangPicker, setShowLangPicker] = React.useState(false);
   const notif = useNotifPrefs();
 
