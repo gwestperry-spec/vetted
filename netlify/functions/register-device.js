@@ -9,9 +9,13 @@
 import { createClient } from "@supabase/supabase-js";
 
 const ALLOWED_ORIGINS = [
+  "https://celebrated-gelato-56d525.netlify.app",
+  "https://tryvettedai.com",
   "https://vettedai.netlify.app",
   "https://app.vetted.ai",
+  "capacitor://localhost",   // iOS Capacitor WebView
   "http://localhost:5173",
+  "http://localhost:3000",
 ];
 
 const supabase = createClient(
@@ -19,32 +23,36 @@ const supabase = createClient(
   process.env.VT_DB_KEY || process.env.SUPABASE_SERVICE_KEY
 );
 
+function corsHeaders(origin) {
+  const allowed = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  return {
+    "Access-Control-Allow-Origin": allowed,
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, X-Vetted-Token",
+    "Content-Type": "application/json",
+  };
+}
+
 export default async function handler(req, context) {
   const origin = req.headers.get("origin") || "";
+  const headers = corsHeaders(origin);
 
   if (req.method === "OPTIONS") {
-    return new Response(null, {
-      status: 204,
-      headers: {
-        "Access-Control-Allow-Origin": ALLOWED_ORIGINS.includes(origin) ? origin : "null",
-        "Access-Control-Allow-Methods": "POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type, X-Vetted-Token",
-      },
-    });
+    return new Response(null, { status: 204, headers });
   }
 
   if (req.method !== "POST") {
-    return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405 });
+    return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405, headers });
   }
 
   if (origin && !ALLOWED_ORIGINS.includes(origin)) {
-    return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403 });
+    return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers });
   }
 
   const { appleId, sessionToken, token, platform = "ios", lang, prefs = {}, langUpdateOnly = false } = await req.json();
 
   if (!appleId) {
-    return new Response(JSON.stringify({ error: "Missing appleId" }), { status: 400 });
+    return new Response(JSON.stringify({ error: "Missing appleId" }), { status: 400, headers });
   }
 
   // ── Lang-only update: user changed language — patch all their device rows ──
@@ -56,16 +64,13 @@ export default async function handler(req, context) {
 
     if (error) {
       console.error("[register-device] lang update error:", error);
-      return new Response(JSON.stringify({ error: "Failed to update lang" }), { status: 500 });
+      return new Response(JSON.stringify({ error: "Failed to update lang" }), { status: 500, headers });
     }
-    return new Response(JSON.stringify({ ok: true }), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
+    return new Response(JSON.stringify({ ok: true }), { status: 200, headers });
   }
 
   if (!token) {
-    return new Response(JSON.stringify({ error: "Missing token" }), { status: 400 });
+    return new Response(JSON.stringify({ error: "Missing token" }), { status: 400, headers });
   }
 
   // Upsert — if same user registers same token again (app restart), just update timestamp
@@ -86,7 +91,7 @@ export default async function handler(req, context) {
 
   if (error) {
     console.error("[register-device] supabase error:", error);
-    return new Response(JSON.stringify({ error: "Failed to register device" }), { status: 500 });
+    return new Response(JSON.stringify({ error: "Failed to register device" }), { status: 500, headers });
   }
 
   return new Response(JSON.stringify({ ok: true }), {
