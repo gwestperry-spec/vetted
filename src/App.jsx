@@ -1750,6 +1750,12 @@ function NotifyTestButton({ authUser, t }) {
   async function runTest() {
     if (status === "running" || !authUser?.id) return;
     setStatus("running");
+    // Hard ceiling: nothing about this diagnostic should take more than 30s
+    // end-to-end. If it does, unlock the UI with a "Diagnostic timed out"
+    // message so the user can retry rather than staring at "Sending…" forever.
+    const watchdog = setTimeout(() => {
+      setStatus({ summary: "⏱️ Diagnostic timed out after 30s. Most common cause: push plugin in a bad state. Force-quit Vetted (swipe up from app switcher), reopen, retry." });
+    }, 30000);
     // Belt-and-suspenders: force-register the push token before firing the
     // diagnostic. If the original hook never ran, this gets a token into
     // Supabase so the test push has something to deliver to.
@@ -1781,8 +1787,10 @@ function NotifyTestButton({ authUser, t }) {
       if (registerResult && registerResult.ok === false) {
         data.summary = `❌ Client-side registration failed at: ${registerResult.stage}\n${registerResult.note}\n\nServer report (may be downstream of this):\n${data.summary || ""}`;
       }
+      clearTimeout(watchdog);
       setStatus(data);
     } catch (err) {
+      clearTimeout(watchdog);
       setStatus({ summary: `Network error: ${err.message}` });
     }
   }
