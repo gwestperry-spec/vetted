@@ -1750,19 +1750,23 @@ function NotifyTestButton({ authUser, t }) {
   async function runTest() {
     if (status === "running" || !authUser?.id) return;
     setStatus("running");
-    // Belt-and-suspenders: try to force-register the push token before firing
-    // the diagnostic. If the original hook never ran (e.g. permission was
-    // denied at sign-in then later enabled in iOS Settings), this gets a
-    // token into Supabase so the test push has something to deliver to.
+    // Belt-and-suspenders: force-register the push token before firing the
+    // diagnostic. If the original hook never ran, this gets a token into
+    // Supabase so the test push has something to deliver to.
+    let registerResult = null;
     try {
       if (typeof window !== "undefined" && typeof window.__vettedForceRegisterPush === "function") {
-        const r = await window.__vettedForceRegisterPush();
-        console.log("[notify-test] force-register result:", r);
-        // Brief delay so the register-device POST completes before the test reads from Supabase
-        await new Promise((resolve) => setTimeout(resolve, 1200));
+        // Stash auth context where the hook can read it without prop-drilling
+        window.__VETTED_APPLE_ID = authUser.id;
+        window.__VETTED_SESSION_TOKEN = authUser.sessionToken || "";
+        window.__VETTED_REGISTER_DEVICE_URL = ENDPOINTS.registerDevice;
+        registerResult = await window.__vettedForceRegisterPush();
+        console.log("[notify-test] force-register result:", registerResult);
+        await new Promise((resolve) => setTimeout(resolve, 800));
       }
     } catch (err) {
       console.log("[notify-test] force-register error:", err);
+      registerResult = { ok: false, stage: "force_register_threw", note: err.message };
     }
     try {
       const res = await fetch(ENDPOINTS.notifyTest, {
@@ -1771,6 +1775,12 @@ function NotifyTestButton({ authUser, t }) {
         body: JSON.stringify({ appleId: authUser.id, sessionToken: authUser.sessionToken || "" }),
       });
       const data = await res.json().catch(() => ({ summary: "Server returned non-JSON." }));
+      // If force-register reported a non-ok stage, surface that in the
+      // summary — the server-side "no devices" message isn't always the
+      // root cause when the client-side registration failed first.
+      if (registerResult && registerResult.ok === false) {
+        data.summary = `❌ Client-side registration failed at: ${registerResult.stage}\n${registerResult.note}\n\nServer report (may be downstream of this):\n${data.summary || ""}`;
+      }
       setStatus(data);
     } catch (err) {
       setStatus({ summary: `Network error: ${err.message}` });

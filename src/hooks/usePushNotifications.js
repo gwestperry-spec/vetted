@@ -33,12 +33,65 @@ export function usePushNotifications({ authUser, lang, enabled, onOpenRole }) {
   if (typeof window !== "undefined") {
     window.__vettedForceRegisterPush = async () => {
       const Push = await getPushPlugin();
-      if (!Push) return { ok: false, reason: "plugin_unavailable" };
-      const perm = await Push.requestPermissions();
-      if (perm.receive !== "granted") return { ok: false, reason: `perm_${perm.receive}` };
-      registered.current = false; // allow re-registration
-      await Push.register();
-      return { ok: true, perm: perm.receive };
+      if (!Push) return { ok: false, stage: "plugin_unavailable", note: "Capacitor push plugin not present (web build, not iOS)." };
+
+      // Permission
+      let perm;
+      try { perm = await Push.requestPermissions(); }
+      catch (e) { return { ok: false, stage: "requestPermissions_threw", note: e.message }; }
+      if (perm.receive !== "granted") {
+        return { ok: false, stage: "perm_not_granted", note: `iOS permission: ${perm.receive}. Go to iOS Settings → Vetted → Notifications → Allow.` };
+      }
+
+      // Wait for token + capture errors
+      return new Promise(async (resolve) => {
+        let tokenListener, errListener;
+        const timer = setTimeout(async () => {
+          try { (await tokenListener)?.remove(); (await errListener)?.remove(); } catch {}
+          resolve({ ok: false, stage: "no_token_after_8s", note: "Push.register() fired but APNs never returned a token within 8 seconds. Possible causes: aps-environment entitlement mismatch (build signed dev but entitlement=production, or vice versa), bundle ID mismatch with APNs key, or APNs connectivity issue." });
+        }, 8000);
+
+        tokenListener = Push.addListener("registration", async ({ value: token }) => {
+          clearTimeout(timer);
+          try { (await tokenListener)?.remove?.(); (await errListener)?.remove?.(); } catch {}
+          // POST to register-device manually so we can capture the result
+          try {
+            const res = await fetch(window.__VETTED_REGISTER_DEVICE_URL || "/.netlify/functions/register-device", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                appleId:      window.__VETTED_APPLE_ID,
+                sessionToken: window.__VETTED_SESSION_TOKEN,
+                token,
+                platform:     "ios",
+                lang:         window.__VETTED_LANG || "en",
+                prefs:        {},
+              }),
+            });
+            const txt = await res.text();
+            if (!res.ok) {
+              resolve({ ok: false, stage: "register_device_failed", note: `register-device returned ${res.status}: ${txt.slice(0, 200)}` });
+            } else {
+              resolve({ ok: true, stage: "registered", note: `Token ${token.slice(-8)} stored.` });
+            }
+          } catch (e) {
+            resolve({ ok: false, stage: "register_device_threw", note: e.message });
+          }
+        });
+
+        errListener = Push.addListener("registrationError", async (err) => {
+          clearTimeout(timer);
+          try { (await tokenListener)?.remove?.(); (await errListener)?.remove?.(); } catch {}
+          resolve({ ok: false, stage: "registrationError", note: err?.error || JSON.stringify(err) });
+        });
+
+        registered.current = false;
+        try { await Push.register(); }
+        catch (e) {
+          clearTimeout(timer);
+          resolve({ ok: false, stage: "register_threw", note: e.message });
+        }
+      });
     };
   }
 
