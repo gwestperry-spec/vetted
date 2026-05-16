@@ -55,6 +55,42 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         let tokenHex = deviceToken.map { String(format: "%02x", $0) }.joined()
         NSLog("[VETTED-PUSH] ✅ APNs token received: \(tokenHex)")
         print("[VETTED-PUSH] ✅ APNs token received: \(tokenHex)")
+
+        // Bridge to JS: write to localStorage + dispatch event. JS picks it up
+        // and POSTs to register-device with its auth context. Bypasses the
+        // broken Capacitor Push plugin entirely.
+        injectTokenIntoWebView(tokenHex, attempt: 0)
+    }
+
+    private func injectTokenIntoWebView(_ token: String, attempt: Int) {
+        guard attempt < 60 else {
+            NSLog("[VETTED-PUSH] inject gave up after 30s")
+            return
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+            guard let self = self, let webView = self.findWebView() else {
+                self?.injectTokenIntoWebView(token, attempt: attempt + 1)
+                return
+            }
+            let js = """
+            (function(){try{
+              localStorage.setItem('vetted_apns_token','\(token)');
+              window.dispatchEvent(new CustomEvent('vetted-apns-token',{detail:'\(token)'}));
+              console.log('[native] apns token written + dispatched');
+              return 'ok';
+            }catch(e){console.log('[native] write failed',e);return 'err';}})()
+            """
+            webView.evaluateJavaScript(js) { result, error in
+                if let error = error {
+                    NSLog("[VETTED-PUSH] injectJS error: \(error) — retrying")
+                    self.injectTokenIntoWebView(token, attempt: attempt + 1)
+                } else if let r = result as? String, r == "ok" {
+                    NSLog("[VETTED-PUSH] token injected into webview on attempt \(attempt)")
+                } else {
+                    self.injectTokenIntoWebView(token, attempt: attempt + 1)
+                }
+            }
+        }
     }
 
     func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {

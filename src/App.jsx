@@ -263,6 +263,51 @@ export default function App() {
     },
   });
 
+  // ── Native APNs token bridge ──────────────────────────────────────────────
+  // AppDelegate.swift handles APNs registration natively (the Capacitor Push
+  // plugin's JS API doesn't reliably deliver tokens to JS on all devices).
+  // When iOS issues a token, the native side writes it to localStorage and
+  // dispatches a `vetted-apns-token` event. We pick that up here, wait for
+  // the user to be authenticated, and POST to register-device.
+  useEffect(() => {
+    if (!authUser?.id) return;
+
+    async function registerDevice(token) {
+      if (!token) return;
+      try {
+        const res = await fetch(ENDPOINTS.registerDevice, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            appleId:      authUser.id,
+            sessionToken: authUser.sessionToken || "",
+            token,
+            platform:     "ios",
+            lang:         lang || "en",
+            prefs:        {},
+          }),
+        });
+        console.log("[push-bridge] register-device status:", res.status);
+        if (res.ok) {
+          try { localStorage.removeItem("vetted_apns_token"); } catch {}
+        }
+      } catch (err) {
+        console.warn("[push-bridge] register-device failed:", err);
+      }
+    }
+
+    // Pick up any token already stored (token arrived before sign-in)
+    try {
+      const stored = localStorage.getItem("vetted_apns_token");
+      if (stored) registerDevice(stored);
+    } catch {}
+
+    // Listen for native dispatches (token arrives after sign-in)
+    const handler = (e) => registerDevice(e?.detail || "");
+    window.addEventListener("vetted-apns-token", handler);
+    return () => window.removeEventListener("vetted-apns-token", handler);
+  }, [authUser?.id, lang]);
+
   // Inject styles
   useEffect(() => {
     let el = document.getElementById("opp-styles");
