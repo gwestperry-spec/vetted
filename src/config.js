@@ -19,6 +19,7 @@ export const ENDPOINTS = {
   githubAuth:       `${API_BASE}/.netlify/functions/github-auth`,
   registerDevice:   `${API_BASE}/.netlify/functions/register-device`,
   sendNotification: `${API_BASE}/.netlify/functions/send-notification`,
+  notifyTest:       `${API_BASE}/.netlify/functions/notify-test`,
   privacy:      `${API_BASE}/privacy`,
   terms:        `${API_BASE}/terms`,
 };

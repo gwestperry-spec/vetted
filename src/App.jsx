@@ -1673,6 +1673,11 @@ function SettingsTab({ t, lang, onLangChange, onSignOut, onOpenMenu, presentatio
             </button>
           ))}
           <div style={{ borderTop: "0.5px solid var(--border)", marginTop: 4 }} />
+          {/* Send test push — diagnostic, visible to all users so user-reported
+              "I never get notifications" can be self-served. Runs the full
+              pipeline (Supabase env → APNs env → device lookup → APNs send)
+              and shows a structured result. */}
+          <NotifyTestButton authUser={authUser} t={t} />
         </div>
 
         {/* Support */}
@@ -1730,6 +1735,67 @@ function SettingsTab({ t, lang, onLangChange, onSignOut, onOpenMenu, presentatio
         </div>
       </div>
     </main>
+  );
+}
+
+// ─── NotifyTestButton ──────────────────────────────────────────────────────
+// Diagnostic UI for the push pipeline. POSTs to /.netlify/functions/notify-test
+// which checks env vars, looks up the user's devices in Supabase, and fires
+// a real APNs push. Surfaces a structured result so users can self-diagnose
+// "I never get notifications" without filing a ticket.
+function NotifyTestButton({ authUser, t }) {
+  const [status, setStatus] = useState(null); // null | "running" | result object | error string
+
+  async function runTest() {
+    if (status === "running" || !authUser?.id) return;
+    setStatus("running");
+    try {
+      const res = await fetch(ENDPOINTS.notifyTest, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ appleId: authUser.id, sessionToken: authUser.sessionToken || "" }),
+      });
+      const data = await res.json().catch(() => ({ summary: "Server returned non-JSON." }));
+      setStatus(data);
+    } catch (err) {
+      setStatus({ summary: `Network error: ${err.message}` });
+    }
+  }
+
+  return (
+    <div style={{ padding: "16px 0 4px" }}>
+      <button
+        onClick={runTest}
+        disabled={status === "running"}
+        style={{
+          background: "transparent", border: "0.5px solid var(--border)",
+          borderRadius: 8, padding: "10px 14px", cursor: status === "running" ? "default" : "pointer",
+          fontFamily: "var(--font-data)", fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase",
+          color: "var(--ink)", fontWeight: 600, opacity: status === "running" ? 0.5 : 1,
+        }}
+      >
+        {status === "running" ? "Sending…" : (t.notifTestButton || "Send test push")}
+      </button>
+      {status && typeof status === "object" && status.summary && (
+        <div style={{
+          marginTop: 10, padding: "10px 12px", borderRadius: 8,
+          background: "var(--cream)", border: "0.5px solid var(--border)",
+          fontFamily: "var(--font-body)", fontSize: 12, color: "var(--ink)", lineHeight: 1.45,
+          whiteSpace: "pre-wrap",
+        }}>
+          {status.summary}
+          {status.stages && (
+            <div style={{ marginTop: 8, fontFamily: "var(--font-data)", fontSize: 10, color: "#5A6A5A", letterSpacing: "0.04em" }}>
+              SUPABASE_ENV: {status.stages.env_supabase ? "✓" : "—"} ·
+              APNS_ENV: {status.stages.env_apns ? "✓" : "—"} ·
+              DEVICES: {status.stages.devices_found ?? 0} ·
+              SENT: {status.stages.apns_sent ?? 0} ·
+              FAILED: {status.stages.apns_failed ?? 0}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
 
