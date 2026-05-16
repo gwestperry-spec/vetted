@@ -106,7 +106,7 @@ export default async function handler(req) {
   // Schema: register-device.js writes to user_devices (apple_id, token, platform).
   let rows;
   try {
-    rows = await sbGet(`/user_devices?select=token,platform,created_at,last_seen_at&apple_id=eq.${encodeURIComponent(appleId)}`);
+    rows = await sbGet(`/user_devices?select=token,platform,updated_at&apple_id=eq.${encodeURIComponent(appleId)}`);
   } catch (err) {
     return jsonResponse({
       stages,
