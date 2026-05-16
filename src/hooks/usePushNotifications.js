@@ -27,6 +27,21 @@ export function usePushNotifications({ authUser, lang, enabled, onOpenRole }) {
   const registered = useRef(false);
   const lastLang   = useRef(null);
 
+  // Exposed manual trigger — lets a debug button in the UI force re-registration
+  // when the original automatic call didn't fire (e.g. permission denied first
+  // time, then later approved in iOS Settings).
+  if (typeof window !== "undefined") {
+    window.__vettedForceRegisterPush = async () => {
+      const Push = await getPushPlugin();
+      if (!Push) return { ok: false, reason: "plugin_unavailable" };
+      const perm = await Push.requestPermissions();
+      if (perm.receive !== "granted") return { ok: false, reason: `perm_${perm.receive}` };
+      registered.current = false; // allow re-registration
+      await Push.register();
+      return { ok: true, perm: perm.receive };
+    };
+  }
+
   useEffect(() => {
     if (!authUser?.id || !enabled || registered.current) return;
 

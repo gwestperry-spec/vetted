@@ -1750,6 +1750,20 @@ function NotifyTestButton({ authUser, t }) {
   async function runTest() {
     if (status === "running" || !authUser?.id) return;
     setStatus("running");
+    // Belt-and-suspenders: try to force-register the push token before firing
+    // the diagnostic. If the original hook never ran (e.g. permission was
+    // denied at sign-in then later enabled in iOS Settings), this gets a
+    // token into Supabase so the test push has something to deliver to.
+    try {
+      if (typeof window !== "undefined" && typeof window.__vettedForceRegisterPush === "function") {
+        const r = await window.__vettedForceRegisterPush();
+        console.log("[notify-test] force-register result:", r);
+        // Brief delay so the register-device POST completes before the test reads from Supabase
+        await new Promise((resolve) => setTimeout(resolve, 1200));
+      }
+    } catch (err) {
+      console.log("[notify-test] force-register error:", err);
+    }
     try {
       const res = await fetch(ENDPOINTS.notifyTest, {
         method: "POST",
