@@ -186,13 +186,12 @@ export default async function handler(req) {
     return new Response(JSON.stringify({ error: "JWT signing failed", detail: err.message }), { status: 500, headers: { ...cors, "Content-Type": "application/json" } });
   }
 
+  // Match Apple Push Notifications Console's working payload shape exactly
   const payload = {
     aps: {
       alert: { title, body: alertBody },
-      sound: "default",
       ...(badge != null ? { badge } : {}),
     },
-    ...data,
   };
 
   const forceSandbox = process.env.APNS_FORCE_SANDBOX === "1";
