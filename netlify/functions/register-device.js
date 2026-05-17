@@ -23,22 +23,25 @@ const supabase = createClient(
   process.env.VT_DB_KEY || process.env.SUPABASE_SERVICE_KEY
 );
 
-function corsHeaders(origin) {
+function corsBase(origin) {
   const allowed = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
   return {
     "Access-Control-Allow-Origin": allowed,
     "Access-Control-Allow-Methods": "POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, X-Vetted-Token",
-    "Content-Type": "application/json",
   };
+}
+
+function jsonHeaders(origin) {
+  return { ...corsBase(origin), "Content-Type": "application/json" };
 }
 
 export default async function handler(req, context) {
   const origin = req.headers.get("origin") || "";
-  const headers = corsHeaders(origin);
+  const headers = jsonHeaders(origin);
 
   if (req.method === "OPTIONS") {
-    return new Response(null, { status: 204, headers });
+    return new Response(null, { status: 204, headers: corsBase(origin) });
   }
 
   if (req.method !== "POST") {
