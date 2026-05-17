@@ -34,7 +34,7 @@ const ALLOWED_ORIGINS = [
 
 const APNS_HOSTS = {
   production: "api.push.apple.com",
-  sandbox:    "api.sandbox.push.apple.com",
+  sandbox:    "api.development.push.apple.com",
 };
 
 // ─── JWT signing ─────────────────────────────────────────────────────────
