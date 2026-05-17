@@ -1415,24 +1415,50 @@ export default function App() {
 
 // ─── Tab screen wrappers ──────────────────────────────────────────────────────
 
-function MarketTab({ t, profile, authUser, userTier, opportunities, currency, salaryCache, setSalaryCache, insightsCache, setInsightsCache, citationsCache, setCitationsCache }) {
+// Shared header used by tabs that don't render their own. Provides the
+// VETTED wordmark and the hamburger menu button so users can always reach
+// settings/about no matter which tab they're on.
+function TabHeader({ onOpenMenu, label = "Open menu" }) {
   return (
-    <MarketPulseCard t={t} profile={profile} authUser={authUser} userTier={userTier} opportunities={opportunities} currency={currency}
-      salaryCache={salaryCache}   setSalaryCache={setSalaryCache}
-      insightsCache={insightsCache} setInsightsCache={setInsightsCache}
-      citationsCache={citationsCache} setCitationsCache={setCitationsCache}
-    />
+    <header style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "54px 8px 6px 20px" }}>
+      <div style={{ fontFamily: "var(--font-data)", fontSize: 11, letterSpacing: "0.18em", color: "var(--ink)", textTransform: "uppercase" }}>VETTED</div>
+      {onOpenMenu && (
+        <button onClick={onOpenMenu} aria-label={label} style={{ width: 44, height: 44, display: "inline-flex", alignItems: "center", justifyContent: "center", background: "transparent", border: "none", cursor: "pointer", color: "var(--ink)", padding: 0 }}>
+          <svg width="20" height="20" viewBox="0 0 22 22" fill="none">
+            <line x1="3.5" y1="7"  x2="18.5" y2="7"  stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+            <line x1="3.5" y1="11" x2="18.5" y2="11" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+            <line x1="3.5" y1="15" x2="18.5" y2="15" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+          </svg>
+        </button>
+      )}
+    </header>
   );
 }
 
-function FiltersTab({ t, lang, filters, setFilters, userTier, onUpgrade, onSave }) {
+function MarketTab({ t, profile, authUser, userTier, opportunities, currency, salaryCache, setSalaryCache, insightsCache, setInsightsCache, citationsCache, setCitationsCache, onOpenMenu }) {
   return (
-    <FiltersStep
-      t={t} lang={lang} filters={filters} setFilters={setFilters}
-      userTier={userTier} onUpgrade={onUpgrade}
-      onBack={null}
-      onNext={onSave}
-    />
+    <div style={{ background: "var(--paper)", minHeight: "100%" }}>
+      <TabHeader onOpenMenu={onOpenMenu} />
+      <MarketPulseCard t={t} profile={profile} authUser={authUser} userTier={userTier} opportunities={opportunities} currency={currency}
+        salaryCache={salaryCache}   setSalaryCache={setSalaryCache}
+        insightsCache={insightsCache} setInsightsCache={setInsightsCache}
+        citationsCache={citationsCache} setCitationsCache={setCitationsCache}
+      />
+    </div>
+  );
+}
+
+function FiltersTab({ t, lang, filters, setFilters, userTier, onUpgrade, onSave, onOpenMenu }) {
+  return (
+    <div style={{ background: "var(--paper)", minHeight: "100%" }}>
+      <TabHeader onOpenMenu={onOpenMenu} />
+      <FiltersStep
+        t={t} lang={lang} filters={filters} setFilters={setFilters}
+        userTier={userTier} onUpgrade={onUpgrade}
+        onBack={null}
+        onNext={onSave}
+      />
+    </div>
   );
 }
 
