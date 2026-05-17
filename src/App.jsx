@@ -1801,24 +1801,11 @@ function NotifyTestButton({ authUser, t }) {
     const watchdog = setTimeout(() => {
       setStatus({ summary: "⏱️ Diagnostic timed out after 30s. Most common cause: push plugin in a bad state. Force-quit Vetted (swipe up from app switcher), reopen, retry." });
     }, 30000);
-    // Belt-and-suspenders: force-register the push token before firing the
-    // diagnostic. If the original hook never ran, this gets a token into
-    // Supabase so the test push has something to deliver to.
+    // Token registration now flows through the native AppDelegate bridge
+    // (didRegisterForRemoteNotificationsWithDeviceToken → evaluateJavaScript
+    // → register-device POST). The diagnostic only needs to hit notify-test
+    // and report what it finds; no force-register loop required.
     let registerResult = null;
-    try {
-      if (typeof window !== "undefined" && typeof window.__vettedForceRegisterPush === "function") {
-        // Stash auth context where the hook can read it without prop-drilling
-        window.__VETTED_APPLE_ID = authUser.id;
-        window.__VETTED_SESSION_TOKEN = authUser.sessionToken || "";
-        window.__VETTED_REGISTER_DEVICE_URL = ENDPOINTS.registerDevice;
-        registerResult = await window.__vettedForceRegisterPush();
-        console.log("[notify-test] force-register result:", registerResult);
-        await new Promise((resolve) => setTimeout(resolve, 800));
-      }
-    } catch (err) {
-      console.log("[notify-test] force-register error:", err);
-      registerResult = { ok: false, stage: "force_register_threw", note: err.message };
-    }
     try {
       const res = await fetch(ENDPOINTS.notifyTest, {
         method: "POST",
