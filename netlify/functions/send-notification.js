@@ -93,9 +93,13 @@ export default async function handler(req, context) {
   note.topic     = APNS_BUNDLE_ID;
 
   try {
-    const prodProvider = makeProvider(true);
+    // Allow runtime override of which gateway to hit first via env var
+    // APNS_FORCE_SANDBOX=1 — useful while debugging dev-build tokens.
+    const forceSandboxFirst = process.env.APNS_FORCE_SANDBOX === "1";
+    const prodProvider = makeProvider(!forceSandboxFirst);
     let result = await prodProvider.send(note, tokens);
     prodProvider.shutdown();
+    console.log(`[send-notification] first-pass gateway: ${forceSandboxFirst ? "sandbox" : "production"} sent=${result.sent?.length || 0} failed=${result.failed?.length || 0}`);
 
     // Retry BadDeviceToken failures against sandbox
     // APNs uses several reasons for dev/prod token mismatch:
@@ -106,11 +110,12 @@ export default async function handler(req, context) {
       .filter((f) => sandboxRetryReasons.has(f.response?.reason))
       .map((f) => f.device);
 
-    if (sandboxRetryTokens.length > 0) {
+    if (sandboxRetryTokens.length > 0 && !forceSandboxFirst) {
       console.log(`[send-notification] retrying ${sandboxRetryTokens.length} tokens against sandbox`);
       const sandboxProvider = makeProvider(false);
       const sandboxResult = await sandboxProvider.send(note, sandboxRetryTokens);
       sandboxProvider.shutdown();
+      console.log(`[send-notification] sandbox retry sent=${sandboxResult.sent?.length || 0} failed=${sandboxResult.failed?.length || 0} reasons=${(sandboxResult.failed || []).map(f => f.response?.reason).join(",")}`);
       // Merge: anything sent via sandbox moves from prod-failed to sent
       const sandboxSent = new Set((sandboxResult.sent || []).map((s) => s.device));
       const stillFailed = (result.failed || []).filter((f) => !sandboxSent.has(f.device));
