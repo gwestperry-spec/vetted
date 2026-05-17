@@ -98,8 +98,12 @@ export default async function handler(req, context) {
     prodProvider.shutdown();
 
     // Retry BadDeviceToken failures against sandbox
+    // APNs uses several reasons for dev/prod token mismatch:
+    // - BadDeviceToken: token format invalid or for wrong env
+    // - BadEnvironmentKeyInToken: token's environment portion mismatches the gateway
+    const sandboxRetryReasons = new Set(["BadDeviceToken", "BadEnvironmentKeyInToken"]);
     const sandboxRetryTokens = (result.failed || [])
-      .filter((f) => f.response?.reason === "BadDeviceToken")
+      .filter((f) => sandboxRetryReasons.has(f.response?.reason))
       .map((f) => f.device);
 
     if (sandboxRetryTokens.length > 0) {
@@ -114,7 +118,7 @@ export default async function handler(req, context) {
       const sandboxFailed = sandboxResult.failed || [];
       // Use sandbox failure reason if we tried both
       const mergedFailed = [
-        ...stillFailed.filter((f) => f.response?.reason !== "BadDeviceToken"),
+        ...stillFailed.filter((f) => !sandboxRetryReasons.has(f.response?.reason)),
         ...sandboxFailed,
       ];
       result = { sent: newSent, failed: mergedFailed };
