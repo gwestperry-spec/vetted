@@ -72,17 +72,20 @@ export default async function handler(req, context) {
     ? APNS_KEY
     : Buffer.from(APNS_KEY, "base64").toString("utf8");
 
-  const provider = new apn.Provider({
-    token: {
-      key:      apnsKeyPem,
-      keyId:    APNS_KEY_ID,
-      teamId:   APNS_TEAM_ID,
-    },
-    production: true,
-  });
+  // Try production gateway first, then retry rejected tokens against sandbox.
+  // Sandbox tokens come from Xcode dev builds (aps-environment=development)
+  // and only accept the sandbox APNs endpoint. Production tokens come from
+  // App Store/TestFlight builds (aps-environment=production). We don't know
+  // which is which from the token itself, so we try prod and fall back.
+  function makeProvider(prod) {
+    return new apn.Provider({
+      token: { key: apnsKeyPem, keyId: APNS_KEY_ID, teamId: APNS_TEAM_ID },
+      production: prod,
+    });
+  }
 
   const note = new apn.Notification();
-  note.expiry    = Math.floor(Date.now() / 1000) + 3600; // 1 hour
+  note.expiry    = Math.floor(Date.now() / 1000) + 3600;
   note.badge     = badge ?? undefined;
   note.sound     = "default";
   note.alert     = { title, body };
@@ -90,8 +93,32 @@ export default async function handler(req, context) {
   note.topic     = APNS_BUNDLE_ID;
 
   try {
-    const result = await provider.send(note, tokens);
-    provider.shutdown();
+    const prodProvider = makeProvider(true);
+    let result = await prodProvider.send(note, tokens);
+    prodProvider.shutdown();
+
+    // Retry BadDeviceToken failures against sandbox
+    const sandboxRetryTokens = (result.failed || [])
+      .filter((f) => f.response?.reason === "BadDeviceToken")
+      .map((f) => f.device);
+
+    if (sandboxRetryTokens.length > 0) {
+      console.log(`[send-notification] retrying ${sandboxRetryTokens.length} tokens against sandbox`);
+      const sandboxProvider = makeProvider(false);
+      const sandboxResult = await sandboxProvider.send(note, sandboxRetryTokens);
+      sandboxProvider.shutdown();
+      // Merge: anything sent via sandbox moves from prod-failed to sent
+      const sandboxSent = new Set((sandboxResult.sent || []).map((s) => s.device));
+      const stillFailed = (result.failed || []).filter((f) => !sandboxSent.has(f.device));
+      const newSent = [...(result.sent || []), ...(sandboxResult.sent || [])];
+      const sandboxFailed = sandboxResult.failed || [];
+      // Use sandbox failure reason if we tried both
+      const mergedFailed = [
+        ...stillFailed.filter((f) => f.response?.reason !== "BadDeviceToken"),
+        ...sandboxFailed,
+      ];
+      result = { sent: newSent, failed: mergedFailed };
+    }
 
     const failed = result.failed?.map(f => ({ token: f.device, reason: f.response?.reason })) || [];
     if (failed.length) console.warn("[send-notification] failed tokens:", failed);
@@ -101,7 +128,6 @@ export default async function handler(req, context) {
       failed,
     }), { status: 200, headers: { "Content-Type": "application/json" } });
   } catch (err) {
-    provider.shutdown();
     console.error("[send-notification] APNs error:", err);
     return new Response(JSON.stringify({ error: "Failed to send notification" }), { status: 500 });
   }
