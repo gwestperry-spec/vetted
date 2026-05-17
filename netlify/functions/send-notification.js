@@ -64,9 +64,17 @@ export default async function handler(req, context) {
     return new Response(JSON.stringify({ error: "Push not configured" }), { status: 503 });
   }
 
+  // APNS_KEY is stored base64-encoded (no PEM newlines, no leading dashes
+  // that confuse env var setters). Decode to get the raw .p8 PEM contents
+  // that `apn` expects. Backward compat: if value still contains PEM
+  // headers (legacy direct paste), use as-is.
+  const apnsKeyPem = APNS_KEY.includes("BEGIN PRIVATE KEY")
+    ? APNS_KEY
+    : Buffer.from(APNS_KEY, "base64").toString("utf8");
+
   const provider = new apn.Provider({
     token: {
-      key:      APNS_KEY,
+      key:      apnsKeyPem,
       keyId:    APNS_KEY_ID,
       teamId:   APNS_TEAM_ID,
     },

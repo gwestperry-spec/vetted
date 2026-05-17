@@ -47,7 +47,9 @@ async function sbPatch(path, body) {
 function makeProvider() {
   return new apn.Provider({
     token: {
-      key:    process.env.APNS_KEY,
+      key:    (process.env.APNS_KEY || "").includes("BEGIN PRIVATE KEY")
+                ? process.env.APNS_KEY
+                : Buffer.from(process.env.APNS_KEY || "", "base64").toString("utf8"),
       keyId:  process.env.APNS_KEY_ID,
       teamId: process.env.APNS_TEAM_ID,
     },
