@@ -123,7 +123,10 @@ function RootPane({ items, onItem }) {
 }
 
 // ─── AboutPane ───────────────────────────────────────────────────────────────
-const APP_VERSION = "2.001.3";
+// Version is injected at build time from package.json (see vite.config.js).
+// Bump package.json + ios MARKETING_VERSION + ios CURRENT_PROJECT_VERSION
+// together for each release — they should all advance in lockstep.
+const APP_VERSION = typeof __APP_VERSION__ !== "undefined" ? __APP_VERSION__ : "dev";
 
 function AboutPane({ onBack }) {
   const links = [
