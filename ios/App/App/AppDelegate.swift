@@ -22,43 +22,22 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     private let pendingShareMaxAgeSeconds: TimeInterval = 300
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        // ─── BRAVO DIAGNOSTIC ──────────────────────────────────────────────
-        // Direct native push permission request, bypassing Capacitor.
-        // If iOS shows the prompt from this call, iOS layer is healthy and
-        // the bug is in the Capacitor bridge. If no prompt, iOS state is
-        // corrupted and only Reset Location & Privacy will fix it.
-        NSLog("[VETTED-PUSH] AppDelegate launching — about to request push auth directly")
-        print("[VETTED-PUSH] AppDelegate launching — about to request push auth directly")
-
-        UNUserNotificationCenter.current().getNotificationSettings { settings in
-            NSLog("[VETTED-PUSH] Existing notification settings: authStatus=\(settings.authorizationStatus.rawValue)")
-            print("[VETTED-PUSH] Existing notification settings: authStatus=\(settings.authorizationStatus.rawValue)")
-        }
-
-        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { granted, error in
-            NSLog("[VETTED-PUSH] requestAuthorization completed: granted=\(granted) error=\(String(describing: error))")
-            print("[VETTED-PUSH] requestAuthorization completed: granted=\(granted) error=\(String(describing: error))")
-            if granted {
-                DispatchQueue.main.async {
-                    NSLog("[VETTED-PUSH] Calling registerForRemoteNotifications")
-                    print("[VETTED-PUSH] Calling registerForRemoteNotifications")
-                    UIApplication.shared.registerForRemoteNotifications()
-                }
-            }
-        }
-
+        // Capacitor auto-registers plugins (SignInWithApple, StoreKit, Print)
+        // that conform to CAPBridgedPlugin when the bridge initialises.
+        // Push permission is requested by usePushNotifications.js after the
+        // user signs in — not here at launch — so the prompt appears in
+        // context, when the user already understands what they signed up for.
         return true
     }
 
-    // APNs registration callbacks — confirm whether iOS issues a token at all
+    // Called when the JS-side post-sign-in flow invokes
+    // UIApplication.shared.registerForRemoteNotifications() (via Capacitor's
+    // Push.register()). iOS delivers the APNs token here. We forward it to
+    // the JS layer via the existing localStorage bridge so register-device
+    // is called with the user's auth context.
     func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
         let tokenHex = deviceToken.map { String(format: "%02x", $0) }.joined()
-        NSLog("[VETTED-PUSH] ✅ APNs token received: \(tokenHex)")
-        print("[VETTED-PUSH] ✅ APNs token received: \(tokenHex)")
-
-        // Bridge to JS: write to localStorage + dispatch event. JS picks it up
-        // and POSTs to register-device with its auth context. Bypasses the
-        // broken Capacitor Push plugin entirely.
+        os_log("APNs token received", log: pushLog, type: .info)
         injectTokenIntoWebView(tokenHex, attempt: 0)
     }
 
@@ -94,8 +73,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
 
     func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
-        NSLog("[VETTED-PUSH] ❌ APNs registration failed: \(error.localizedDescription)")
-        print("[VETTED-PUSH] ❌ APNs registration failed: \(error.localizedDescription)")
+        os_log("APNs registration failed: %{public}@", log: pushLog, type: .error, error.localizedDescription)
     }
 
     func applicationWillResignActive(_ application: UIApplication) {}
