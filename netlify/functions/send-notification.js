@@ -71,6 +71,7 @@ function sendOne({ host, token, bundleId, jwtToken, payload }) {
       "apns-topic":         bundleId,
       "apns-push-type":     "alert",
       "apns-priority":      "10",
+      "apns-expiration":    "0",
       "content-type":       "application/json",
       "content-length":     Buffer.byteLength(body),
     });
