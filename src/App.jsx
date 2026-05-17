@@ -14,6 +14,7 @@ import {
 import React, { Component, useState, useEffect, useRef } from "react";
 import { useAuth } from "./hooks/useAuth.js";
 import { usePushNotifications } from "./hooks/usePushNotifications.js";
+import { useReviewPrompt, recordScoreCompleted } from "./hooks/useReviewPrompt.js";
 import { handleError } from "./utils/handleError.js";
 import LangSwitcher from "./components/LangSwitcher.jsx";
 import SignInGate from "./components/SignInGate.jsx";
@@ -261,6 +262,15 @@ export default function App() {
         setStep("workspace");
       }
     },
+  });
+
+  // ── App Store review prompt ───────────────────────────────────────────────
+  // Fires only at high-quality moments: 3+ scores, latest verdict positive,
+  // user has been around ≥1 day, and they've dwelled on the result for 3s.
+  // Apple silently caps to 3 prompts/year so we don't double-throttle hard.
+  useReviewPrompt({
+    recommendation: step === "result" ? currentOpp?.recommendation : null,
+    visible:        step === "result",
   });
 
   // ── Native APNs token bridge ──────────────────────────────────────────────
@@ -968,6 +978,9 @@ export default function App() {
         durationMs: Date.now() - scoreStartMs,
         filterCount: filters.length,
       });
+      // Bump the score counter the review-prompt hook uses to decide
+      // whether the user is engaged enough to ask for a rating.
+      recordScoreCompleted();
 
       // Persist to Supabase
       // (score count increment is handled server-side in anthropic.js)

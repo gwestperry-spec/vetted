@@ -10,6 +10,7 @@ public class StoreKitPlugin: CAPPlugin, CAPBridgedPlugin {
     public let pluginMethods: [CAPPluginMethod] = [
         CAPPluginMethod(name: "purchase",         returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "restorePurchases", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "requestReview",    returnType: CAPPluginReturnPromise),
     ]
 
     override public func load() {
@@ -90,6 +91,33 @@ public class StoreKitPlugin: CAPPlugin, CAPBridgedPlugin {
             }
 
             call.resolve(["transactions": transactions])
+        }
+    }
+
+    // ─── requestReview() ──────────────────────────────────────────────────
+    // Asks iOS to show the App Store rating prompt (1–5 stars + Submit).
+    // Apple silently throttles to max 3 prompts per user per 365 days — we
+    // don't need to track frequency, just call when the user is in a
+    // positive moment (just got a "pursue" verdict, 3+ scores deep).
+    @objc func requestReview(_ call: CAPPluginCall) {
+        DispatchQueue.main.async {
+            if #available(iOS 18.0, *) {
+                if let scene = UIApplication.shared.connectedScenes
+                    .first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene {
+                    AppStore.requestReview(in: scene)
+                    call.resolve(["shown": true])
+                    return
+                }
+                call.resolve(["shown": false, "reason": "no_active_scene"])
+            } else {
+                if let scene = UIApplication.shared.connectedScenes
+                    .first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene {
+                    SKStoreReviewController.requestReview(in: scene)
+                    call.resolve(["shown": true])
+                    return
+                }
+                call.resolve(["shown": false, "reason": "no_active_scene"])
+            }
         }
     }
 }
