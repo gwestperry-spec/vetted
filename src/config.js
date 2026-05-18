@@ -15,6 +15,7 @@ export const ENDPOINTS = {
   salaryLookup: `${API_BASE}/.netlify/functions/salary-lookup`,
   behavioralIntelligence: `${API_BASE}/.netlify/functions/behavioral-intelligence`,
   behavioralInsights:     `${API_BASE}/.netlify/functions/behavioral-insights`,
+  coverLetter:            `${API_BASE}/.netlify/functions/cover-letter`,
   marketPulse:  `${API_BASE}/.netlify/functions/market-pulse`,
   fetchJd:          `${API_BASE}/.netlify/functions/fetch-jd`,
   githubAuth:       `${API_BASE}/.netlify/functions/github-auth`,

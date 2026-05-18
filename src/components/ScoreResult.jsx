@@ -653,6 +653,8 @@ import ResolveHub from "./redesign/score-result/ResolveHub.jsx";
 import InsightsLanding from "./redesign/score-result/InsightsLanding.jsx";
 import FiltersLanding from "./redesign/score-result/FiltersLanding.jsx";
 import PayLanding from "./redesign/score-result/PayLanding.jsx";
+import CoachLanding from "./redesign/score-result/CoachLanding.jsx";
+import CoverLetterDraft from "./redesign/score-result/CoverLetterDraft.jsx";
 import PlaceholderLanding from "./redesign/score-result/PlaceholderLanding.jsx";
 
 export default function ScoreResult({ t, lang, opp, profile, filters, onBack, onRemove, onUpdateStatus, userTier, authUser, onUpgrade }) {
@@ -712,11 +714,22 @@ export default function ScoreResult({ t, lang, opp, profile, filters, onBack, on
   }
   if (view === "coach") {
     return (
-      <PlaceholderLanding
-        title="COACH"
+      <CoachLanding
         opp={opp}
+        profile={profile}
         onBack={() => setView("hub")}
-        onShowLegacy={() => { setActiveTab("coach"); setView("legacy"); }}
+        onDraftCoverLetter={() => setView("coverletter")}
+      />
+    );
+  }
+  if (view === "coverletter") {
+    return (
+      <CoverLetterDraft
+        opp={opp}
+        profile={profile}
+        authUser={authUser}
+        userTier={userTier}
+        onBack={() => setView("coach")}
       />
     );
   }
