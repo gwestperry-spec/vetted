@@ -95,6 +95,34 @@ export default function BehavioralInsightsPod({
     data.synthesis,
   ].filter(Boolean).length;
 
+  // No active cards (e.g. backend returned eligible:true but every
+  // sub-aggregation came back null because the underlying profile fields
+  // / filter scores / location prefs aren't populated yet). Show a
+  // single explanatory card so the pod never collapses to an empty box.
+  if (activeCount === 0) {
+    return (
+      <div style={{ marginBottom: 12 }}>
+        <Header activeCount={0} />
+        <div style={{ padding: "0 22px" }}>
+          <div style={{
+            background: "var(--cream)",
+            borderRadius: 10,
+            padding: "18px 16px",
+            fontFamily: "var(--font-prose)", fontSize: 13,
+            color: "var(--muted-deep)", lineHeight: 1.5,
+          }}>
+            <div style={{
+              fontFamily: "var(--font-serif)", fontSize: 13, fontWeight: 700,
+              letterSpacing: "-0.005em", color: "var(--ink)",
+              marginBottom: 4,
+            }}>{t.podWaitingTitle || "Insights are warming up."}</div>
+            {t.podWaitingBody || "We have your scores but need a comp floor, location preferences, and a few weighted filters before the pod can fill out. Tap any EDIT in Profile to seed them."}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={{ marginBottom: 12 }}>
       <Header activeCount={activeCount} />

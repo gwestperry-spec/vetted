@@ -395,12 +395,6 @@ export default function RoleWorkspace({
   };
 
   // ══════════════════════════════════════════════════════════════════════════
-  // Pod renders only when data exists (insightsLoading is also surfaced as
-  // a loading skeleton inside the pod). Skip rendering entirely when the
-  // user is below the 5-role threshold to avoid a giant empty box on the
-  // workspace door.
-  const showInsightsPod = !!insightsData && insightsData.eligible !== false;
-
   return (
     <main id="main-content" aria-label="Role workspace" style={{
       background: "var(--paper)",
@@ -472,21 +466,19 @@ export default function RoleWorkspace({
           <WsKpiTile value={profile.threshold ? String(profile.threshold) : "—"} label={t?.wsThreshold || "THRESHOLD"} color="var(--gold)" />
         </div>
 
-        {/* Behavioral Insights pod — only rendered when eligible and data
-            has landed, so the empty PATTERNS box doesn't pad the workspace
-            door with dead space. Loading skeleton is still surfaced if a
-            fetch is in-flight. */}
-        {(showInsightsPod || insightsLoading) && (
-          <BehavioralInsightsPod
-            data={insightsData}
-            loading={insightsLoading}
-            onEditFloor={() => onEditProfile?.("compensationMin")}
-            onAdjustWeight={() => onEditFilters?.()}
-            onEditPreferences={() => onEditProfile?.("locationPrefs")}
-            onOpenPipeline={() => { /* already on workspace; no-op for now */ }}
-            t={t || {}}
-          />
-        )}
+        {/* Behavioral Insights pod — swipeable carousel of pattern cards.
+            Renders even when the user is under the 5-role threshold or
+            the backend hasn't populated all four sub-objects yet; the
+            pod handles its own loading / empty / partial states. */}
+        <BehavioralInsightsPod
+          data={insightsData}
+          loading={insightsLoading}
+          onEditFloor={() => onEditProfile?.("compensationMin")}
+          onAdjustWeight={() => onEditFilters?.()}
+          onEditPreferences={() => onEditProfile?.("locationPrefs")}
+          onOpenPipeline={() => { /* already on workspace; no-op for now */ }}
+          t={t || {}}
+        />
 
         {/* Hero card — top match */}
         {scoredRoles[0] && (
