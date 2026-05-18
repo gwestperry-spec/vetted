@@ -55,7 +55,28 @@ const TABS = [
   { id: "profile",   label: "PROFILE"   },
 ];
 
-export default function TabBarV2({ active = "workspace", onChange = () => {} }) {
+export default function TabBarV2({ active = "workspace", onChange = () => {}, theme = "light" }) {
+  // Dark theme treatment (used over the forest Profile + future dark
+  // surfaces): translucent ink fill with a stronger blur, on-dark hairline
+  // top, gold dot for active, on-dark-mono for inactive — per the HANDOFF
+  // tab-bar-on-dark spec.
+  const isDark = theme === "dark";
+  const navStyle = isDark
+    ? {
+        borderTop: "0.5px solid rgba(232,240,232,0.16)",
+        background: "rgba(15,31,15,0.75)",
+        backdropFilter: "saturate(140%) blur(8px)",
+        WebkitBackdropFilter: "saturate(140%) blur(8px)",
+      }
+    : {
+        borderTop: "0.5px solid var(--border)",
+        background: "rgba(250,250,248,0.88)",
+        backdropFilter: "saturate(140%) blur(20px)",
+        WebkitBackdropFilter: "saturate(140%) blur(20px)",
+      };
+  const activeColor   = isDark ? "#fbbf24" : "var(--accent)";
+  const inactiveColor = isDark ? "#7A9A7A" : "#8A9A8A";
+
   return (
     <nav
       aria-label="Main navigation"
@@ -66,10 +87,7 @@ export default function TabBarV2({ active = "workspace", onChange = () => {} }) 
         left: 0,
         right: 0,
         zIndex: 100,
-        borderTop: "0.5px solid var(--border)",
-        background: "rgba(250,250,248,0.88)",
-        backdropFilter: "saturate(140%) blur(20px)",
-        WebkitBackdropFilter: "saturate(140%) blur(20px)",
+        ...navStyle,
         paddingTop: 8,
         paddingBottom: 22,
         maxWidth: 860,
@@ -78,7 +96,7 @@ export default function TabBarV2({ active = "workspace", onChange = () => {} }) 
     >
       {TABS.map(tab => {
         const isActive = active === tab.id;
-        const color = isActive ? "var(--accent)" : "#8A9A8A";
+        const color = isActive ? activeColor : inactiveColor;
         return (
           <button
             key={tab.id}

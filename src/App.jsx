@@ -1318,9 +1318,13 @@ export default function App() {
               />
             )}
 
-            {/* Persistent bottom tab bar */}
+            {/* Persistent bottom tab bar.
+                Inverts to the dark "on-ink" treatment when the active tab
+                renders a forest surface (currently just Profile), per the
+                Build-30 HANDOFF tab-bar-on-dark spec. */}
             <TabBarV2
               active={activeTab}
+              theme={activeTab === "profile" ? "dark" : "light"}
               onChange={(tab) => {
                 setActiveTab(tab);
               }}
