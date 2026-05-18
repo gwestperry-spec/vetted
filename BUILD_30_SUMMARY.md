@@ -1,3 +1,73 @@
+# Vetted — Build 30 Summary
+
+**Version:** 2.2.4 (30) · **Status:** archive-ready
+**Previous shipped:** Build 29 (2.2.3) — approved May 11, 2026
+
+## Build 30 — The redesign release
+
+Build 30 is a substantial visual + interaction redesign of three surfaces.
+The 5-tab production navigation (Score · Workspace · Market Pulse · Filters
+· Profile) is unchanged. Existing data, profiles, and scoring continue
+working without migration.
+
+### Workspace (live for all users)
+- **Behavioral Insights pod** with 4 swipeable cards (Floor Margin · Filter
+  Signal · Preference Drift · Synthesis). Replaces the VQ Advocate inline
+  banner. Data values-driven, not prose-driven. Fed by new
+  `/behavioral-insights` Netlify function.
+- Updated typography matching the editorial brand voice (Libre Baskerville
+  serif on eyebrows + headline, 0.22em tracking).
+- New **time-range chip** (24h · 7d · 14d · 30d · All) defaulting to 14d.
+
+### Score result (live for all users)
+- **ResolveHub** — new landing on every completed score. Paused verdict seal
+  with the score in the center on a forest backdrop, verdict pill, role
+  context, recommendation rationale, then a 2×2 pill grid (Insights ·
+  Filters · Coach · Pay) for navigation.
+- **InsightsLanding** with 4 tiles (Honest Fit · Strengths · Real Gaps ·
+  Narrative Bridge), each opening a ThoughtCard overlay with the full
+  section content.
+- **FiltersLanding** with one tile per framework filter, score-tiered
+  (≥4.0 accent · 3.0-3.9 gold · <3.0 default), each opening a ThoughtCard
+  with the filter's rationale.
+- **PayLanding** reads salary signal from JD text, shows Market range +
+  Negotiation leverage tiles with opinionated coaching guidance.
+- **CoachLanding** with 3 reading tiles (Interview prep · Position · Comp
+  leverage) + 1 ink-filled action tile (Draft cover letter).
+- **CoverLetterDraft** — new screen + endpoint. Single opinionated style
+  (no A/B/C picker). Vantage unlimited regenerates; Navigator 3/month;
+  Free gets the initial draft only.
+- Legacy tab-based score result remains accessible via "Show legacy" if any
+  pill placeholder is hit during rollout (none should be in Build 30).
+
+### Scoring screen (live for all users)
+- **ScoringScreen** with forest backdrop, rotating VerdictSeal (outer ring
+  9s/rev, inner ring 6s/rev), cycling Q+A anchor pairs (20-pair starter
+  set; 140-pair library queued for Build 31), FETCH · READ · WEIGH · CALL
+  step trail. `prefers-reduced-motion` fallback to static.
+
+### Behind the scenes
+- **VQ Advocate** standalone screen + inline card **deleted entirely**.
+  Pattern surfacing moves into the workspace pod.
+- New Netlify functions: `behavioral-insights.js`, `cover-letter.js`.
+  Both use raw fetch to Supabase PostgREST per the Error-131 lesson.
+- All redesign components in `src/components/redesign/` for isolation;
+  legacy components untouched as a safety net during rollout.
+- Push notification deep-link path added for future pattern-tier
+  notifications (`data.kind === "pattern"` routes to Workspace).
+- 14 new errors logged (Errors 131-144) covering the redesign work and
+  the upstream push-notification debugging marathon that preceded it.
+
+### Known scope for Build 31
+- Full editorial translation of ~50 new redesign strings across 6
+  non-English languages (Error 143)
+- 140-pair anchor library expansion (Error 143)
+- Workspace square scroll region restructure (Error 144)
+- Server-side HEADWIND pattern detection + push deep-link (Phase 7 is
+  forward-compatible; just needs the scheduled job)
+
+---
+
 # Vetted — Build 29 Summary
 
 **Version:** 2.2.3 (29) · **Status:** archive-ready, not yet uploaded

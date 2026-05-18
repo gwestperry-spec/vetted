@@ -1632,3 +1632,25 @@ Optional env var `APNS_FORCE_SANDBOX=1` flips the order (sandbox first) for debu
 **Lesson:** The two-font system is intentional but the boundary needs to be a clear visual separation (a row apart, a different surface, etc.). Within a single tight row, one type family. Worth a design lint pass on any list/table component.
 **Files:** `src/components/VQAdvocate.jsx`
 **Commit:** 8d6a68e
+
+## Error 142 — register-device.js used @supabase/supabase-js incompatibly with Netlify Functions v2 bundler
+**Build:** Discovered May 17, 2026; documented permanently here as a recurrence guardrail.
+**Side:** Already documented as Error 131. Re-emphasized here because Phase-2 redesign added `behavioral-insights.js` and `cover-letter.js` — both deliberately use raw `fetch` to Supabase PostgREST per the lesson learned. Future Netlify functions must follow the same pattern.
+**Files:** `netlify/functions/behavioral-insights.js`, `netlify/functions/cover-letter.js`
+
+## Error 143 — Build-30 redesign English-first on new surfaces
+**Build:** Documented May 18, 2026 during Build-30 redesign work.
+**Side:** All redesign components in `src/components/redesign/`.
+**Symptom:** New UI strings (~50) are hardcoded English. Non-English users (es, zh, fr, ar, vi, pt) see English on Build-30 redesign surfaces while continuing to see translated content on pre-redesign surfaces.
+**Root cause:** Translating editorial-voice copy across 7 languages requires native-speaker review for brand consistency. Machine translation of phrases like "Where your Pursue comp lands" or "The case" loses intent. Shipping bad translations and rewriting them later is worse than shipping English-first and translating once with a translator in the loop.
+**Fix planned:** Build 31 brings a full editorial translation pass on all new strings + the 140-pair anchor library across 7 languages. RTL layout pass for Arabic on the redesign surfaces. Estimated 2 days with translator involvement.
+**Files:** Whole `src/components/redesign/` tree
+**Decision documented in commit:** 660a17a
+
+## Error 144 — Build-30 workspace square scroll region deferred
+**Build:** Documented May 18, 2026 during Phase-2b workspace restructure.
+**Side:** `src/components/workspace/RoleWorkspace.jsx`.
+**Symptom:** Design spec calls for a single "square" white card with internal vertical scroll containing the role list, with the page itself non-scrolling. Build-30 ships with the existing carousel + multiple lists layout (Top Match hero, KPI tiles, lists for active/applied/archived), retaining the new typography and time-range chip but not the single-square structure.
+**Root cause:** Restructuring the entire workspace layout into one square mid-redesign would risk shipping a half-broken workspace. The existing layout has six distinct sections that don't fit one square cleanly. The new pod + typography + chip ship without that restructure; behavior continues to work.
+**Fix planned:** Build 31 (or 32) brings the full square layout — consolidating Top Match hero + scrolling list into one square with internal scroll. Existing sections move into the square or get demoted to a hamburger menu.
+**Files:** `src/components/workspace/RoleWorkspace.jsx`
