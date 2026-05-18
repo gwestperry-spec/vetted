@@ -7,22 +7,34 @@
 // Cancel pill top-right is the only exit.
 
 import React from "react";
+import { createPortal } from "react-dom";
 import VerdictSeal from "../VerdictSeal.jsx";
 import AnchorPairCycle from "./AnchorPairCycle.jsx";
 import StepTrail from "./StepTrail.jsx";
 
 // scoringPhase: 0 = fetch, 1 = read, 2 = weigh, 3 = call (legacy contract
 // from App.jsx). Map to the trail's activeIdx directly.
+//
+// Rendered via portal directly onto document.body so the fullscreen
+// fixed overlay isn't constrained by any ancestor that creates a
+// containing block (e.g. #root's flex layout, or any transform/filter
+// further up the tree). Edge-to-edge with safe-area padding for the
+// notch and home indicator.
 export default function ScoringScreen({ scoringPhase = 0, onCancel, anchorPairs, t = {} }) {
-  return (
+  const body = (
     <div style={{
       position: "fixed", inset: 0,
+      width: "100vw", height: "100dvh",
       background:
         "radial-gradient(130% 90% at 50% 40%, #1F3520 0%, #152715 50%, #0F1F0F 100%)",
       color: "var(--on-dark-ink)",
       display: "flex", flexDirection: "column", alignItems: "center",
-      paddingTop: 56, paddingBottom: 32,
-      zIndex: 50,
+      paddingTop: "calc(56px + env(safe-area-inset-top, 0px))",
+      paddingBottom: "calc(32px + env(safe-area-inset-bottom, 0px))",
+      paddingLeft: "env(safe-area-inset-left, 0px)",
+      paddingRight: "env(safe-area-inset-right, 0px)",
+      zIndex: 9999,
+      overflow: "hidden",
     }}>
 
       {/* Cancel pill */}
@@ -78,4 +90,5 @@ export default function ScoringScreen({ scoringPhase = 0, onCancel, anchorPairs,
       <StepTrail activeIdx={Math.min(3, Math.max(0, scoringPhase))} t={t} />
     </div>
   );
+  return typeof document !== "undefined" ? createPortal(body, document.body) : body;
 }

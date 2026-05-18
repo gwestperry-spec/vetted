@@ -363,7 +363,10 @@ export default function RoleWorkspace({
     : headlineBase;
 
   const now = Date.now();
-  const allVisible   = workspaceRoles.filter(r => r.status !== "archived");
+  // Apply time-range chip first, then verdict + search filters.
+  const allVisible = workspaceRoles
+    .filter(r => r.status !== "archived")
+    .filter(inRange);
   const filteredRoles = allVisible.filter(r => {
     const rec = (r.framework_snapshot?.recommendation || "").toLowerCase();
     if (filterVerdict !== "ALL" && rec !== filterVerdict.toLowerCase()) return false;

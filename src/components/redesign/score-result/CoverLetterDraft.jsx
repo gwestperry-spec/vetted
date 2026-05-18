@@ -12,9 +12,11 @@
 //
 // Vantage: unlimited regenerates. Navigator: 3 / month. Free: read-only.
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import TopBar from "../TopBar.jsx";
 import { ENDPOINTS } from "../../../config.js";
+
+const LS_KEY = (id) => `vetted:coverLetterDraft:${id || "default"}`;
 
 export default function CoverLetterDraft({
   opp,
@@ -28,11 +30,20 @@ export default function CoverLetterDraft({
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
   const [savedAt, setSavedAt] = useState(null);
+  const textareaRef = useRef(null);
 
   const isVantage = userTier === "vantage" || userTier === "vantage_lifetime";
 
-  // Initial fetch on mount
+  // Initial mount: pre-fill from localStorage if a saved draft exists for
+  // this opportunity. Otherwise, generate fresh from the API.
   useEffect(() => {
+    try {
+      const cached = localStorage.getItem(LS_KEY(opp?.id));
+      if (cached && cached.trim()) {
+        setDraft(cached);
+        return;
+      }
+    } catch { /* ignore storage errors */ }
     fetchDraft();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -74,13 +85,42 @@ export default function CoverLetterDraft({
     }
   }
 
-  function handleCopy() {
+  async function handleCopy() {
+    if (!draft) return;
+    let copied = false;
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(draft);
+        copied = true;
+      }
+    } catch { /* fall through to legacy */ }
+    if (!copied) {
+      // Legacy fallback for iOS WebView / older browsers — select the
+      // textarea and trigger document.execCommand("copy").
+      try {
+        const el = textareaRef.current;
+        if (el) {
+          el.focus();
+          el.select();
+          document.execCommand("copy");
+          copied = true;
+          el.blur();
+        }
+      } catch { /* ignore */ }
+    }
+    setSavedAt(copied ? (t.copied || "Copied") : (t.copyFailed || "Copy failed"));
+    setTimeout(() => setSavedAt(null), 2200);
+  }
+
+  function handleSave() {
     if (!draft) return;
     try {
-      navigator.clipboard?.writeText(draft);
-      setSavedAt(t.copied || "Copied");
-      setTimeout(() => setSavedAt(null), 2200);
-    } catch { /* ignore */ }
+      localStorage.setItem(LS_KEY(opp?.id), draft);
+      setSavedAt(t.saved || "Saved");
+    } catch {
+      setSavedAt(t.saveFailed || "Save failed");
+    }
+    setTimeout(() => setSavedAt(null), 2200);
   }
 
   return (
@@ -95,7 +135,7 @@ export default function CoverLetterDraft({
         onBack={onBack}
         rightSlot={
           <button
-            onClick={() => setSavedAt(t.saved || "Saved")}
+            onClick={handleSave}
             style={{
               background: "transparent", border: "none", cursor: "pointer", padding: 0,
               fontFamily: "var(--font-serif)", fontSize: 10, fontWeight: 700,
@@ -140,6 +180,7 @@ export default function CoverLetterDraft({
         {!loading && !err && (
           <>
             <textarea
+              ref={textareaRef}
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
               style={{
@@ -169,19 +210,27 @@ export default function CoverLetterDraft({
         background: "var(--paper)",
         display: "flex", alignItems: "center", gap: 10,
       }}>
-        <button
-          onClick={fetchDraft}
-          disabled={loading || !isVantage}
-          style={{
-            background: "transparent",
-            border: "1px solid var(--border)",
-            borderRadius: 20, padding: "8px 14px",
-            fontFamily: "var(--font-serif)", fontSize: 10, fontWeight: 700,
-            letterSpacing: "0.20em", color: isVantage ? "var(--ink)" : "var(--muted-soft)",
-            textTransform: "uppercase",
-            cursor: isVantage && !loading ? "pointer" : "default",
-          }}
-        >{t.regenerate ? String(t.regenerate).toUpperCase() : "REGENERATE"}</button>
+        {(() => {
+          // Allow Regenerate when: Vantage tier OR there's an error to retry
+          // OR draft is empty (first generation never landed). Otherwise
+          // non-Vantage tiers see a disabled chip.
+          const canRegen = isVantage || !!err || !draft;
+          return (
+            <button
+              onClick={fetchDraft}
+              disabled={loading || !canRegen}
+              style={{
+                background: "transparent",
+                border: "1px solid var(--border)",
+                borderRadius: 20, padding: "8px 14px",
+                fontFamily: "var(--font-serif)", fontSize: 10, fontWeight: 700,
+                letterSpacing: "0.20em", color: canRegen ? "var(--ink)" : "var(--muted-soft)",
+                textTransform: "uppercase",
+                cursor: canRegen && !loading ? "pointer" : "default",
+              }}
+            >{t.regenerate ? String(t.regenerate).toUpperCase() : "REGENERATE"}</button>
+          );
+        })()}
 
         <button
           onClick={handleCopy}
