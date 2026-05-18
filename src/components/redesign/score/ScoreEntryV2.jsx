@@ -235,39 +235,44 @@ export default function ScoreEntryV2({
           <HamburgerButton onClick={onOpenMenu}/>
         </header>
 
-        <div style={{ padding: "14px 20px 18px" }}>
+        <div style={{ padding: "10px 20px 12px" }}>
           <div style={{
-            fontFamily: F.serif, fontSize: 10, fontWeight: 700,
+            fontFamily: F.serif, fontSize: 9, fontWeight: 700,
             letterSpacing: "0.24em", color: C.mutedSoft,
-            textTransform: "uppercase", marginBottom: 14,
+            textTransform: "uppercase", marginBottom: 10,
           }}>{t.scoreEyebrow || "SCORE · NEW OPPORTUNITY"}</div>
           <h1 style={{
-            fontFamily: F.serif, fontSize: 28, fontWeight: 600,
+            fontFamily: F.serif, fontSize: 24, fontWeight: 600,
             color: C.ink, lineHeight: 1.1, margin: 0,
             letterSpacing: "-0.02em",
           }}>{t.scoreHeadline || "Run a role through your filter framework."}</h1>
           <div style={{
-            marginTop: 10, fontFamily: F.serif, fontStyle: "italic",
-            fontSize: 15, color: C.mutedDeep, lineHeight: 1.45,
+            marginTop: 6, fontFamily: F.serif, fontStyle: "italic",
+            fontSize: 14, color: C.mutedDeep, lineHeight: 1.4,
             textWrap: "pretty",
           }}>{t.scoreSubhead || "Paste the JD or drop a link. Eight seconds."}</div>
         </div>
       </div>
 
-      {/* Scrollable body */}
+      {/* Body — sized to fit the viewport so the tab no longer scrolls.
+          KPIs / cohort were removed; the remaining elements are tightened
+          to land between the header and the bottom tab bar without any
+          vertical overflow. */}
       <div style={{
-        flex: 1, minHeight: 0, overflowY: "auto",
-        WebkitOverflowScrolling: "touch",
-        paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 110px)",
+        flex: 1, minHeight: 0, overflow: "hidden",
+        paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 100px)",
+        display: "flex", flexDirection: "column",
       }}>
-        {/* The input slab */}
-        <div style={{ padding: "0 20px 8px" }}>
+        {/* The input slab — flex column so the empty-state anchor at the
+            very bottom can push down with marginTop: auto, keeping the
+            slab + chips + tip locked to the top of the body area. */}
+        <div style={{ padding: "0 20px 8px", flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
           <div style={{
             position: "relative",
             background: C.cream,
             borderRadius: 14,
             border: `0.5px solid ${val ? "#A8B8A5" : C.border}`,
-            padding: "16px 16px 14px",
+            padding: "14px 14px 12px",
             transition: "border-color 200ms ease",
           }}>
             <textarea
@@ -275,12 +280,12 @@ export default function ScoreEntryV2({
               onChange={(e) => setVal(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder={t.scoreSlabPlaceholder || "Paste a job description, or drop a URL…"}
-              rows={6}
+              rows={4}
               style={{
                 width: "100%", boxSizing: "border-box",
                 background: "transparent", border: "none", outline: "none",
-                fontFamily: F.serif, fontSize: 15, color: C.ink,
-                lineHeight: 1.5, resize: "none", minHeight: 120,
+                fontFamily: F.serif, fontSize: 14, color: C.ink,
+                lineHeight: 1.45, resize: "none", minHeight: 80,
                 fontStyle: empty ? "italic" : "normal",
               }}/>
             <div style={{
@@ -328,8 +333,8 @@ export default function ScoreEntryV2({
 
           {/* Source chips — decorative; sources known to work */}
           <div style={{
-            marginTop: 12,
-            display: "flex", gap: 8, flexWrap: "wrap",
+            marginTop: 10,
+            display: "flex", gap: 6, flexWrap: "wrap",
           }}>
             {[
               t.sourceGreenhouse  || "Greenhouse",
@@ -340,10 +345,10 @@ export default function ScoreEntryV2({
               t.sourceEmailJD     || "Email JD",
             ].map(s => (
               <span key={s} style={{
-                padding: "6px 11px", borderRadius: 999,
+                padding: "5px 10px", borderRadius: 999,
                 background: "transparent", border: `0.5px solid ${C.border}`,
                 fontFamily: F.serif, fontSize: 9, fontWeight: 700,
-                letterSpacing: "0.20em", color: C.mutedDeep,
+                letterSpacing: "0.18em", color: C.mutedDeep,
                 textTransform: "uppercase",
               }}>{s}</span>
             ))}
@@ -351,8 +356,8 @@ export default function ScoreEntryV2({
 
           {/* When a URL won't fetch — source-agnostic tip */}
           <div style={{
-            marginTop: 14,
-            padding: "12px 14px",
+            marginTop: 12,
+            padding: "10px 12px",
             background: "rgba(184, 134, 11, 0.06)",
             borderLeft: `2px solid ${C.gold}`,
             borderRadius: "0 4px 4px 0",
@@ -360,11 +365,11 @@ export default function ScoreEntryV2({
             <div style={{
               fontFamily: F.serif, fontSize: 9, fontWeight: 700,
               letterSpacing: "0.22em", color: C.gold,
-              textTransform: "uppercase", marginBottom: 6,
+              textTransform: "uppercase", marginBottom: 4,
             }}>{t.scoreTipTitle || "WHEN A URL WON'T FETCH"}</div>
             <div style={{
-              fontFamily: F.serif, fontSize: 13, fontStyle: "italic",
-              color: C.ink, lineHeight: 1.5, marginBottom: 10,
+              fontFamily: F.serif, fontSize: 12.5, fontStyle: "italic",
+              color: C.ink, lineHeight: 1.45, marginBottom: 8,
               textWrap: "pretty",
             }}>
               {t.scoreTipBody || (
@@ -388,23 +393,25 @@ export default function ScoreEntryV2({
             </div>
           </div>
 
-          {/* Empty-state anchor pair — italic editorial weight */}
+          {/* Empty-state anchor pair — italic editorial weight, pushed to
+              the bottom of the available space so it never bumps the tip
+              box up against the input slab. */}
           {empty && (
-            <div style={{ marginTop: 28, padding: "0 4px" }}>
+            <div style={{ marginTop: "auto", paddingTop: 16, padding: "16px 4px 0" }}>
               <div style={{
-                fontFamily: F.serif, fontSize: 24, color: C.goldDisplay,
-                lineHeight: 0.4, marginBottom: 6,
+                fontFamily: F.serif, fontSize: 22, color: C.goldDisplay,
+                lineHeight: 0.4, marginBottom: 4,
               }}>&ldquo;</div>
               <div key={anchorIdx} style={{
-                fontFamily: F.serif, fontStyle: "italic", fontSize: 15,
-                lineHeight: 1.5, color: C.ink,
+                fontFamily: F.serif, fontStyle: "italic", fontSize: 14,
+                lineHeight: 1.45, color: C.ink,
                 letterSpacing: "-0.005em", textWrap: "pretty",
                 animation: "sf2-pair-fadein 600ms ease",
               }}>{anchor.q}</div>
               <div style={{
-                marginTop: 8, paddingRight: 4, textAlign: "right",
-                fontFamily: F.serif, fontStyle: "italic", fontSize: 13,
-                color: C.mutedDeep, lineHeight: 1.5,
+                marginTop: 6, paddingRight: 4, textAlign: "right",
+                fontFamily: F.serif, fontStyle: "italic", fontSize: 12.5,
+                color: C.mutedDeep, lineHeight: 1.45,
               }}>{anchor.a}</div>
             </div>
           )}
