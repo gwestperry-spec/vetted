@@ -20,17 +20,17 @@ import ThoughtCard from "../ThoughtCard.jsx";
 import { Icon } from "../IconSet.jsx";
 import { extractSalaryFromJd, formatRange } from "../../../utils/salaryExtract.js";
 
-export default function PayLanding({ opp, profile, onBack, onNext }) {
+export default function PayLanding({ opp, profile, onBack, onNext, t = {} }) {
   const [openTile, setOpenTile] = useState(null);
 
   const jdSalary = extractSalaryFromJd(opp.framework_snapshot?.jd || opp.jd || "");
   const stated = profile?.compensationMin
-    ? `$${Math.round(parseFloat(profile.compensationMin) / 1000)}K floor`
+    ? `$${Math.round(parseFloat(profile.compensationMin) / 1000)}K ${t.rxFloor || "floor"}`
     : null;
 
   const statusLabel = jdSalary
-    ? `${formatRange(jdSalary)} posted`
-    : "Range not disclosed.";
+    ? `${formatRange(jdSalary)}`
+    : (t.rangeNotDisclosed || "Range not disclosed.");
 
   return (
     <div style={{
@@ -38,7 +38,7 @@ export default function PayLanding({ opp, profile, onBack, onNext }) {
       paddingTop: 56,
       display: "flex", flexDirection: "column",
     }}>
-      <TopBar title="PAY" backLabel="VQ" onBack={onBack} />
+      <TopBar title={t.pillPay || "PAY"} backLabel="VQ" onBack={onBack} />
 
       <Breadcrumb
         score={Number(opp.overall_score).toFixed(1)}
@@ -51,7 +51,7 @@ export default function PayLanding({ opp, profile, onBack, onNext }) {
           fontFamily: "var(--font-serif)", fontSize: 9, fontWeight: 700,
           letterSpacing: "0.22em", color: "var(--muted-soft)",
           textTransform: "uppercase", marginBottom: 8,
-        }}>POSTED RANGE</div>
+        }}>{t.rxPostedRange || "POSTED RANGE"}</div>
         <div style={{
           fontFamily: "var(--font-serif)", fontSize: 16, fontWeight: 400,
           color: "var(--ink)", lineHeight: 1.4,
@@ -60,7 +60,7 @@ export default function PayLanding({ opp, profile, onBack, onNext }) {
           <div style={{
             marginTop: 4,
             fontFamily: "var(--font-prose)", fontSize: 12, color: "var(--muted-deep)",
-          }}>Your stated floor: {stated}</div>
+          }}>{t.yourStatedFloor || "Your stated floor:"} {stated}</div>
         )}
       </div>
 
@@ -71,33 +71,33 @@ export default function PayLanding({ opp, profile, onBack, onNext }) {
         <Tile
           accent="accent"
           icon={(c) => <Icon name="chart" size={20} color={c} />}
-          title="Market range"
+          title={t.tileMarketRange || "Market range"}
           body={jdSalary
-            ? `${formatRange(jdSalary)}. ${stated || "Set a floor in your profile to compare."}`
-            : "Range not disclosed in JD. Use the role title to compare to market in Pulse."}
+            ? `${formatRange(jdSalary)}. ${stated || (t.setFloorToCompare || "Set a floor in your profile to compare.")}`
+            : (t.rangeNotDisclosedJD || "Range not disclosed in JD. Use the role title to compare to market in Pulse.")}
           onClick={() => setOpenTile("market")}
         />
         <Tile
           accent="accent"
           icon={(c) => <Icon name="money" size={20} color={c} />}
-          title="Negotiation leverage"
-          body="Anchor where your experience commands the conversation."
+          title={t.tileNegotiationLeverage || "Negotiation leverage"}
+          body={t.tileLeverageBody || "Anchor where your experience commands the conversation."}
           onClick={() => setOpenTile("leverage")}
         />
       </div>
 
       <NextPrompt
-        hint="Read the take, then move to Coach."
-        label="COACH"
+        hint={t.hintReadTakeCoach || "Read the take, then move to Coach."}
+        label={t.pillCoach || "COACH"}
         onNext={onNext}
       />
 
       {openTile === "market" && (
         <ThoughtCard
-          pillName="PAY"
-          sectionLabel="MARKET RANGE"
-          title="Market range"
-          nextLabel="COACH"
+          pillName={t.pillPay || "PAY"}
+          sectionLabel={(t.tileMarketRange || "Market range").toUpperCase()}
+          title={t.tileMarketRange || "Market range"}
+          nextLabel={t.pillCoach || "COACH"}
           onNext={() => { setOpenTile(null); onNext?.(); }}
           onClose={() => setOpenTile(null)}
         >
@@ -111,10 +111,10 @@ export default function PayLanding({ opp, profile, onBack, onNext }) {
 
       {openTile === "leverage" && (
         <ThoughtCard
-          pillName="PAY"
-          sectionLabel="NEGOTIATION LEVERAGE"
-          title="Negotiation leverage"
-          nextLabel="COACH"
+          pillName={t.pillPay || "PAY"}
+          sectionLabel={(t.tileNegotiationLeverage || "Negotiation leverage").toUpperCase()}
+          title={t.tileNegotiationLeverage || "Negotiation leverage"}
+          nextLabel={t.pillCoach || "COACH"}
           onNext={() => { setOpenTile(null); onNext?.(); }}
           onClose={() => setOpenTile(null)}
         >

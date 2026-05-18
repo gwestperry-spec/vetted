@@ -431,7 +431,7 @@ export default function RoleWorkspace({
             }}>
               {(t?.workspaceTitle || "Workspace").toUpperCase()}{firstName ? ` · ${firstName.toUpperCase()}` : ""}
             </p>
-            <TimeRangeChip value={timeRange} onChange={setTimeRange} />
+            <TimeRangeChip value={timeRange} onChange={setTimeRange} t={t || {}} />
           </div>
           <h1 style={{
             fontFamily: "var(--font-serif)", fontSize: 24, fontWeight: 700,
@@ -461,6 +461,7 @@ export default function RoleWorkspace({
           onAdjustWeight={() => onEditFilters?.()}
           onEditPreferences={() => onEditProfile?.("locationPrefs")}
           onOpenPipeline={() => { /* already on workspace; no-op for now */ }}
+          t={t || {}}
         />
 
         {/* Hero card — top match */}

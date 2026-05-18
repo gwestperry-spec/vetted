@@ -24,6 +24,7 @@ export default function BehavioralInsightsPod({
   onAdjustWeight,
   onEditPreferences,
   onOpenPipeline,
+  t = {},
 }) {
   // Eyebrow row above the pod
   const Header = ({ activeCount }) => (
@@ -35,12 +36,12 @@ export default function BehavioralInsightsPod({
         fontFamily: "var(--font-serif)", fontSize: 9, fontWeight: 700,
         letterSpacing: "0.22em", color: "var(--muted-soft)",
         textTransform: "uppercase",
-      }}>PATTERNS</span>
+      }}>{t.patterns || "PATTERNS"}</span>
       <span style={{ flex: 1, height: 0.5, background: "var(--border)" }} />
       <span style={{
         fontFamily: "var(--font-serif)", fontSize: 9, fontWeight: 700,
         letterSpacing: "0.20em", color: "var(--accent)",
-      }}>{activeCount} ACTIVE</span>
+      }}>{activeCount} {t.active || "ACTIVE"}</span>
     </div>
   );
 
@@ -61,10 +62,8 @@ export default function BehavioralInsightsPod({
               fontFamily: "var(--font-serif)", fontSize: 13, fontWeight: 700,
               letterSpacing: "-0.005em", color: "var(--ink)",
               marginBottom: 4,
-            }}>Score 5+ roles to unlock insights.</div>
-            We need a small history to see patterns — floor margins, filter
-            drift, pursue rate. Score a few more roles and your pod will
-            populate here.
+            }}>{t.podEmptyTitle || "Score 5+ roles to unlock insights."}</div>
+            {t.podEmptyBody || "We need a small history to see patterns — floor margins, filter drift, pursue rate. Score a few more roles and your pod will populate here."}
           </div>
         </div>
       </div>
@@ -101,16 +100,16 @@ export default function BehavioralInsightsPod({
       <Header activeCount={activeCount} />
       <Pod ariaLabel="Behavioral insights">
         {data.floorMargin && (
-          <SpectrumCard data={data.floorMargin} onEditFloor={onEditFloor} />
+          <SpectrumCard data={data.floorMargin} onEditFloor={onEditFloor} t={t} />
         )}
         {data.filterSignal && (
-          <FilterSignalCard data={data.filterSignal} onAdjustWeight={onAdjustWeight} />
+          <FilterSignalCard data={data.filterSignal} onAdjustWeight={onAdjustWeight} t={t} />
         )}
         {data.preferenceDrift && (
-          <PreferenceDriftCard data={data.preferenceDrift} onEditPreferences={onEditPreferences} />
+          <PreferenceDriftCard data={data.preferenceDrift} onEditPreferences={onEditPreferences} t={t} />
         )}
         {data.synthesis && (
-          <SynthesisCard data={data.synthesis} onOpenPipeline={onOpenPipeline} />
+          <SynthesisCard data={data.synthesis} onOpenPipeline={onOpenPipeline} t={t} />
         )}
       </Pod>
     </div>

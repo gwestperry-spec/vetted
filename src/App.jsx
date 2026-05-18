@@ -1077,7 +1077,7 @@ export default function App() {
             legacy VQLoadingScreen import is retained for potential rollback
             via a feature flag — not removed in case Phase 6 needs to be
             reverted quickly. */}
-        <ScoringScreen scoringPhase={scoringPhase} />
+        <ScoringScreen scoringPhase={scoringPhase} t={t} />
       </div>
     );
   }

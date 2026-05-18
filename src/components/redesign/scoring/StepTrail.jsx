@@ -5,9 +5,15 @@
 
 import React from "react";
 
-const STEPS = ["FETCH", "READ", "WEIGH", "CALL"];
+const STEPS_DEFAULT = ["FETCH", "READ", "WEIGH", "CALL"];
 
-export default function StepTrail({ activeIdx = 0 }) {
+export default function StepTrail({ activeIdx = 0, t = {} }) {
+  const STEPS = [
+    t.stepFetch ? String(t.stepFetch).toUpperCase() : "FETCH",
+    t.stepRead  ? String(t.stepRead).toUpperCase()  : "READ",
+    t.stepWeigh ? String(t.stepWeigh).toUpperCase() : "WEIGH",
+    t.stepCall  ? String(t.stepCall).toUpperCase()  : "CALL",
+  ];
   return (
     <div style={{
       display: "flex", alignItems: "center", justifyContent: "center",

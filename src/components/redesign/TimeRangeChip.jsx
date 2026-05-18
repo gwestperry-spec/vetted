@@ -18,10 +18,18 @@ export const TIME_RANGES = [
   { key: "all", label: "All time", days: null },
 ];
 
-export default function TimeRangeChip({ value = "14d", onChange }) {
+export default function TimeRangeChip({ value = "14d", onChange, t = {} }) {
   const [open, setOpen] = useState(false);
+  const labelFor = (r) => {
+    if (r.key === "24h") return t.trange24h || r.label;
+    if (r.key === "7d")  return t.trange7d  || r.label;
+    if (r.key === "30d") return t.trange30d || r.label;
+    if (r.key === "14d") return t.trange14d || r.label;
+    if (r.key === "all") return t.trangeAll || r.label;
+    return r.label;
+  };
   const current = TIME_RANGES.find((r) => r.key === value) || TIME_RANGES[2];
-  const labelUpper = current.label.toUpperCase();
+  const labelUpper = String(labelFor(current)).toUpperCase();
 
   return (
     <div style={{ position: "relative" }}>
@@ -82,7 +90,7 @@ export default function TimeRangeChip({ value = "14d", onChange }) {
                   textTransform: "uppercase",
                 }}
               >
-                {r.label}
+                {labelFor(r)}
               </button>
             ))}
           </div>

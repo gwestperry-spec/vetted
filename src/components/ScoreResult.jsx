@@ -680,6 +680,7 @@ export default function ScoreResult({ t, lang, opp, profile, filters, onBack, on
         company={opp.company}
         onBack={onBack}
         onPillTap={(id) => setView(id)}
+        t={t}
       />
     );
   }
@@ -689,6 +690,7 @@ export default function ScoreResult({ t, lang, opp, profile, filters, onBack, on
         opp={opp}
         onBack={() => setView("hub")}
         onNext={() => setView("filters")}
+        t={t}
       />
     );
   }
@@ -699,6 +701,7 @@ export default function ScoreResult({ t, lang, opp, profile, filters, onBack, on
         filters={filters}
         onBack={() => setView("hub")}
         onNext={() => setView("pay")}
+        t={t}
       />
     );
   }
@@ -709,6 +712,7 @@ export default function ScoreResult({ t, lang, opp, profile, filters, onBack, on
         profile={profile}
         onBack={() => setView("hub")}
         onNext={() => setView("coach")}
+        t={t}
       />
     );
   }
@@ -719,6 +723,7 @@ export default function ScoreResult({ t, lang, opp, profile, filters, onBack, on
         profile={profile}
         onBack={() => setView("hub")}
         onDraftCoverLetter={() => setView("coverletter")}
+        t={t}
       />
     );
   }
@@ -730,6 +735,7 @@ export default function ScoreResult({ t, lang, opp, profile, filters, onBack, on
         authUser={authUser}
         userTier={userTier}
         onBack={() => setView("coach")}
+        t={t}
       />
     );
   }

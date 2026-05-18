@@ -16,32 +16,18 @@ import NextPrompt from "../NextPrompt.jsx";
 import ThoughtCard from "../ThoughtCard.jsx";
 import { Icon } from "../IconSet.jsx";
 
-const SECTIONS = [
-  {
-    key: "honestFit",
-    icon: (color) => <Icon name="quote" size={20} color={color} />,
-    title: "Honest fit assessment",
-    accent: null,
-  },
-  {
-    key: "strengths",
-    icon: (color) => <Icon name="check" size={14} color={color} />,
-    title: "Where you are strong",
-    accent: "accent",
-  },
-  {
-    key: "gaps",
-    icon: (color) => <Icon name="triangle" size={14} color={color} />,
-    title: "Real gaps",
-    accent: "gold",
-  },
-  {
-    key: "bridge",
-    icon: (color) => <Icon name="bridge" size={20} color={color} />,
-    title: "Narrative bridge",
-    accent: null,
-  },
-];
+function buildSections(t) {
+  return [
+    { key: "honestFit", icon: (c) => <Icon name="quote" size={20} color={c} />,
+      title: t.tileHonestFit || "Honest fit assessment", accent: null },
+    { key: "strengths", icon: (c) => <Icon name="check" size={14} color={c} />,
+      title: t.tileStrengths || "Where you are strong", accent: "accent" },
+    { key: "gaps", icon: (c) => <Icon name="triangle" size={14} color={c} />,
+      title: t.tileGaps || "Real gaps", accent: "gold" },
+    { key: "bridge", icon: (c) => <Icon name="bridge" size={20} color={c} />,
+      title: t.tileBridge || "Narrative bridge", accent: null },
+  ];
+}
 
 function buildBodySummary(opp, key) {
   switch (key) {
@@ -112,8 +98,9 @@ function ThoughtBody({ section, opp }) {
   return null;
 }
 
-export default function InsightsLanding({ opp, onBack, onNext }) {
+export default function InsightsLanding({ opp, onBack, onNext, t = {} }) {
   const [openSection, setOpenSection] = useState(null);
+  const SECTIONS = buildSections(t);
 
   return (
     <div style={{
@@ -121,7 +108,7 @@ export default function InsightsLanding({ opp, onBack, onNext }) {
       paddingTop: 56,
       display: "flex", flexDirection: "column",
     }}>
-      <TopBar title="INSIGHTS" backLabel="VQ" onBack={onBack} />
+      <TopBar title={t.pillInsights || "INSIGHTS"} backLabel="VQ" onBack={onBack} />
 
       <Breadcrumb
         score={Number(opp.overall_score).toFixed(1)}
@@ -134,7 +121,7 @@ export default function InsightsLanding({ opp, onBack, onNext }) {
           fontFamily: "var(--font-serif)", fontSize: 9, fontWeight: 700,
           letterSpacing: "0.22em", color: "var(--muted-soft)",
           textTransform: "uppercase", marginBottom: 8,
-        }}>FOUR SECTIONS</div>
+        }}>{t.rxFourSections || "FOUR SECTIONS"}</div>
       </div>
 
       <div style={{
@@ -154,17 +141,17 @@ export default function InsightsLanding({ opp, onBack, onNext }) {
       </div>
 
       <NextPrompt
-        hint="Tap any section to open it."
-        label="FILTERS"
+        hint={t.hintTapSection || "Tap any section to open it."}
+        label={t.pillFilters || "FILTERS"}
         onNext={onNext}
       />
 
       {openSection && (
         <ThoughtCard
-          pillName="INSIGHTS"
+          pillName={t.pillInsights || "INSIGHTS"}
           sectionLabel={SECTIONS.find((s) => s.key === openSection).title.toUpperCase()}
           title={SECTIONS.find((s) => s.key === openSection).title}
-          nextLabel="FILTERS"
+          nextLabel={t.pillFilters || "FILTERS"}
           onNext={() => { setOpenSection(null); onNext?.(); }}
           onClose={() => setOpenSection(null)}
         >

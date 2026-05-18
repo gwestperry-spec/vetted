@@ -11,7 +11,7 @@
 
 import React from "react";
 
-export default function SynthesisCard({ data, onOpenPipeline }) {
+export default function SynthesisCard({ data, onOpenPipeline, t = {} }) {
   const {
     scoredThisWeek = 0,
     inPursueNow    = 0,
@@ -36,7 +36,7 @@ export default function SynthesisCard({ data, onOpenPipeline }) {
         fontFamily: "var(--font-serif)", fontSize: 9, fontWeight: 700,
         letterSpacing: "0.22em", color: "var(--muted-soft)",
         textTransform: "uppercase", marginBottom: 6,
-      }}>THIS WEEK</div>
+      }}>{t.thisWeek || "THIS WEEK"}</div>
 
       <div style={{
         fontFamily: "var(--font-serif)", fontSize: 13, fontWeight: 700,
@@ -49,8 +49,8 @@ export default function SynthesisCard({ data, onOpenPipeline }) {
           display: "grid", gridTemplateColumns: "1fr 1fr",
           gap: "12px 16px",
         }}>
-          <Cell num={scoredThisWeek} label="Scored" />
-          <Cell num={inPursueNow}    label="In Pursue" />
+          <Cell num={scoredThisWeek} label={t.scored || "Scored"} />
+          <Cell num={inPursueNow}    label={t.inPursue || "In Pursue"} />
         </div>
 
         <div style={{ marginTop: 14 }}>
@@ -74,7 +74,7 @@ export default function SynthesisCard({ data, onOpenPipeline }) {
             fontFamily: "var(--font-serif)", fontSize: 8, fontWeight: 700,
             letterSpacing: "0.20em", color: "var(--muted-soft)",
             textTransform: "uppercase",
-          }}>Pursue rate · 4-wk comparison</div>
+          }}>{t.pursueRate || "Pursue rate · 4-wk comparison"}</div>
         </div>
       </div>
 
@@ -92,7 +92,7 @@ export default function SynthesisCard({ data, onOpenPipeline }) {
             display: "inline-flex", alignItems: "center", gap: 6,
           }}
         >
-          Open pipeline
+          {t.openPipeline || "Open pipeline"}
           <span style={{
             fontFamily: "var(--font-serif)", fontSize: 14, fontWeight: 400,
             color: "var(--muted-soft)",

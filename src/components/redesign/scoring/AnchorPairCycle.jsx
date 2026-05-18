@@ -37,8 +37,10 @@ export default function AnchorPairCycle({
   pairs,
   intervalMs = 6000,
   answerDelayMs = 2000,
+  t = {},
 }) {
-  const list = pairs && pairs.length > 0 ? pairs : DEFAULT_PAIRS;
+  const tPairs = Array.isArray(t.anchorPairs) && t.anchorPairs.length > 0 ? t.anchorPairs : null;
+  const list = (pairs && pairs.length > 0) ? pairs : (tPairs || DEFAULT_PAIRS);
   // Shuffle order on mount so each scoring session is fresh
   const orderRef = useRef([]);
   const [idx, setIdx] = useState(0);

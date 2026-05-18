@@ -12,7 +12,7 @@
 
 import React from "react";
 
-export default function FilterSignalCard({ data, onAdjustWeight }) {
+export default function FilterSignalCard({ data, onAdjustWeight, t = {} }) {
   const { filters = [], laggingId, draggedCount } = data || {};
   const lagging = filters.find((f) => f.id === laggingId);
 
@@ -29,7 +29,7 @@ export default function FilterSignalCard({ data, onAdjustWeight }) {
         fontFamily: "var(--font-serif)", fontSize: 9, fontWeight: 700,
         letterSpacing: "0.22em", color: "var(--gold)",
         textTransform: "uppercase", marginBottom: 6,
-      }}>FILTER SIGNAL</div>
+      }}>{t.filterSignal || "FILTER SIGNAL"}</div>
 
       <div style={{
         fontFamily: "var(--font-serif)", fontSize: 13, fontWeight: 700,
@@ -101,7 +101,7 @@ export default function FilterSignalCard({ data, onAdjustWeight }) {
             display: "inline-flex", alignItems: "center", gap: 6,
           }}
         >
-          Adjust weight
+          {t.adjustWeight || "Adjust weight"}
           <span style={{
             fontFamily: "var(--font-serif)", fontSize: 14, fontWeight: 400,
             color: "var(--muted-soft)",

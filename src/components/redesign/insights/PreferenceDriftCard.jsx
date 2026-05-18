@@ -16,7 +16,7 @@
 
 import React from "react";
 
-export default function PreferenceDriftCard({ data, onEditPreferences }) {
+export default function PreferenceDriftCard({ data, onEditPreferences, t = {} }) {
   const { driftPct = 0, location, comp } = data || {};
 
   return (
@@ -32,7 +32,7 @@ export default function PreferenceDriftCard({ data, onEditPreferences }) {
         fontFamily: "var(--font-serif)", fontSize: 9, fontWeight: 700,
         letterSpacing: "0.22em", color: "var(--gold)",
         textTransform: "uppercase", marginBottom: 6,
-      }}>PREFERENCE DRIFT</div>
+      }}>{t.preferenceDrift || "PREFERENCE DRIFT"}</div>
 
       <div style={{
         fontFamily: "var(--font-serif)", fontSize: 13, fontWeight: 700,
@@ -72,7 +72,7 @@ export default function PreferenceDriftCard({ data, onEditPreferences }) {
             display: "inline-flex", alignItems: "center", gap: 6,
           }}
         >
-          Edit preferences
+          {t.editPreferences || "Edit preferences"}
           <span style={{
             fontFamily: "var(--font-serif)", fontSize: 14, fontWeight: 400,
             color: "var(--muted-soft)",

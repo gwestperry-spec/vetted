@@ -13,7 +13,7 @@ import StepTrail from "./StepTrail.jsx";
 
 // scoringPhase: 0 = fetch, 1 = read, 2 = weigh, 3 = call (legacy contract
 // from App.jsx). Map to the trail's activeIdx directly.
-export default function ScoringScreen({ scoringPhase = 0, onCancel, anchorPairs }) {
+export default function ScoringScreen({ scoringPhase = 0, onCancel, anchorPairs, t = {} }) {
   return (
     <div style={{
       position: "fixed", inset: 0,
@@ -39,7 +39,7 @@ export default function ScoringScreen({ scoringPhase = 0, onCancel, anchorPairs 
             letterSpacing: "0.20em", color: "var(--on-dark-soft)",
             textTransform: "uppercase",
           }}
-        >CANCEL</button>
+        >{t.cancel ? String(t.cancel).toUpperCase() : "CANCEL"}</button>
       )}
 
       {/* Vetted brand line */}
@@ -48,7 +48,7 @@ export default function ScoringScreen({ scoringPhase = 0, onCancel, anchorPairs 
         fontFamily: "var(--font-serif)", fontSize: 11, fontWeight: 700,
         letterSpacing: "0.30em", color: "var(--on-dark-soft)",
         textTransform: "uppercase",
-      }}>VETTED · SCORING</div>
+      }}>{t.scoringTitle || "VETTED · SCORING"}</div>
 
       {/* Animated seal */}
       <VerdictSeal
@@ -61,7 +61,7 @@ export default function ScoringScreen({ scoringPhase = 0, onCancel, anchorPairs 
 
       {/* Anchor pair */}
       <div style={{ marginTop: 32, marginBottom: 32, flexShrink: 0 }}>
-        <AnchorPairCycle pairs={anchorPairs} />
+        <AnchorPairCycle pairs={anchorPairs} t={t} />
       </div>
 
       {/* "Usually under eight seconds" */}
@@ -70,12 +70,12 @@ export default function ScoringScreen({ scoringPhase = 0, onCancel, anchorPairs 
         fontFamily: "var(--font-serif)", fontSize: 11, fontWeight: 400,
         fontStyle: "italic", color: "var(--on-dark-soft)",
         textAlign: "center",
-      }}>Usually under eight seconds.</div>
+      }}>{t.usuallyUnderEightSeconds || "Usually under eight seconds."}</div>
 
       <div style={{ flex: 1 }} />
 
       {/* Step trail */}
-      <StepTrail activeIdx={Math.min(3, Math.max(0, scoringPhase))} />
+      <StepTrail activeIdx={Math.min(3, Math.max(0, scoringPhase))} t={t} />
     </div>
   );
 }

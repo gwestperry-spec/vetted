@@ -10,13 +10,6 @@
 import React from "react";
 import VerdictSeal from "../VerdictSeal.jsx";
 
-const PILLS = [
-  { id: "insights", label: "INSIGHTS", teaser: "The case" },
-  { id: "filters",  label: "FILTERS",  teaser: "5, weighted" },
-  { id: "coach",    label: "COACH",    teaser: "The take" },
-  { id: "pay",      label: "PAY",      teaser: "Market range" },
-];
-
 export default function ResolveHub({
   score,            // number 1–5
   verdict,          // "pursue" | "monitor" | "pass"
@@ -25,7 +18,14 @@ export default function ResolveHub({
   company,          // string
   onPillTap,        // function(id)
   onBack,
+  t = {},
 }) {
+  const PILLS = [
+    { id: "insights", label: t.pillInsights || "INSIGHTS", teaser: t.pillInsightsTeaser || "The case" },
+    { id: "filters",  label: t.pillFilters  || "FILTERS",  teaser: t.pillFiltersTeaser  || "5, weighted" },
+    { id: "coach",    label: t.pillCoach    || "COACH",    teaser: t.pillCoachTeaser    || "The take" },
+    { id: "pay",      label: t.pillPay      || "PAY",      teaser: t.pillPayTeaser      || "Market range" },
+  ];
   const verdictUpper = String(verdict || "").toUpperCase();
   const pillTheme =
     verdict === "pursue"  ? { bg: "var(--pursue-dark-bg)",  fg: "var(--pursue-dark-fg)" } :
@@ -66,7 +66,7 @@ export default function ResolveHub({
         fontFamily: "var(--font-serif)", fontSize: 9, fontWeight: 700,
         letterSpacing: "0.22em", color: "var(--on-dark-soft)",
         textTransform: "uppercase", marginTop: 14, marginBottom: 18,
-      }}>VERDICT · {verdictUpper}</div>
+      }}>{(t.rxVerdict || "VERDICT")} · {verdictUpper}</div>
 
       {/* Seal with score in center */}
       <VerdictSeal
@@ -119,7 +119,7 @@ export default function ResolveHub({
         fontFamily: "var(--font-serif)", fontSize: 9, fontWeight: 700,
         letterSpacing: "0.22em", color: "var(--dot)",
         textTransform: "uppercase",
-      }}>READ DEEPER</div>
+      }}>{t.rxReadDeeper || "READ DEEPER"}</div>
 
       {/* 4-pill grid (2×2) */}
       <div style={{

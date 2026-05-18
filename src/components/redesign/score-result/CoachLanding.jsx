@@ -17,7 +17,7 @@ import Tile from "../Tile.jsx";
 import ThoughtCard from "../ThoughtCard.jsx";
 import { Icon } from "../IconSet.jsx";
 
-export default function CoachLanding({ opp, profile, onBack, onDraftCoverLetter }) {
+export default function CoachLanding({ opp, profile, onBack, onDraftCoverLetter, t = {} }) {
   const [openTile, setOpenTile] = useState(null);
 
   return (
@@ -26,7 +26,7 @@ export default function CoachLanding({ opp, profile, onBack, onDraftCoverLetter 
       paddingTop: 56,
       display: "flex", flexDirection: "column",
     }}>
-      <TopBar title="COACH" backLabel="VQ" onBack={onBack} />
+      <TopBar title={t.pillCoach || "COACH"} backLabel="VQ" onBack={onBack} />
 
       <Breadcrumb
         score={Number(opp.overall_score).toFixed(1)}
@@ -39,7 +39,7 @@ export default function CoachLanding({ opp, profile, onBack, onDraftCoverLetter 
           fontFamily: "var(--font-serif)", fontSize: 9, fontWeight: 700,
           letterSpacing: "0.22em", color: "var(--muted-soft)",
           textTransform: "uppercase", marginBottom: 8,
-        }}>HOW TO ACT ON THIS</div>
+        }}>{t.rxFourSections || "HOW TO ACT ON THIS"}</div>
       </div>
 
       <div style={{
@@ -48,35 +48,35 @@ export default function CoachLanding({ opp, profile, onBack, onDraftCoverLetter 
       }}>
         <Tile
           icon={(c) => <Icon name="chat" size={20} color={c} />}
-          title="Interview preparation"
+          title={t.tileInterviewPrep || "Interview preparation"}
           body="Two scripted questions to lead with — and the answers your background already gives you."
           onClick={() => setOpenTile("interview")}
         />
         <Tile
           icon={(c) => <Icon name="target" size={20} color={c} />}
-          title="How to position yourself"
+          title={t.tilePosition || "How to position yourself"}
           body="The opening sentence to walk in with, plus the bridge from your background to this role."
           onClick={() => setOpenTile("position")}
         />
         <Tile
           icon={(c) => <Icon name="money" size={20} color={c} />}
-          title="Negotiation leverage"
+          title={t.tileNegotiationLeverage || "Negotiation leverage"}
           body="Where to anchor comp, restated as a coaching move."
           onClick={() => setOpenTile("leverage")}
         />
         <Tile
           action
           icon={(c) => <Icon name="pen" size={20} color={c} />}
-          title="Draft cover letter"
+          title={t.tileDraftCoverLetter || "Draft cover letter"}
           onClick={onDraftCoverLetter}
         />
       </div>
 
       {openTile === "interview" && (
         <ThoughtCard
-          pillName="COACH" sectionLabel="INTERVIEW PREPARATION"
-          title="Interview preparation"
-          nextLabel="DRAFT COVER LETTER"
+          pillName={t.pillCoach || "COACH"} sectionLabel={t.tileInterviewPrep ? String(t.tileInterviewPrep).toUpperCase() : "INTERVIEW PREPARATION"}
+          title={t.tileInterviewPrep || "Interview preparation"}
+          nextLabel={t.tileDraftCoverLetter ? String(t.tileDraftCoverLetter).toUpperCase() : "DRAFT COVER LETTER"}
           onNext={() => { setOpenTile(null); onDraftCoverLetter?.(); }}
           onClose={() => setOpenTile(null)}
         >
@@ -108,9 +108,9 @@ export default function CoachLanding({ opp, profile, onBack, onDraftCoverLetter 
 
       {openTile === "position" && (
         <ThoughtCard
-          pillName="COACH" sectionLabel="HOW TO POSITION YOURSELF"
-          title="How to position yourself"
-          nextLabel="DRAFT COVER LETTER"
+          pillName={t.pillCoach || "COACH"} sectionLabel={t.tilePosition ? String(t.tilePosition).toUpperCase() : "HOW TO POSITION YOURSELF"}
+          title={t.tilePosition || "How to position yourself"}
+          nextLabel={t.tileDraftCoverLetter ? String(t.tileDraftCoverLetter).toUpperCase() : "DRAFT COVER LETTER"}
           onNext={() => { setOpenTile(null); onDraftCoverLetter?.(); }}
           onClose={() => setOpenTile(null)}
         >
@@ -127,9 +127,9 @@ export default function CoachLanding({ opp, profile, onBack, onDraftCoverLetter 
 
       {openTile === "leverage" && (
         <ThoughtCard
-          pillName="COACH" sectionLabel="NEGOTIATION LEVERAGE"
-          title="Negotiation leverage"
-          nextLabel="DRAFT COVER LETTER"
+          pillName={t.pillCoach || "COACH"} sectionLabel={t.tileNegotiationLeverage ? String(t.tileNegotiationLeverage).toUpperCase() : "NEGOTIATION LEVERAGE"}
+          title={t.tileNegotiationLeverage || "Negotiation leverage"}
+          nextLabel={t.tileDraftCoverLetter ? String(t.tileDraftCoverLetter).toUpperCase() : "DRAFT COVER LETTER"}
           onNext={() => { setOpenTile(null); onDraftCoverLetter?.(); }}
           onClose={() => setOpenTile(null)}
         >

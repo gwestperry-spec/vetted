@@ -12,7 +12,7 @@
 
 import React from "react";
 
-export default function SpectrumCard({ data, onEditFloor }) {
+export default function SpectrumCard({ data, onEditFloor, t = {} }) {
   const { avgPursueComp, compFloor, belowFloorCount, pursueTotal, currency = "USD" } = data || {};
 
   // Position 0–1: where avg sits on the track. 0 = floor, 1 = floor + 50%
@@ -37,7 +37,7 @@ export default function SpectrumCard({ data, onEditFloor }) {
         fontFamily: "var(--font-serif)", fontSize: 9, fontWeight: 700,
         letterSpacing: "0.22em", color: "var(--muted-soft)",
         textTransform: "uppercase", marginBottom: 6,
-      }}>FLOOR MARGIN</div>
+      }}>{t.floorMargin || "FLOOR MARGIN"}</div>
 
       <div style={{
         fontFamily: "var(--font-serif)", fontSize: 13, fontWeight: 700,
@@ -109,7 +109,7 @@ export default function SpectrumCard({ data, onEditFloor }) {
             display: "inline-flex", alignItems: "center", gap: 6,
           }}
         >
-          Edit floor
+          {t.editFloor || "Edit floor"}
           <span style={{
             fontFamily: "var(--font-serif)", fontSize: 14, fontWeight: 400,
             color: "var(--muted-soft)",

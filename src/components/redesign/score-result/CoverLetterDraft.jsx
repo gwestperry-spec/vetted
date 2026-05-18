@@ -22,6 +22,7 @@ export default function CoverLetterDraft({
   authUser,
   userTier,
   onBack,
+  t = {},
 }) {
   const [draft, setDraft] = useState("");
   const [loading, setLoading] = useState(false);
@@ -77,7 +78,7 @@ export default function CoverLetterDraft({
     if (!draft) return;
     try {
       navigator.clipboard?.writeText(draft);
-      setSavedAt("Copied");
+      setSavedAt(t.copied || "Copied");
       setTimeout(() => setSavedAt(null), 2200);
     } catch { /* ignore */ }
   }
@@ -89,18 +90,18 @@ export default function CoverLetterDraft({
       display: "flex", flexDirection: "column",
     }}>
       <TopBar
-        title="COVER LETTER"
-        backLabel="COACH"
+        title={t.coverLetter ? String(t.coverLetter).toUpperCase() : "COVER LETTER"}
+        backLabel={t.pillCoach || "COACH"}
         onBack={onBack}
         rightSlot={
           <button
-            onClick={() => setSavedAt("Saved")}
+            onClick={() => setSavedAt(t.saved || "Saved")}
             style={{
               background: "transparent", border: "none", cursor: "pointer", padding: 0,
               fontFamily: "var(--font-serif)", fontSize: 10, fontWeight: 700,
               letterSpacing: "0.20em", color: "var(--ink)", textTransform: "uppercase",
             }}
-          >SAVE</button>
+          >{t.save ? String(t.save).toUpperCase() : "SAVE"}</button>
         }
       />
 
@@ -126,7 +127,7 @@ export default function CoverLetterDraft({
             fontFamily: "var(--font-prose)", fontSize: 13,
             color: "var(--muted-soft)", textAlign: "center",
             padding: "40px 0",
-          }}>Drafting…</div>
+          }}>{t.drafting || "Drafting…"}</div>
         )}
 
         {err && (
@@ -155,7 +156,7 @@ export default function CoverLetterDraft({
               letterSpacing: "0.18em", color: "var(--muted-soft)",
               textTransform: "uppercase",
             }}>
-              {draft.split(/\s+/).filter(Boolean).length} WORDS · DRAFTED FROM THE COACH TAKE
+              {draft.split(/\s+/).filter(Boolean).length} {t.wordCount || "WORDS · DRAFTED FROM THE COACH TAKE"}
             </div>
           </>
         )}
@@ -180,7 +181,7 @@ export default function CoverLetterDraft({
             textTransform: "uppercase",
             cursor: isVantage && !loading ? "pointer" : "default",
           }}
-        >REGENERATE</button>
+        >{t.regenerate ? String(t.regenerate).toUpperCase() : "REGENERATE"}</button>
 
         <button
           onClick={handleCopy}
@@ -193,7 +194,7 @@ export default function CoverLetterDraft({
             textTransform: "uppercase",
             cursor: "pointer",
           }}
-        >COPY</button>
+        >{t.copy ? String(t.copy).toUpperCase() : "COPY"}</button>
 
         <div style={{ flex: 1 }} />
 

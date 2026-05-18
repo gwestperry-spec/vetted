@@ -47,7 +47,7 @@ function ScoreBar({ score, color }) {
   );
 }
 
-export default function FiltersLanding({ opp, filters, onBack, onNext }) {
+export default function FiltersLanding({ opp, filters, onBack, onNext, t = {} }) {
   const [openFilterId, setOpenFilterId] = useState(null);
 
   // Sort: highest score first so user reads strengths before weak filters
@@ -65,7 +65,7 @@ export default function FiltersLanding({ opp, filters, onBack, onNext }) {
       paddingTop: 56,
       display: "flex", flexDirection: "column",
     }}>
-      <TopBar title="FILTERS" backLabel="VQ" onBack={onBack} />
+      <TopBar title={t.pillFilters || "FILTERS"} backLabel="VQ" onBack={onBack} />
 
       <Breadcrumb
         score={Number(opp.overall_score).toFixed(1)}
@@ -78,7 +78,7 @@ export default function FiltersLanding({ opp, filters, onBack, onNext }) {
           fontFamily: "var(--font-serif)", fontSize: 9, fontWeight: 700,
           letterSpacing: "0.22em", color: "var(--muted-soft)",
           textTransform: "uppercase", marginBottom: 8,
-        }}>{scored.length} {scored.length === 1 ? "FILTER" : "FILTERS"}</div>
+        }}>{scored.length} {scored.length === 1 ? (t.rxFilterOfN || "FILTER") : (t.rxFiltersOfN || "FILTERS")}</div>
       </div>
 
       <div style={{
@@ -114,18 +114,18 @@ export default function FiltersLanding({ opp, filters, onBack, onNext }) {
       </div>
 
       <NextPrompt
-        hint="Tap any filter for the rationale."
-        label="PAY"
+        hint={t.hintTapFilter || "Tap any filter for the rationale."}
+        label={t.pillPay || "PAY"}
         onNext={onNext}
       />
 
       {openFilter && (
         <ThoughtCard
-          pillName="FILTERS"
+          pillName={t.pillFilters || "FILTERS"}
           sectionLabel={localizedName(filters, openFilter.filter_id, openFilter.filter_name).toUpperCase()}
           title={localizedName(filters, openFilter.filter_id, openFilter.filter_name)}
-          provenance={`SOURCE · ${Number(openFilter.score).toFixed(1)} / 5`}
-          nextLabel="PAY"
+          provenance={`${t.rxFilterOfN || "SOURCE"} · ${Number(openFilter.score).toFixed(1)} / 5`}
+          nextLabel={t.pillPay || "PAY"}
           onNext={() => { setOpenFilterId(null); onNext?.(); }}
           onClose={() => setOpenFilterId(null)}
         >
