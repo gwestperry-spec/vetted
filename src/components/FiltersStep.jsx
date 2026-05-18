@@ -64,20 +64,30 @@ export default function FiltersStep({ t, lang, filters, setFilters, onBack, onNe
   const customFilters = filters.filter(f => !f.isCore);
 
   return (
-    <main id="main-content" aria-label="Filter weights" style={{ background: "var(--paper)", minHeight: "100%" }}>
+    <main id="main-content" aria-label="Filter weights" style={{
+      background: "var(--paper)",
+      minHeight: "100%",
+      // Push all content below the fixed header so it doesn't hide
+      // behind the VETTED wordmark / hamburger bar. Header occupies
+      // safe-area-inset-top + 14 + ~28 (line-height + bottom pad).
+      paddingTop: "calc(env(safe-area-inset-top, 0px) + 50px)",
+    }}>
 
-      {/* Header — sticky so the VETTED wordmark + hamburger stay
-          pinned to the top of the viewport while the page scrolls.
-          paddingTop pulls from the iOS safe-area inset so the bar sits
-          under the status bar without overlap. */}
+      {/* Header — position:fixed so it pins to the viewport top
+          regardless of where the page scrolls. Previous attempt used
+          position:sticky which is unreliable inside <main> on iOS
+          WebView. */}
       <header style={{
-        position: "sticky",
+        position: "fixed",
         top: 0,
-        zIndex: 10,
+        left: 0,
+        right: 0,
+        zIndex: 20,
         background: "var(--paper)",
+        borderBottom: "0.5px solid var(--border)",
         display: "flex", alignItems: "center", justifyContent: "space-between",
-        paddingTop: "calc(env(safe-area-inset-top, 0px) + 14px)",
-        paddingRight: 8, paddingBottom: 6, paddingLeft: 20,
+        paddingTop: "calc(env(safe-area-inset-top, 0px) + 12px)",
+        paddingRight: 8, paddingBottom: 8, paddingLeft: 20,
       }}>
         <div style={{ fontFamily: "var(--font-data)", fontSize: 11, letterSpacing: "0.18em", color: "var(--ink)", textTransform: "uppercase" }}>
           VETTED

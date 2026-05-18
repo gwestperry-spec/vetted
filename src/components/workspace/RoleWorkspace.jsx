@@ -401,25 +401,32 @@ export default function RoleWorkspace({
       // "Door not hallway" — bound the whole workspace to a single screen
       // height. Only the score-history container inside scrolls; the
       // headline, KPI tiles, pod, top match, and history header stay put.
+      // paddingTop reserves room for the fixed VETTED header above so
+      // content doesn't hide behind it.
       height: "100dvh",
+      paddingTop: "calc(env(safe-area-inset-top, 0px) + 50px)",
+      boxSizing: "border-box",
       display: "flex", flexDirection: "column", overflow: "hidden",
     }}>
 
       {/* ── HEADER ──────────────────────────────────────────────────────
-          Sticky + paper-filled so the VETTED wordmark + hamburger stay
-          pinned at the top of the viewport regardless of how anything
-          below scrolls. Top padding pulls from the iOS safe-area inset
-          so the bar sits cleanly under the status bar instead of being
-          covered by the notch. Same pattern as Filters tab. */}
+          Fixed + paper-filled so the VETTED wordmark + hamburger stay
+          pinned at the top of the viewport. Previously tried position:
+          sticky inside <main> but iOS WebView didn't honor it reliably.
+          Fixed is the known-good pattern. The 100dvh "door" main below
+          accounts for the header via paddingTop. */}
       <header style={{
-        position: "sticky",
+        position: "fixed",
         top: 0,
-        zIndex: 10,
+        left: 0,
+        right: 0,
+        zIndex: 20,
         background: "var(--paper)",
+        borderBottom: "0.5px solid var(--border)",
         flexShrink: 0,
         display: "flex", alignItems: "center", justifyContent: "space-between",
-        paddingTop: "calc(env(safe-area-inset-top, 0px) + 14px)",
-        paddingRight: 8, paddingBottom: 6, paddingLeft: 20,
+        paddingTop: "calc(env(safe-area-inset-top, 0px) + 12px)",
+        paddingRight: 8, paddingBottom: 8, paddingLeft: 20,
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <span
