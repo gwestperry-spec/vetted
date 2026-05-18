@@ -1917,6 +1917,17 @@ function NotifyTestButton({ authUser, t }) {
               FAILED: {status.stages.apns_failed ?? 0}
             </div>
           )}
+          {Array.isArray(status.devices) && status.devices.length > 0 && (
+            <div style={{ marginTop: 8, fontFamily: "var(--font-data)", fontSize: 10, color: "#5A6A5A", letterSpacing: "0.04em" }}>
+              {status.devices.map((d, i) => (
+                <div key={i} style={{ marginTop: 2 }}>
+                  …{d.token_tail} · {(d.env || "prod").toUpperCase()} · {String(d.status).toUpperCase()}
+                  {d.reason ? ` · ${d.reason}` : ""}
+                  {d.status_code ? ` (${d.status_code})` : ""}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>

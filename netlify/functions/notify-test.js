@@ -130,9 +130,18 @@ export default async function handler(req) {
     ? APNS_KEY
     : Buffer.from(APNS_KEY, "base64").toString("utf8");
 
-  const provider = new apn.Provider({
+  // Two providers — one for production APNs, one for sandbox/development.
+  // TestFlight + App Store builds produce production tokens; Xcode-built
+  // debug installs produce sandbox tokens. We try production first; on
+  // BadDeviceToken (the classic env-mismatch reason) we retry against
+  // sandbox automatically and report whichever endpoint actually worked.
+  const providerProd = new apn.Provider({
     token: { key: apnsKeyPem, keyId: APNS_KEY_ID, teamId: APNS_TEAM_ID },
     production: true,
+  });
+  const providerDev = new apn.Provider({
+    token: { key: apnsKeyPem, keyId: APNS_KEY_ID, teamId: APNS_TEAM_ID },
+    production: false,
   });
 
   for (const row of rows) {
@@ -146,34 +155,48 @@ export default async function handler(req) {
     note.payload = { kind: "diagnostic" };
     note.topic   = APNS_BUNDLE_ID;
 
+    let attempt = await tryProvider(providerProd, note, row.token, "production");
+    if (attempt.status === "failed" && attempt.reason === "BadDeviceToken") {
+      // Likely a sandbox token (Xcode-debug build) being sent to prod.
+      // Retry against the development endpoint; record which one worked.
+      const retry = await tryProvider(providerDev, note, row.token, "development");
+      if (retry.status === "sent") {
+        stages.apns_sent += 1;
+        devices.push(retry);
+        continue;
+      }
+      // Both failed — surface the production reason since it's the
+      // canonical environment.
+    }
+    if (attempt.status === "sent") stages.apns_sent += 1;
+    else                            stages.apns_failed += 1;
+    devices.push(attempt);
+  }
+
+  async function tryProvider(provider, note, token, env) {
     try {
-      const result = await provider.send(note, row.token);
+      const result = await provider.send(note, token);
       const sent   = result.sent?.length || 0;
       const failed = result.failed || [];
-      if (sent > 0) stages.apns_sent += sent;
-      if (failed.length) {
-        stages.apns_failed += failed.length;
-        devices.push({
-          token_tail: row.token.slice(-8),
-          platform:   row.platform,
-          status:     "failed",
-          reason:     failed[0]?.response?.reason || "unknown",
-        });
-      } else {
-        devices.push({
-          token_tail: row.token.slice(-8),
-          platform:   row.platform,
-          status:     "sent",
-        });
+      if (sent > 0) {
+        return { token_tail: token.slice(-8), platform: "ios", status: "sent", env };
       }
+      return {
+        token_tail: token.slice(-8),
+        platform:   "ios",
+        status:     "failed",
+        env,
+        reason:     failed[0]?.response?.reason || "unknown",
+        status_code: failed[0]?.status,
+      };
     } catch (err) {
-      stages.apns_failed += 1;
-      devices.push({
-        token_tail: row.token.slice(-8),
-        platform:   row.platform,
+      return {
+        token_tail: token.slice(-8),
+        platform:   "ios",
         status:     "error",
+        env,
         reason:     err.message,
-      });
+      };
     }
   }
 
