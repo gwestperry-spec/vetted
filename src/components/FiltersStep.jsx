@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { resolveLang } from "../utils/langUtils.js";
 import { sanitizeText, MAX_SHORT, MAX_LONG } from "../utils/sanitize.js";
 import FrameworkPicker from "./FrameworkPicker.jsx";
@@ -73,35 +74,40 @@ export default function FiltersStep({ t, lang, filters, setFilters, onBack, onNe
       paddingTop: "calc(env(safe-area-inset-top, 0px) + 50px)",
     }}>
 
-      {/* Header — position:fixed so it pins to the viewport top
-          regardless of where the page scrolls. Previous attempt used
-          position:sticky which is unreliable inside <main> on iOS
-          WebView. */}
-      <header style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        zIndex: 20,
-        background: "var(--paper)",
-        borderBottom: "0.5px solid var(--border)",
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        paddingTop: "calc(env(safe-area-inset-top, 0px) + 12px)",
-        paddingRight: 8, paddingBottom: 8, paddingLeft: 20,
-      }}>
-        <div style={{ fontFamily: "var(--font-data)", fontSize: 11, letterSpacing: "0.18em", color: "var(--ink)", textTransform: "uppercase" }}>
-          VETTED
-        </div>
-        {onOpenMenu && (
-          <button onClick={onOpenMenu} aria-label="Open menu" style={{ width: 44, height: 44, display: "inline-flex", alignItems: "center", justifyContent: "center", background: "transparent", border: "none", cursor: "pointer", color: "var(--ink)", padding: 0 }}>
-            <svg width="20" height="20" viewBox="0 0 22 22" fill="none">
-              <line x1="3.5" y1="7"  x2="18.5" y2="7"  stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
-              <line x1="3.5" y1="11" x2="18.5" y2="11" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
-              <line x1="3.5" y1="15" x2="18.5" y2="15" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
-            </svg>
-          </button>
-        )}
-      </header>
+      {/* Header — portal-rendered onto document.body. iOS WebView is
+          unreliable with both `position: sticky` and `position: fixed`
+          on elements inside #root's centered + bordered column. Portal
+          puts the header at the document root where fixed reliably
+          pins to the viewport. Same defensive pattern as Workspace,
+          ScoringScreen, etc. */}
+      {typeof document !== "undefined" && createPortal(
+        <header style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 50,
+          background: "var(--paper)",
+          borderBottom: "0.5px solid var(--border)",
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          paddingTop: "calc(env(safe-area-inset-top, 0px) + 12px)",
+          paddingRight: 8, paddingBottom: 8, paddingLeft: 20,
+        }}>
+          <div style={{ fontFamily: "var(--font-data)", fontSize: 11, letterSpacing: "0.18em", color: "var(--ink)", textTransform: "uppercase" }}>
+            VETTED
+          </div>
+          {onOpenMenu && (
+            <button onClick={onOpenMenu} aria-label="Open menu" style={{ width: 44, height: 44, display: "inline-flex", alignItems: "center", justifyContent: "center", background: "transparent", border: "none", cursor: "pointer", color: "var(--ink)", padding: 0 }}>
+              <svg width="20" height="20" viewBox="0 0 22 22" fill="none">
+                <line x1="3.5" y1="7"  x2="18.5" y2="7"  stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+                <line x1="3.5" y1="11" x2="18.5" y2="11" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+                <line x1="3.5" y1="15" x2="18.5" y2="15" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+              </svg>
+            </button>
+          )}
+        </header>,
+        document.body
+      )}
 
       {/* Title block */}
       <div style={{ padding: "14px 20px 20px" }}>

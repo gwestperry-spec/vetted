@@ -4,6 +4,7 @@
 // MarketPulse (Vantage), Today, In Progress (applied), Active, Archived.
 
 import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import RoleCard from "./RoleCard.jsx";
 import CompareQueue from "./CompareQueue.jsx";
 import WorkspaceEmptyState from "./WorkspaceEmptyState.jsx";
@@ -410,43 +411,47 @@ export default function RoleWorkspace({
     }}>
 
       {/* ── HEADER ──────────────────────────────────────────────────────
-          Fixed + paper-filled so the VETTED wordmark + hamburger stay
-          pinned at the top of the viewport. Previously tried position:
-          sticky inside <main> but iOS WebView didn't honor it reliably.
-          Fixed is the known-good pattern. The 100dvh "door" main below
-          accounts for the header via paddingTop. */}
-      <header style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        zIndex: 20,
-        background: "var(--paper)",
-        borderBottom: "0.5px solid var(--border)",
-        flexShrink: 0,
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        paddingTop: "calc(env(safe-area-inset-top, 0px) + 12px)",
-        paddingRight: 8, paddingBottom: 8, paddingLeft: 20,
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span
-            onClick={handleDevTap}
-            style={{ fontFamily: "var(--font-data)", fontSize: 11, letterSpacing: "0.18em", color: "var(--ink)", textTransform: "uppercase", userSelect: "none", cursor: "default" }}
-          >VETTED</span>
-          {devTierOverride && (
-            <span style={{ fontFamily: "var(--font-data)", fontSize: 9, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase", background: "#e74c3c", color: "#fff", padding: "1px 5px", borderRadius: 20 }}>DEV</span>
+          Portal-rendered onto document.body so the fixed top bar
+          escapes #root's centered column / border on iOS WebView.
+          createPortal places it at the document root, where position:
+          fixed reliably pins to the viewport regardless of any
+          ancestor's overflow / transform / containing-block quirks.
+          Same defensive pattern as ScoringScreen, ResolveHub,
+          ProfileLanding, ScoreEntryV2. */}
+      {typeof document !== "undefined" && createPortal(
+        <header style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 50,
+          background: "var(--paper)",
+          borderBottom: "0.5px solid var(--border)",
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          paddingTop: "calc(env(safe-area-inset-top, 0px) + 12px)",
+          paddingRight: 8, paddingBottom: 8, paddingLeft: 20,
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span
+              onClick={handleDevTap}
+              style={{ fontFamily: "var(--font-data)", fontSize: 11, letterSpacing: "0.18em", color: "var(--ink)", textTransform: "uppercase", userSelect: "none", cursor: "default" }}
+            >VETTED</span>
+            {devTierOverride && (
+              <span style={{ fontFamily: "var(--font-data)", fontSize: 9, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase", background: "#e74c3c", color: "#fff", padding: "1px 5px", borderRadius: 20 }}>DEV</span>
+            )}
+          </div>
+          {onOpenMenu && (
+            <button onClick={onOpenMenu} aria-label="Open menu" style={{ width: 44, height: 44, display: "inline-flex", alignItems: "center", justifyContent: "center", background: "transparent", border: "none", cursor: "pointer", color: "var(--ink)", WebkitTapHighlightColor: "transparent" }}>
+              <svg width="20" height="20" viewBox="0 0 22 22" fill="none">
+                <line x1="3.5" y1="7"  x2="18.5" y2="7"  stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+                <line x1="3.5" y1="11" x2="18.5" y2="11" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+                <line x1="3.5" y1="15" x2="18.5" y2="15" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+              </svg>
+            </button>
           )}
-        </div>
-        {onOpenMenu && (
-          <button onClick={onOpenMenu} aria-label="Open menu" style={{ width: 44, height: 44, display: "inline-flex", alignItems: "center", justifyContent: "center", background: "transparent", border: "none", cursor: "pointer", color: "var(--ink)", WebkitTapHighlightColor: "transparent" }}>
-            <svg width="20" height="20" viewBox="0 0 22 22" fill="none">
-              <line x1="3.5" y1="7"  x2="18.5" y2="7"  stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
-              <line x1="3.5" y1="11" x2="18.5" y2="11" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
-              <line x1="3.5" y1="15" x2="18.5" y2="15" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
-            </svg>
-          </button>
-        )}
-      </header>
+        </header>,
+        document.body
+      )}
 
       {/* ── Workspace door ───────────────────────────────────────────────
           Flex column that fills the screen. Header sticks to the top,
