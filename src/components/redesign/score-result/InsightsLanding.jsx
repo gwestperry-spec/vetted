@@ -103,7 +103,7 @@ export default function InsightsLanding({ opp, onBack, onNext, t = {} }) {
   const SECTIONS = buildSections(t);
 
   return (
-    <div style={{
+    <div className="no-scrollbar" style={{
       width: "100%", height: "100dvh", background: "var(--paper)",
       paddingTop: 56,
       display: "flex", flexDirection: "column", overflow: "hidden",
@@ -124,7 +124,7 @@ export default function InsightsLanding({ opp, onBack, onNext, t = {} }) {
         }}>{t.rxFourSections || "FOUR SECTIONS"}</div>
       </div>
 
-      <div style={{
+      <div className="no-scrollbar" style={{
         flex: 1, padding: "16px 20px 0", minHeight: 0, overflowY: "auto",
         display: "flex", flexDirection: "column", gap: 10,
       }}>

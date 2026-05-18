@@ -21,10 +21,10 @@ export default function CoachLanding({ opp, profile, onBack, onDraftCoverLetter,
   const [openTile, setOpenTile] = useState(null);
 
   return (
-    <div style={{
+    <div className="no-scrollbar" style={{
       width: "100%", height: "100dvh", background: "var(--paper)",
       paddingTop: 56,
-      display: "flex", flexDirection: "column",
+      display: "flex", flexDirection: "column", overflow: "hidden",
     }}>
       <TopBar title={t.pillCoach || "COACH"} backLabel="VQ" onBack={onBack} />
 

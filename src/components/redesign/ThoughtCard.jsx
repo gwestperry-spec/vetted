@@ -131,7 +131,7 @@ export default function ThoughtCard({
         </div>
 
         {/* Scrollable body */}
-        <div style={{
+        <div className="no-scrollbar" style={{
           flex: 1,
           overflowY: "auto",
           overflowX: "hidden",

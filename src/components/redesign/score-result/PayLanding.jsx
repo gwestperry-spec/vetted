@@ -33,10 +33,10 @@ export default function PayLanding({ opp, profile, onBack, onNext, t = {} }) {
     : (t.rangeNotDisclosed || "Range not disclosed.");
 
   return (
-    <div style={{
+    <div className="no-scrollbar" style={{
       width: "100%", height: "100dvh", background: "var(--paper)",
       paddingTop: 56,
-      display: "flex", flexDirection: "column",
+      display: "flex", flexDirection: "column", overflow: "hidden",
     }}>
       <TopBar title={t.pillPay || "PAY"} backLabel="VQ" onBack={onBack} />
 

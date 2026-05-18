@@ -60,7 +60,7 @@ export default function FiltersLanding({ opp, filters, onBack, onNext, t = {} })
     : null;
 
   return (
-    <div style={{
+    <div className="no-scrollbar" style={{
       width: "100%", height: "100dvh", background: "var(--paper)",
       paddingTop: 56,
       display: "flex", flexDirection: "column", overflow: "hidden",
@@ -81,7 +81,7 @@ export default function FiltersLanding({ opp, filters, onBack, onNext, t = {} })
         }}>{scored.length} {scored.length === 1 ? (t.rxFilterOfN || "FILTER") : (t.rxFiltersOfN || "FILTERS")}</div>
       </div>
 
-      <div style={{
+      <div className="no-scrollbar" style={{
         flex: 1, padding: "16px 20px 12px", minHeight: 0, overflowY: "auto",
         display: "flex", flexDirection: "column", gap: 8,
       }}>
