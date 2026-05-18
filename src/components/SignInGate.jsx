@@ -1,5 +1,4 @@
 import { ENDPOINTS } from "../config.js";
-import LangSwitcher from "./LangSwitcher.jsx";
 import VerdictSeal from "./redesign/VerdictSeal.jsx";
 
 // ─── Error guidance map ───────────────────────────────────────────────────────
@@ -149,9 +148,8 @@ export default function SignInGate({ t, lang, setLang, onSignIn, onGitHubSignIn,
         marginBottom: 32,
       }}>Score every opportunity against what actually matters to you.</p>
 
-      <div style={{ marginBottom: 28 }}>
-        <LangSwitcher lang={lang} setLang={setLang} />
-      </div>
+      {/* Language switcher moved to the in-app menu (hamburger →
+          Settings tab). Sign-in stays single-purpose. */}
 
       {/* ── Error state with actionable guidance ── */}
       {guidance && (

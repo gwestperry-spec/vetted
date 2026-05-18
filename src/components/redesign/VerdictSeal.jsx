@@ -61,9 +61,9 @@ export default function VerdictSeal({
   // as "PASPURSUE" on the wire. Use em-spaces (U+2003), which the renderer
   // can't collapse, plus a diamond separator that survives heavy letter-
   // spacing. xml:space="preserve" belt-and-suspenders the whitespace.
-  const SEP = "    "; // four em-spaces ≈ one wide gap
+  const SEP = " "; // one em-space (U+2003, non-collapsible)
   const outerText = `PURSUE${SEP}◆${SEP}MONITOR${SEP}◆${SEP}PASS${SEP}◆${SEP}`;
-  const repeated = outerText.repeat(3); // enough to fill the circle
+  const repeated = outerText.repeat(2); // enough to fill the circle
 
   return (
     <div style={{
