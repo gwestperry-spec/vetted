@@ -3,7 +3,7 @@
 // Contains: inline scoring, Top Matches carousel, Intelligence strip,
 // MarketPulse (Vantage), Today, In Progress (applied), Active, Archived.
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import RoleCard from "./RoleCard.jsx";
 import CompareQueue from "./CompareQueue.jsx";
 import WorkspaceEmptyState from "./WorkspaceEmptyState.jsx";
@@ -13,7 +13,7 @@ import MarketPulseCard from "../MarketPulse.jsx";
 import { ScoringProgress as ScoringProgressComponent } from "../VQLoadingScreen.jsx";
 import { ENDPOINTS } from "../../config.js";
 import CoachMark from "../CoachMark.jsx";
-// VQAdvocateCard import removed Build 30 — replaced by Insights pod (forthcoming).
+import BehavioralInsightsPod from "../redesign/insights/BehavioralInsightsPod.jsx";
 
 // ── URL helpers (mirrors Dashboard.jsx) ────────────────────────────────────
 const MAX_JD  = 12000;
@@ -203,6 +203,38 @@ export default function RoleWorkspace({
   );
   const archivedRoles = workspaceRoles.filter(r => r.status === "archived");
 
+  // ── Behavioral Insights pod data fetch ────────────────────────────────────
+  // POSTs to /.netlify/functions/behavioral-insights with the user's filter
+  // framework. Re-fetches whenever workspaceRoles count changes (a new score
+  // landed). Eligibility = ≥ 5 scored roles; empty state otherwise.
+  const [insightsData, setInsightsData] = useState(null);
+  const [insightsLoading, setInsightsLoading] = useState(false);
+  const scoredCount = workspaceRoles.filter((r) => r.vq_score != null).length;
+
+  useEffect(() => {
+    if (!authUser?.id) return;
+    if (scoredCount < 5) {
+      setInsightsData({ eligible: false });
+      return;
+    }
+    let cancelled = false;
+    setInsightsLoading(true);
+    fetch(ENDPOINTS.behavioralInsights, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        appleId:      authUser.id,
+        sessionToken: authUser.sessionToken || "",
+        filters,
+      }),
+    })
+      .then((res) => res.ok ? res.json() : null)
+      .then((data) => { if (!cancelled && data) setInsightsData(data); })
+      .catch((err) => { if (!cancelled) console.warn("[insights] fetch failed:", err); })
+      .finally(() => { if (!cancelled) setInsightsLoading(false); });
+    return () => { cancelled = true; };
+  }, [authUser?.id, scoredCount]);
+
   // ── Top Matches carousel (top 5 scored non-archived/queued roles) ─────────
   const scoredRoles = workspaceRoles
     .filter(r => r.vq_score != null && r.status !== "archived" && r.status !== "queued")
@@ -389,9 +421,19 @@ export default function RoleWorkspace({
           <WsKpiTile value={profile.threshold ? String(profile.threshold) : "—"} label={t?.wsThreshold || "THRESHOLD"} color="var(--gold)" />
         </div>
 
-        {/* VQAdvocateCard removed Build 30 — the new Insights pod with
-            swipeable cards (Floor Margin · Filter Signal · Preference
-            Drift · Synthesis) will render here in a follow-up commit. */}
+        {/* Behavioral Insights pod — 4 swipeable cards. Replaces the legacy
+            VQAdvocateCard banner. Fetches from /behavioral-insights and
+            handles loading / empty / populated states internally. CTAs
+            route to existing destinations (profile edit, filter editor,
+            workspace pipeline). */}
+        <BehavioralInsightsPod
+          data={insightsData}
+          loading={insightsLoading}
+          onEditFloor={() => onEditProfile?.("compensationMin")}
+          onAdjustWeight={() => onEditFilters?.()}
+          onEditPreferences={() => onEditProfile?.("locationPrefs")}
+          onOpenPipeline={() => { /* already on workspace; no-op for now */ }}
+        />
 
         {/* Hero card — top match */}
         {scoredRoles[0] && (
