@@ -34,6 +34,7 @@ import HamburgerSheet, { HamburgerButton } from "./components/HamburgerSheet.jsx
 import MarketPulseCard from "./components/MarketPulse.jsx";
 import MarketPulseV2 from "./components/redesign/market/MarketPulseV2.jsx";
 import ScoreEntry from "./components/ScoreEntry.jsx";
+import ScoreEntryV2 from "./components/redesign/score/ScoreEntryV2.jsx";
 // VQAdvocate component removed Build 30. Behavioral patterns now surface
 // inline via the Insights pod on the Workspace tab — no standalone screen.
 import { COUNTRY_MAP } from "./data/countries.js";
@@ -1193,20 +1194,25 @@ export default function App() {
 
             {/* Tab content */}
             {activeTab === "score" && (
-              <ScoreEntry
-                onScore={(jd, url) => {
-                  scoreOpportunity(jd, url);
-                  setActiveTab("workspace");
-                  setStep("workspace");
-                }}
-                loading={loading}
-                workspaceRoles={workspaceRoles}
-                onOpenMenu={() => setMenuOpen(true)}
-                authUser={authUser}
-                prefill={scorePrefill}
-                onPrefillConsumed={() => setScorePrefill(null)}
-                t={t}
-              />
+              // Build-30 redesign: single-purpose entry surface. The
+              // legacy ScoreEntry's THIS WEEK KPI strip + Pursue cohort
+              // are intentionally removed — history is Workspace's job,
+              // cohort is Pulse's. Same scoring trigger contract.
+              <div style={{ position: "relative", height: "100dvh", overflow: "hidden" }}>
+                <ScoreEntryV2
+                  onScore={(jd, url) => {
+                    scoreOpportunity(jd, url);
+                    setActiveTab("workspace");
+                    setStep("workspace");
+                  }}
+                  loading={loading}
+                  onOpenMenu={() => setMenuOpen(true)}
+                  authUser={authUser}
+                  prefill={scorePrefill}
+                  onPrefillConsumed={() => setScorePrefill(null)}
+                  t={t}
+                />
+              </div>
             )}
             {activeTab === "workspace" && (
               <RoleWorkspace
