@@ -1772,3 +1772,13 @@ Optional env var `APNS_FORCE_SANDBOX=1` flips the order (sandbox first) for debu
 **Lesson:** When two components render "the same thing" but read differently, the gap is rarely the component itself once the props match — it's the parent's chrome, padding, or background. Audit the surrounding layout, not just the renderable.
 **Files:** `src/components/SignInGate.jsx`
 **Commit:** b0e700f
+
+## Error 157 — SignInGate forest stopped at #root border, not edge-to-edge
+**Build:** Discovered May 18, 2026 after Error 156's full-bleed-forest fix.
+**Side:** `src/components/SignInGate.jsx`.
+**Symptom:** Sign-in gate had the forest backdrop applied via CSS, but the gradient stopped well short of the screen edges — paper-colored bands above the status bar and below the home indicator, and a 1px hairline border on each side. The forest looked like a rectangular panel on a paper page, not the immersive forest the scoring / hub / profile surfaces present.
+**Root cause:** Recurrence of the same containing-block pattern documented in Errors 146, 148, 152. `#root` is `width: 1126px; max-width: 100%; min-height: 100svh; display: flex; flex-direction: column; border-inline: 1px solid var(--border)` and the document body fills paper. Applying a forest gradient to a child of #root only fills the child's box — not the iOS safe area, not the #root border, not the body fill above/below.
+**Fix:** Portal-rendered SignInGate onto document.body via `createPortal`, position: fixed, 100vw × 100dvh, z-index 30. The forest gradient now bleeds under the notch + home indicator + #root border — same pattern that fixed ScoringScreen, ResolveHub, ProfileLanding, and ScoreEntryV2.
+**Lesson:** Re-confirmed: any forest-backdrop screen must portal to document.body. CSS-only `position: fixed` inside #root never escapes the column. This is now a standing rule for any new dark surface.
+**Files:** `src/components/SignInGate.jsx`
+**Commit:** f69dbba
