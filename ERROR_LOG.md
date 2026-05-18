@@ -1782,3 +1782,13 @@ Optional env var `APNS_FORCE_SANDBOX=1` flips the order (sandbox first) for debu
 **Lesson:** Re-confirmed: any forest-backdrop screen must portal to document.body. CSS-only `position: fixed` inside #root never escapes the column. This is now a standing rule for any new dark surface.
 **Files:** `src/components/SignInGate.jsx`
 **Commit:** f69dbba
+
+## Error 158 — Visible scroll bars on all four VQ landings (Insights / Filters / Coach / Pay)
+**Build:** Discovered May 18, 2026 during Build-30 hub navigation testing.
+**Side:** All four redesign landings + ThoughtCard overlay.
+**Symptom:** Tapping into any of the four READ DEEPER pills from the Resolve hub showed a visible scroll bar / thin track on the landing — even when the content fit within the viewport with no functional need to scroll.
+**Root cause:** Two contributors. (1) Insights and Filters genuinely have `overflowY: auto` on their tile-list containers (Filters can have up to 10 tiles), so iOS WebView draws a track when those are present. (2) Coach and Pay don't have explicit overflow but the outer flex column was permissive enough that the WebView still showed a scroll affordance. Default browser styles always show scroll bars on scrollable regions; we never opted out.
+**Fix:** Added a global `.no-scrollbar` utility class to index.css with the three cross-browser scrollbar-hiding rules (Firefox `scrollbar-width`, WebKit `::-webkit-scrollbar`, IE/Edge legacy `-ms-overflow-style`). Applied to the outer wrapper of all four landings, the inner tile-list scroller on Insights + Filters, and the ThoughtCard's scrollable body. Coach + Pay also gained explicit `overflow: hidden` on the outer wrapper to match Insights/Filters. Scrolling still works on the tile lists where needed — the track just doesn't draw.
+**Lesson:** Any auto/scroll region in the editorial redesign should default to the `.no-scrollbar` utility. The design vocabulary doesn't permit chrome scroll bars on paper or forest surfaces.
+**Files:** `src/index.css`, `src/components/redesign/score-result/{InsightsLanding,FiltersLanding,CoachLanding,PayLanding}.jsx`, `src/components/redesign/ThoughtCard.jsx`
+**Commit:** 4cc4dae
