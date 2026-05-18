@@ -36,17 +36,36 @@ export default function FrameworkPicker({ t = {}, lang = "en", onApply, onSkip }
         </p>
       </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      {/* Horizontal scroll carousel — each template is a fixed-width
+          card the user pages through with a swipe. Negative side-margin
+          + per-card padding lets the row bleed to the screen edges
+          without breaking the page gutter. */}
+      <div
+        className="no-scrollbar"
+        style={{
+          display: "flex",
+          gap: 10,
+          overflowX: "auto",
+          overflowY: "hidden",
+          scrollSnapType: "x mandatory",
+          WebkitOverflowScrolling: "touch",
+          padding: "2px 20px 4px",
+          margin: "0 -20px",
+        }}
+      >
         {FRAMEWORK_TEMPLATES.map((tpl) => (
           <button
             key={tpl.id}
             onClick={() => onApply?.(tpl)}
             style={{
+              flex: "0 0 78%",
+              maxWidth: 320,
+              scrollSnapAlign: "start",
               textAlign: "left",
               background: "var(--cream)",
               border: "0.5px solid var(--border)",
               borderRadius: 10,
-              padding: "12px 14px",
+              padding: "14px 16px",
               cursor: "pointer",
               WebkitTapHighlightColor: "transparent",
               transition: "border-color 180ms ease, background 180ms ease",

@@ -1469,14 +1469,17 @@ function MarketTab({ t, profile, authUser, userTier, opportunities, currency, sa
 }
 
 function FiltersTab({ t, lang, filters, setFilters, userTier, onUpgrade, onSave, onOpenMenu }) {
+  // FiltersStep renders its own VETTED + hamburger header internally,
+  // so we don't wrap it in TabHeader here (would duplicate the wordmark
+  // with awkward empty space between the two).
   return (
     <div style={{ background: "var(--paper)", minHeight: "100%" }}>
-      <TabHeader onOpenMenu={onOpenMenu} />
       <FiltersStep
         t={t} lang={lang} filters={filters} setFilters={setFilters}
         userTier={userTier} onUpgrade={onUpgrade}
         onBack={null}
         onNext={onSave}
+        onOpenMenu={onOpenMenu}
       />
     </div>
   );

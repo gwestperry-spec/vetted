@@ -110,15 +110,41 @@ export default function FiltersStep({ t, lang, filters, setFilters, onBack, onNe
           </div>
         )}
 
-        {/* CORE section */}
+        {/* CORE section — horizontal scroll carousel, one card per filter.
+            Each card is bounded so the row can bleed off-screen to the
+            right while the user pages through with a swipe. */}
         <FfSection title={t.coreFilters?.toUpperCase() || "CORE"} hint={String(coreFilters.length)} first />
-        <div style={{ padding: "0 20px" }}>
-          {coreFilters.map((f, i) => (
-            <FfFilterCard
-              key={f.id} f={f} fn={fn} t={t}
-              isLast={i === coreFilters.length - 1}
-              onWeight={w => updateWeight(f.id, w)}
-            />
+        <div
+          className="no-scrollbar"
+          style={{
+            display: "flex",
+            gap: 10,
+            overflowX: "auto",
+            overflowY: "hidden",
+            scrollSnapType: "x mandatory",
+            WebkitOverflowScrolling: "touch",
+            padding: "2px 20px 16px",
+          }}
+        >
+          {coreFilters.map((f) => (
+            <div
+              key={f.id}
+              style={{
+                flex: "0 0 78%",
+                maxWidth: 320,
+                scrollSnapAlign: "start",
+                background: "var(--cream)",
+                border: "0.5px solid var(--border)",
+                borderRadius: 10,
+                padding: "4px 14px 8px",
+              }}
+            >
+              <FfFilterCard
+                f={f} fn={fn} t={t}
+                isLast={true}
+                onWeight={w => updateWeight(f.id, w)}
+              />
+            </div>
           ))}
         </div>
 
