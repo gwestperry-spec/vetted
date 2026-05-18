@@ -1,5 +1,6 @@
 import { ENDPOINTS } from "../config.js";
 import LangSwitcher from "./LangSwitcher.jsx";
+import VerdictSeal from "./redesign/VerdictSeal.jsx";
 
 // ─── Error guidance map ───────────────────────────────────────────────────────
 // Specific, actionable recovery steps per error type.
@@ -75,7 +76,7 @@ export default function SignInGate({ t, lang, setLang, onSignIn, onGitHubSignIn,
     <div style={{
       maxWidth: 480,
       margin: "0 auto",
-      paddingTop: 60,
+      paddingTop: 48,
       paddingBottom: 48,
       paddingLeft: 24,
       paddingRight: 24,
@@ -85,6 +86,28 @@ export default function SignInGate({ t, lang, setLang, onSignIn, onGitHubSignIn,
       flexDirection: "column",
       alignItems: "center",
     }}>
+      {/* ── Verdict seal — rotating hairlines on a forest disk. Same
+          mark the user sees during scoring + on the resolve hub, so the
+          sign-in opens with the brand mark in motion. ── */}
+      <div style={{
+        position: "relative",
+        width: 168, height: 168,
+        marginBottom: 24,
+        borderRadius: "50%",
+        overflow: "hidden",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        background:
+          "radial-gradient(130% 90% at 50% 40%, #1F3520 0%, #152715 55%, #0F1F0F 100%)",
+        boxShadow: "0 1px 0 rgba(255,255,255,0.5), 0 8px 24px rgba(15,31,15,0.18)",
+      }}>
+        <div style={{
+          position: "absolute", inset: 0,
+          background: "radial-gradient(circle at 50% 40%, rgba(251,191,36,0.10) 0%, rgba(251,191,36,0.04) 35%, transparent 65%)",
+          pointerEvents: "none",
+        }}/>
+        <VerdictSeal size={158} paused={false} outerSpeed={10} innerSpeed={7} opacity={0.95}/>
+      </div>
+
       {/* ── Brand name ── */}
       <h1 style={{
         fontFamily: "var(--font-display)",
