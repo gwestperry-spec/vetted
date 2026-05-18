@@ -14,6 +14,7 @@ import { ScoringProgress as ScoringProgressComponent } from "../VQLoadingScreen.
 import { ENDPOINTS } from "../../config.js";
 import CoachMark from "../CoachMark.jsx";
 import BehavioralInsightsPod from "../redesign/insights/BehavioralInsightsPod.jsx";
+import TimeRangeChip, { TIME_RANGES } from "../redesign/TimeRangeChip.jsx";
 
 // ── URL helpers (mirrors Dashboard.jsx) ────────────────────────────────────
 const MAX_JD  = 12000;
@@ -202,6 +203,19 @@ export default function RoleWorkspace({
     !todayRoles.find(t => t.role_id === r.role_id)
   );
   const archivedRoles = workspaceRoles.filter(r => r.status === "archived");
+
+  // ── Time-range filter (Build-30 redesign) ─────────────────────────────────
+  // Default 14d matches the design spec. Affects which roles appear in the
+  // workspace lists; pod insights are unaffected (they always run 30-day
+  // server-side aggregation regardless of the chip).
+  const [timeRange, setTimeRange] = useState("14d");
+  const timeRangeDays = TIME_RANGES.find((r) => r.key === timeRange)?.days ?? null;
+  const inRange = (r) => {
+    if (timeRangeDays == null) return true;
+    if (!r.created_at) return true;
+    const age = (Date.now() - new Date(r.created_at).getTime()) / (24 * 60 * 60 * 1000);
+    return age <= timeRangeDays;
+  };
 
   // ── Behavioral Insights pod data fetch ────────────────────────────────────
   // POSTs to /.netlify/functions/behavioral-insights with the user's filter
@@ -404,12 +418,26 @@ export default function RoleWorkspace({
       {/* ── Scrollable body ──────────────────────────────────────────────── */}
       <div style={{ paddingBottom: 100 }}>
 
-        {/* Title block */}
+        {/* Title block — Build-30 redesign typography + time-range chip */}
         <div style={{ padding: "14px 20px 18px" }}>
-          <p style={{ fontFamily: "var(--font-data)", fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--muted)", marginBottom: 10 }}>
-            {(t?.workspaceTitle || "Workspace").toUpperCase()}{firstName ? ` · ${firstName.toUpperCase()}` : ""}
-          </p>
-          <h1 style={{ fontFamily: "var(--font-display)", fontSize: 26, fontWeight: 700, color: "var(--ink)", lineHeight: 1.18, margin: 0, letterSpacing: "-0.005em" }}>
+          <div style={{
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            gap: 10, marginBottom: 10,
+          }}>
+            <p style={{
+              fontFamily: "var(--font-serif)", fontSize: 9, fontWeight: 700,
+              letterSpacing: "0.22em", textTransform: "uppercase",
+              color: "var(--muted-soft)", margin: 0,
+            }}>
+              {(t?.workspaceTitle || "Workspace").toUpperCase()}{firstName ? ` · ${firstName.toUpperCase()}` : ""}
+            </p>
+            <TimeRangeChip value={timeRange} onChange={setTimeRange} />
+          </div>
+          <h1 style={{
+            fontFamily: "var(--font-serif)", fontSize: 24, fontWeight: 700,
+            color: "var(--ink)", lineHeight: 1.15, margin: 0,
+            letterSpacing: "-0.02em",
+          }}>
             {headline}
           </h1>
         </div>

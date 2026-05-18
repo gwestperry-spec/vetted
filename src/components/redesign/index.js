@@ -13,3 +13,4 @@ export { default as NextPrompt } from "./NextPrompt.jsx";
 export { default as ThoughtCard } from "./ThoughtCard.jsx";
 export { default as Pod } from "./Pod.jsx";
 export { default as VerdictSeal } from "./VerdictSeal.jsx";
+export { default as TimeRangeChip, TIME_RANGES } from "./TimeRangeChip.jsx";
