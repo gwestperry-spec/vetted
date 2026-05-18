@@ -23,7 +23,7 @@ function getNotifPrefs() {
   try { return JSON.parse(localStorage.getItem(NOTIF_PREFS_KEY) || "{}"); } catch { return {}; }
 }
 
-export function usePushNotifications({ authUser, lang, enabled, onOpenRole }) {
+export function usePushNotifications({ authUser, lang, enabled, onOpenRole, onOpenPattern }) {
   const registered = useRef(false);
   const lastLang   = useRef(null);
 
@@ -152,6 +152,12 @@ export function usePushNotifications({ authUser, lang, enabled, onOpenRole }) {
       // Deep-link handler — notification tapped while app is open or from cold launch
       const tapListener = await Push.addListener("pushNotificationActionPerformed", (action) => {
         const data = action.notification?.data || {};
+        // Build-30: pattern notifications deep-link to the Workspace tab so
+        // the user lands on the Insights pod with the new pattern surfaced.
+        if (data.kind === "pattern" && onOpenPattern) {
+          onOpenPattern(data.patternId || null);
+          return;
+        }
         if (data.roleId && onOpenRole) {
           onOpenRole(data.roleId);
         }

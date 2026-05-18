@@ -264,6 +264,12 @@ export default function App() {
         setStep("workspace");
       }
     },
+    // Build-30: pattern-tier pushes (HEADWIND) deep-link to the Workspace
+    // tab so the Insights pod surfaces with the new pattern visible.
+    onOpenPattern: () => {
+      setActiveTab("workspace");
+      setStep("workspace");
+    },
   });
 
   // ── App Store review prompt ───────────────────────────────────────────────
