@@ -1802,3 +1802,13 @@ Optional env var `APNS_FORCE_SANDBOX=1` flips the order (sandbox first) for debu
 **Lesson:** Diagnostic UIs that swallow per-row failure detail are worse than no UI — they create the illusion of debugging info while hiding the only data that would let the user act. Pattern: whenever a function returns an array of per-item results, render the array, not just the summary.
 **Files:** `netlify/functions/notify-test.js`, `src/App.jsx`
 **Commit:** 51bd65d
+
+## Error 160 — Filters tab rendered "VETTED" wordmark twice + vertical-only layouts
+**Build:** Discovered May 18, 2026 during Build-30 Filters tab review.
+**Side:** `src/App.jsx` (FiltersTab wrapper), `src/components/FiltersStep.jsx`, `src/components/FrameworkPicker.jsx`.
+**Symptom:** The Filters tab opened with the "VETTED" wordmark twice — once as a TabHeader at the top, then again about 80pt below as FiltersStep's internal header — with awkward empty space between. Also: the starter framework list and the core filter list both stacked vertically, taking far more vertical space than the design's editorial intent allowed.
+**Root cause:** FiltersStep was authored as a standalone onboarding screen with its own VETTED + hamburger header. When it was later reused inside the Filters tab, FiltersTab in App.jsx wrapped it in the shared TabHeader without realizing FiltersStep already had its own. Two headers. As for the lists: FrameworkPicker used `flex-direction: column` and the core-filter list inside FiltersStep mapped each `FfFilterCard` into a stacked article with bottom hairlines — both genuinely worked as vertical lists, but the tab needed to feel like an editorial pick-a-card carousel, not a wall.
+**Fix:** (1) Dropped TabHeader from FiltersTab; forwards `onOpenMenu` directly into FiltersStep so the internal header handles the menu button. Single VETTED wordmark now. (2) Converted FrameworkPicker's template list and FiltersStep's core-filter list into horizontal scroll-snap carousels. Each card is a 78%-width bounded element (cream fill, 0.5px border, 10pt radius) sitting in an `overflow-x: auto` row with `scroll-snap-type: x mandatory`. Both rows use the `.no-scrollbar` utility. Core-filter cards render with `isLast: true` since they're no longer stacked, suppressing the bottom-divider mode.
+**Lesson:** When a component is shipped standalone first and then reused as a sub-component later, audit its internal chrome (headers, padding, dividers) against the outer host's chrome. Two screens calling the same widget shouldn't double up. Same pattern applies if FiltersStep is ever embedded in a third surface.
+**Files:** `src/App.jsx`, `src/components/FiltersStep.jsx`, `src/components/FrameworkPicker.jsx`
+**Commit:** e3f82ca
