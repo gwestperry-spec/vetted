@@ -101,39 +101,67 @@ CANDIDATE BACKGROUND
 
 Return ONLY the cover letter text — no preamble, no markdown, no signature.`;
 
-  try {
-    const apiRes = await fetch(ANTHROPIC_URL, {
-      method: "POST",
-      headers: {
-        "x-api-key": ANTHROPIC_KEY,
-        "anthropic-version": "2023-06-01",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        // Match the model used by other functions in this app
-        // (anthropic.js, anthropic-stream.mjs, etc.). The previous
-        // "claude-sonnet-4-5" alias was unrecognized by the API and
-        // surfaced as a 401 to the client.
-        model: "claude-haiku-4-5-20251001",
-        max_tokens: 600,
-        temperature: 0.7,
-        system: systemPrompt,
-        messages: [{ role: "user", content: userPrompt }],
-      }),
-    });
+  // Retry on transient errors (429 rate limit, 5xx server / overload).
+  // Anthropic emits 529 ("Overloaded") under traffic spikes — a single
+  // short retry usually clears it without burdening the user with the
+  // raw status code.
+  const RETRIABLE = new Set([429, 500, 502, 503, 504, 529]);
+  const MAX_ATTEMPTS = 3;
+  let lastStatus = 0;
+  let lastDetail = "";
 
-    if (!apiRes.ok) {
-      const text = await apiRes.text().catch(() => "");
-      return new Response(JSON.stringify({ error: `Anthropic ${apiRes.status}`, detail: text.slice(0, 200) }), { status: 502, headers });
-    }
+  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+    try {
+      const apiRes = await fetch(ANTHROPIC_URL, {
+        method: "POST",
+        headers: {
+          "x-api-key": ANTHROPIC_KEY,
+          "anthropic-version": "2023-06-01",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          // Match the model used by other functions in this app
+          // (anthropic.js, anthropic-stream.mjs, etc.). The previous
+          // "claude-sonnet-4-5" alias was unrecognized by the API and
+          // surfaced as a 401 to the client.
+          model: "claude-haiku-4-5-20251001",
+          max_tokens: 600,
+          temperature: 0.7,
+          system: systemPrompt,
+          messages: [{ role: "user", content: userPrompt }],
+        }),
+      });
 
-    const data = await apiRes.json();
-    const draft = data?.content?.[0]?.text?.trim() || "";
-    if (!draft) {
-      return new Response(JSON.stringify({ error: "Empty response from model" }), { status: 502, headers });
+      if (apiRes.ok) {
+        const data = await apiRes.json();
+        const draft = data?.content?.[0]?.text?.trim() || "";
+        if (!draft) {
+          return new Response(JSON.stringify({ error: "Empty response from model" }), { status: 502, headers });
+        }
+        return new Response(JSON.stringify({ draft }), { status: 200, headers });
+      }
+
+      lastStatus = apiRes.status;
+      lastDetail = (await apiRes.text().catch(() => "")).slice(0, 200);
+      if (!RETRIABLE.has(apiRes.status) || attempt === MAX_ATTEMPTS - 1) break;
+      // Backoff: 800ms → 1800ms → (stop). Linear is fine at this scale.
+      await new Promise(r => setTimeout(r, 800 + attempt * 1000));
+    } catch (err) {
+      lastStatus = 0;
+      lastDetail = err?.message || "network error";
+      if (attempt === MAX_ATTEMPTS - 1) break;
+      await new Promise(r => setTimeout(r, 800 + attempt * 1000));
     }
-    return new Response(JSON.stringify({ draft }), { status: 200, headers });
-  } catch (err) {
-    return new Response(JSON.stringify({ error: "Anthropic call failed", detail: err.message }), { status: 500, headers });
   }
+
+  // Map common upstream failures to user-friendly messages. The
+  // raw status still goes in `detail` for ops visibility.
+  let friendly = "Couldn't reach the writer. Try again in a moment.";
+  if (lastStatus === 429)                       friendly = "The drafting model is rate-limited. Try again in a moment.";
+  else if (lastStatus === 529)                  friendly = "The drafting model is overloaded right now. Try again in a moment.";
+  else if (lastStatus >= 500 && lastStatus < 600) friendly = "The drafting model is having a hiccup. Try again in a moment.";
+  return new Response(
+    JSON.stringify({ error: friendly, detail: `upstream ${lastStatus || "network"}: ${lastDetail}` }),
+    { status: 502, headers }
+  );
 }
