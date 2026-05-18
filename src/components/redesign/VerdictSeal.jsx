@@ -57,10 +57,12 @@ export default function VerdictSeal({
   }
 
   // Outer ring text path.
-  // Wider whitespace + bullet separator (•) reads more clearly than the
-  // narrow middot under letter-spacing — without the extra padding the
-  // ring renders as "PASSPURSUE" with letterSpacing eating the gap.
-  const outerText = "PURSUE      •      MONITOR      •      PASS      •      ";
+  // SVG collapses runs of regular spaces, so the previous fix still read
+  // as "PASPURSUE" on the wire. Use em-spaces (U+2003), which the renderer
+  // can't collapse, plus a diamond separator that survives heavy letter-
+  // spacing. xml:space="preserve" belt-and-suspenders the whitespace.
+  const SEP = "    "; // four em-spaces ≈ one wide gap
+  const outerText = `PURSUE${SEP}◆${SEP}MONITOR${SEP}◆${SEP}PASS${SEP}◆${SEP}`;
   const repeated = outerText.repeat(3); // enough to fill the circle
 
   return (
@@ -94,7 +96,8 @@ export default function VerdictSeal({
             fontWeight={700}
             letterSpacing="6"
             fill="var(--on-dark-soft)"
-            style={{ opacity: opacity * 0.85 }}
+            xmlSpace="preserve"
+            style={{ opacity: opacity * 0.85, whiteSpace: "pre" }}
           >
             <textPath href="#seal-outer-path" startOffset="0">
               {repeated}
