@@ -422,7 +422,7 @@ export default function MarketPulseV2({
             color: C.ink, lineHeight: 1.12, letterSpacing: "-0.02em",
           }}>{(t.mpHeadlinePrefix || "Your target lands at the ")}{cohort.percentile}<sup style={{
             fontSize: 16, fontWeight: 400, letterSpacing: "0",
-          }}>{t.mpOrdinalTh || "th"}</sup>{(t.mpHeadlineSuffix || ".")}</h1>
+          }}>{t.mpOrdinalTh || "th"}</sup>{(t.mpHeadlinePercentile || " percentile.")}</h1>
           <div style={{
             marginTop: 10, fontFamily: F.prose, fontStyle: "italic",
             fontSize: 14.5, color: "#5A6A5A", lineHeight: 1.45,
@@ -483,7 +483,7 @@ export default function MarketPulseV2({
             }}>
               <span>${cohort.cohortLow}k</span>
               <span style={{ color: ON_DARK.goldDot }}>
-                {t.mpYourTarget || "YOUR TARGET"} · ${cohort.userTarget}k · {cohort.percentile}<sup style={{ fontSize: 7 }}>{(t.mpOrdinalTh || "th").toUpperCase()}</sup>
+                {t.mpYourTarget || "YOUR TARGET"} · ${cohort.userTarget}k · {cohort.percentile}<sup style={{ fontSize: 7 }}>{(t.mpOrdinalTh || "th").toUpperCase()}</sup> {(t.mpPctile || "PCTILE")}
               </span>
               <span>${cohort.cohortHigh}k</span>
             </div>
