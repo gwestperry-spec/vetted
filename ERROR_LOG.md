@@ -1742,3 +1742,13 @@ Optional env var `APNS_FORCE_SANDBOX=1` flips the order (sandbox first) for debu
 **Lesson:** Pair Error 149's lesson: when the same component is used at multiple sizes, verify text-on-arc rendering at each size, not just the largest.
 **Files:** `src/components/SignInGate.jsx`, `src/components/redesign/VerdictSeal.jsx`
 **Commit:** f246f20
+
+## Error 154 — cover-letter surfaced "Anthropic 529" raw + bailed on first failure
+**Build:** Discovered May 18, 2026 during Build-30 TestFlight cover-letter QA.
+**Side:** `netlify/functions/cover-letter.js`.
+**Symptom:** Cover letter screen rendered "Anthropic 529" in red where the draft should have been. The 529 is Anthropic's "Overloaded" — transient server-side condition, usually clears within seconds.
+**Root cause:** Two issues compounding. (1) The function bailed on the first non-2xx from Anthropic with no retry, so any momentary upstream blip surfaced as a hard failure. (2) The error message returned to the client was the literal upstream status string ("Anthropic 529") — gibberish to a user.
+**Fix:** Wrapped the fetch in a retry loop, up to 3 attempts with linear backoff (800ms → 1800ms), retriable status set = {429, 500, 502, 503, 504, 529}. Most 529s clear inside the second attempt; users never see the error. After exhausted retries, mapped upstream status → human message: 529 → "The drafting model is overloaded right now. Try again in a moment.", 429 → "rate-limited", 5xx → "having a hiccup", network → "Couldn't reach the writer". Raw upstream status still goes in the `detail` field on the response for ops visibility.
+**Lesson:** Every LLM-backed function in this app should retry transient codes (429/5xx/529) and surface friendly messages on final failure. Worth retrofitting `anthropic.js`, `anthropic-stream.mjs`, `behavioral-intelligence.js`, `parse-resume.js`, and `market-pulse.js` with the same pattern. Currently only `cover-letter.js` has it.
+**Files:** `netlify/functions/cover-letter.js`
+**Commit:** b763761
