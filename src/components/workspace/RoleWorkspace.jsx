@@ -405,10 +405,21 @@ export default function RoleWorkspace({
       display: "flex", flexDirection: "column", overflow: "hidden",
     }}>
 
-      {/* ── HEADER ──────────────────────────────────────────────────────── */}
+      {/* ── HEADER ──────────────────────────────────────────────────────
+          Sticky + paper-filled so the VETTED wordmark + hamburger stay
+          pinned at the top of the viewport regardless of how anything
+          below scrolls. Top padding pulls from the iOS safe-area inset
+          so the bar sits cleanly under the status bar instead of being
+          covered by the notch. Same pattern as Filters tab. */}
       <header style={{
+        position: "sticky",
+        top: 0,
+        zIndex: 10,
+        background: "var(--paper)",
+        flexShrink: 0,
         display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: "14px 8px 6px 20px",
+        paddingTop: "calc(env(safe-area-inset-top, 0px) + 14px)",
+        paddingRight: 8, paddingBottom: 6, paddingLeft: 20,
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <span
