@@ -1841,3 +1841,13 @@ Optional env var `APNS_FORCE_SANDBOX=1` flips the order (sandbox first) for debu
 **Lesson:** Codified rule: on iOS WebView, prefer `position: fixed` over `position: sticky` for chrome that must pin during scroll. Sticky is fine on web / desktop but unreliable in the embedded WKWebView context this app runs in. Worth retrofitting any future use of sticky in this codebase before it gets reported as a "header doesn't pin" bug.
 **Files:** `src/components/FiltersStep.jsx`, `src/components/workspace/RoleWorkspace.jsx`
 **Commit:** 8354867
+
+## Error 164 — position:fixed headers ALSO failed on iOS WebView inside #root
+**Build:** Discovered May 18, 2026 immediately after Error 163's fix shipped.
+**Side:** `src/components/FiltersStep.jsx`, `src/components/workspace/RoleWorkspace.jsx`.
+**Symptom:** User re-tested after Error 163 converted both headers from sticky to fixed. Header *still* didn't pin during scroll on iOS WebView. Third attempt at the same bug.
+**Root cause:** `#root` in this app is `width: 1126px; max-width: 100%; margin: 0 auto; border-inline: 1px solid var(--border); display: flex; flex-direction: column`. Even without explicit `transform` or `overflow`, the combination of a centered max-width column with hairline side borders is enough for iOS WebView (WKWebView) to treat `#root` as creating a containing block for `position: fixed` descendants. The fixed element pins to `#root`'s box, not the viewport — and as the document scrolls, the box scrolls with it.
+**Fix:** Portal-render the header onto `document.body` via React's `createPortal`. The header now lives at the document root, outside `#root` entirely. `position: fixed; top: 0; z-index: 50` on a document-body child always pins to the viewport, no exceptions. Same defensive pattern this codebase already uses for ScoringScreen / ResolveHub / ProfileLanding / ScoreEntryV2 (Errors 146, 148, 152, 157).
+**Lesson:** On iOS WebView with a centered max-width #root, neither `position: sticky` nor `position: fixed` can be trusted to pin to the viewport when applied to elements inside #root. Standing rule expanded: **any chrome that must pin during scroll must portal to document.body.** Codify a `<PinnedHeader>` shared component on a future refactor that bundles createPortal + position:fixed + safe-area-inset-top + paper background — three of the four tabs now open-code the same pattern.
+**Files:** `src/components/FiltersStep.jsx`, `src/components/workspace/RoleWorkspace.jsx`
+**Commit:** 64ce0f7
