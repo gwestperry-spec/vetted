@@ -651,6 +651,8 @@ Respond ONLY with valid JSON (no markdown). Every value must be a plain string â
 // as a safety net while Phase 3/4/5 land.
 import ResolveHub from "./redesign/score-result/ResolveHub.jsx";
 import InsightsLanding from "./redesign/score-result/InsightsLanding.jsx";
+import FiltersLanding from "./redesign/score-result/FiltersLanding.jsx";
+import PayLanding from "./redesign/score-result/PayLanding.jsx";
 import PlaceholderLanding from "./redesign/score-result/PlaceholderLanding.jsx";
 
 export default function ScoreResult({ t, lang, opp, profile, filters, onBack, onRemove, onUpdateStatus, userTier, authUser, onUpgrade }) {
@@ -688,14 +690,33 @@ export default function ScoreResult({ t, lang, opp, profile, filters, onBack, on
       />
     );
   }
-  if (view === "filters" || view === "pay" || view === "coach") {
-    const title = view === "filters" ? "FILTERS" : view === "pay" ? "PAY" : "COACH";
+  if (view === "filters") {
+    return (
+      <FiltersLanding
+        opp={opp}
+        filters={filters}
+        onBack={() => setView("hub")}
+        onNext={() => setView("pay")}
+      />
+    );
+  }
+  if (view === "pay") {
+    return (
+      <PayLanding
+        opp={opp}
+        profile={profile}
+        onBack={() => setView("hub")}
+        onNext={() => setView("coach")}
+      />
+    );
+  }
+  if (view === "coach") {
     return (
       <PlaceholderLanding
-        title={title}
+        title="COACH"
         opp={opp}
         onBack={() => setView("hub")}
-        onShowLegacy={() => { setActiveTab(view); setView("legacy"); }}
+        onShowLegacy={() => { setActiveTab("coach"); setView("legacy"); }}
       />
     );
   }
