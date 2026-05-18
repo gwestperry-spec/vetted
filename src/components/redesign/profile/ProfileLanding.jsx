@@ -345,13 +345,28 @@ export default function ProfileLanding({
           </div>
         )}
 
-        {/* Engraved numerals — compensation + timing */}
+        {/* Engraved numerals — compensation + timing.
+            EDIT button moved to a dedicated header row above the strip so
+            it stops crowding the "WANTS TO LAND" label in the third
+            column. */}
         <div style={{
-          marginTop: 28, paddingTop: 22, paddingBottom: 22,
+          marginTop: 28, paddingTop: 14,
           borderTop: `0.5px solid ${C.onDarkBorderStrong}`,
+          display: "flex", justifyContent: "flex-end",
+        }}>
+          <button onClick={() => handleEdit("compensationMin")} aria-label="Edit compensation" style={{
+            background: "transparent", border: "none", cursor: "pointer",
+            padding: 0, color: C.onDarkMono,
+            display: "inline-flex", alignItems: "center", gap: 6,
+            fontFamily: F.data, fontSize: 9, fontWeight: 500,
+            letterSpacing: "0.18em", textTransform: "uppercase",
+          }}>{editLabel} <EditArrow color={C.onDarkMono}/></button>
+        </div>
+        <div style={{
+          paddingTop: 10, paddingBottom: 22,
           borderBottom: `0.5px solid ${C.onDarkBorderStrong}`,
           display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8,
-          position: "relative",
+          alignItems: "end",
         }}>
           <PlateStat label={(t.profileFieldCompMin || "Floor").toUpperCase()}
                      big={fmtCompK(profile.compensationMin)} unit="k"/>
@@ -359,14 +374,6 @@ export default function ProfileLanding({
                      big={fmtCompK(profile.compensationTarget)} unit="k" accent/>
           <PlateStat label={(t.profileFieldWantsToLand || "Wants to land").toUpperCase()}
                      big={timing}/>
-          <button onClick={() => handleEdit("compensationMin")} aria-label="Edit compensation" style={{
-            position: "absolute", top: 8, right: 0,
-            background: "transparent", border: "none", cursor: "pointer",
-            padding: 6, color: C.onDarkMono,
-            display: "inline-flex", alignItems: "center", gap: 4,
-            fontFamily: F.data, fontSize: 9, fontWeight: 500,
-            letterSpacing: "0.18em", textTransform: "uppercase",
-          }}>{editLabel} <EditArrow color={C.onDarkMono}/></button>
         </div>
 
         {/* Target roles */}
