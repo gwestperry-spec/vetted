@@ -56,14 +56,12 @@ export default function VerdictSeal({
     );
   }
 
-  // Outer ring text path.
-  // SVG collapses runs of regular spaces, so the previous fix still read
-  // as "PASPURSUE" on the wire. Use em-spaces (U+2003), which the renderer
-  // can't collapse, plus a diamond separator that survives heavy letter-
-  // spacing. xml:space="preserve" belt-and-suspenders the whitespace.
-  const SEP = " "; // one em-space (U+2003, non-collapsible)
-  const outerText = `PURSUE${SEP}◆${SEP}MONITOR${SEP}◆${SEP}PASS${SEP}◆${SEP}`;
-  const repeated = outerText.repeat(2); // enough to fill the circle
+  // Outer ring text. Single pass of "PURSUE ◆ MONITOR ◆ PASS ◆", stretched
+  // to fill the exact arc circumference via textLength. Browser distributes
+  // whitespace evenly — no Unicode em-space tricks, no looping, the
+  // three verdicts always read evenly spaced regardless of seal size.
+  const circumference = 2 * Math.PI * outerR;
+  const outerText = "PURSUE  ◆  MONITOR  ◆  PASS  ◆";
 
   return (
     <div style={{
@@ -92,15 +90,18 @@ export default function VerdictSeal({
         >
           <text
             fontFamily="var(--font-serif)"
-            fontSize={10}
+            fontSize={11}
             fontWeight={700}
-            letterSpacing="6"
             fill="var(--on-dark-soft)"
-            xmlSpace="preserve"
-            style={{ opacity: opacity * 0.85, whiteSpace: "pre" }}
+            style={{ opacity: opacity * 0.85 }}
           >
-            <textPath href="#seal-outer-path" startOffset="0">
-              {repeated}
+            <textPath
+              href="#seal-outer-path"
+              startOffset="0"
+              textLength={circumference}
+              lengthAdjust="spacing"
+            >
+              {outerText}
             </textPath>
           </text>
         </g>
