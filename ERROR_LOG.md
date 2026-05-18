@@ -1831,3 +1831,13 @@ Optional env var `APNS_FORCE_SANDBOX=1` flips the order (sandbox first) for debu
 **Lesson:** Anywhere in this app where a header sits on a paper or forest surface, the formula is: `position: sticky; top: 0; zIndex >= 10; background-fill; paddingTop: calc(env(safe-area-inset-top, 0px) + N)`. Codify it as a shared component on a future refactor pass.
 **Files:** `src/components/workspace/RoleWorkspace.jsx`
 **Commit:** 579f348
+
+## Error 163 — position:sticky headers didn't pin on iOS WebView (Filters + Workspace)
+**Build:** Discovered May 18, 2026 after the sticky-header fixes (161 + 162) shipped — user re-tested and the header still scrolled off on the Filters tab.
+**Side:** `src/components/FiltersStep.jsx`, `src/components/workspace/RoleWorkspace.jsx`.
+**Symptom:** Despite `position: sticky; top: 0; zIndex: 10; background: paper` on the header, scrolling the Filters page still pushed the VETTED wordmark + hamburger off the top of the viewport. Same risk applied to Workspace's sticky header even though the door layout shouldn't have allowed it to move.
+**Root cause:** iOS WebView (WKWebView) is known to mishandle `position: sticky` when the sticky element lives inside a `<main>` element with `min-height: 100%` and the actual scroll container is the document body. The sticky-positioning algorithm needs a clear "this is where I should pin to" ancestor; the layout context here apparently isn't deterministic enough for the WebView's implementation. Works fine in desktop Safari + Chrome / Firefox, fails in iOS WKWebView.
+**Fix:** Converted both headers to `position: fixed; top: 0; left: 0; right: 0; z-index: 20` with paper background + 0.5px border-bottom for visual separation. Added `paddingTop: calc(env(safe-area-inset-top, 0px) + 50px)` to the parent `<main>` so content reserves room for the fixed bar and doesn't render underneath it. Same edge-to-edge top-pinning pattern as TabBarV2 at the bottom. Known-good across all iOS versions.
+**Lesson:** Codified rule: on iOS WebView, prefer `position: fixed` over `position: sticky` for chrome that must pin during scroll. Sticky is fine on web / desktop but unreliable in the embedded WKWebView context this app runs in. Worth retrofitting any future use of sticky in this codebase before it gets reported as a "header doesn't pin" bug.
+**Files:** `src/components/FiltersStep.jsx`, `src/components/workspace/RoleWorkspace.jsx`
+**Commit:** 8354867
