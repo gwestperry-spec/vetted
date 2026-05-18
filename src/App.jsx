@@ -31,7 +31,8 @@ import TabBarV2 from "./components/TabBarV2.jsx";
 import HamburgerSheet, { HamburgerButton } from "./components/HamburgerSheet.jsx";
 import MarketPulseCard from "./components/MarketPulse.jsx";
 import ScoreEntry from "./components/ScoreEntry.jsx";
-import VQAdvocateScreen, { VQAdvocateCard } from "./components/VQAdvocate.jsx";
+// VQAdvocate component removed Build 30. Behavioral patterns now surface
+// inline via the Insights pod on the Workspace tab — no standalone screen.
 import { COUNTRY_MAP } from "./data/countries.js";
 import { exportOpportunityPdf } from "./utils/exportPdf.js";
 
@@ -210,7 +211,7 @@ export default function App() {
   const [scoringPhase, setScoringPhase] = useState(0);
   const [streamingFilters, setStreamingFilters] = useState([]);
   const [showPaywall, setShowPaywall]   = useState(false);
-  const [showAdvocate, setShowAdvocate] = useState(false);
+  // showAdvocate state removed Build 30 — Advocate screen deprecated.
   const [upgradeSuccess, setUpgradeSuccess] = useState(false);
   const [showWalkthrough, setShowWalkthrough] = useState(false);
   const [pendingTierCheck, setPendingTierCheck] = useState(false);
@@ -1086,7 +1087,7 @@ export default function App() {
   // ── Hamburger menu actions ────────────────────────────────────────────────
   function handleMenuAction(id, payload) {
     if (id === "upgrade")  { setShowPaywall(true); }
-    if (id === "advocate") { setShowAdvocate(true); }
+    // "advocate" menu action removed Build 30; entry no longer in HamburgerSheet.
     if (id === "settings") { setActiveTab("settings"); }
     if (id === "signout")  { handleSignOut(); }
     if (id === "blog")     { window.open("https://tryvettedai.com/blog", "_blank", "noopener"); }
@@ -1211,7 +1212,6 @@ export default function App() {
                 onOpenPaywall={openWorkspacePaywall}
                 onMarkApplied={handleMarkWorkspaceApplied}
                 onUnmarkApplied={handleUnmarkWorkspaceApplied}
-                onOpenAdvocate={() => setShowAdvocate(true)}
                 onEditProfile={(stepId) => { setEditingProfile(true); setEditProfileStep(stepId || null); setStep("onboard"); }}
                 onEditFilters={() => { setActiveTab("filters"); }}
                 onScore={scoreOpportunity}
@@ -1372,15 +1372,7 @@ export default function App() {
         />
       )}
 
-      {showAdvocate && (
-        <VQAdvocateScreen
-          onClose={() => setShowAdvocate(false)}
-          onNavigate={(tab) => { setShowAdvocate(false); if (tab !== "close") setActiveTab(tab); }}
-          opportunities={workspaceRoles}
-          profile={profile}
-          t={t}
-        />
-      )}
+      {/* VQAdvocateScreen render removed Build 30 — replaced by inline pod. */}
 
       {showPaywall && (
         <PaywallModal

@@ -1,0 +1,523 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Behavioral Insights Pod</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  /* ─── Tokens — exact match to production design system ───────────────── */
+  :root {
+    --ink:           #1A2E1A;
+    --paper:         #FAFAF8;
+    --cream:         #F0F4F0;
+    --cream-warm:    #EDF1ED;
+    --border:        #D8E8D8;
+    --accent:        #3A7A3A;
+    --accent-border: rgba(58,122,58,0.40);
+    --gold:          #8A6A10;
+    --gold-bg:       #FDF6DE;
+    --gold-display:  #B8A030;
+    --muted:         #5A6A5A;
+    --muted-soft:    #8A9A8A;
+    --pursue-bg:     #EAF3DE; --pursue-fg: #27500A;
+    --monitor-bg:    #FAEEDA; --monitor-fg: #633806;
+    --pass-bg:       #F8ECEC; --pass-fg:    #C05050;
+    --serif: "Libre Baskerville", Georgia, serif;
+    --sans:  "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  html, body { margin: 0; padding: 0; background: #1c1c1e; color: var(--ink); font-family: var(--sans); }
+
+  .stage {
+    min-height: 100vh;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 40px 20px;
+    gap: 30px;
+    flex-wrap: wrap;
+  }
+
+  .phone {
+    width: 393px;
+    height: 852px;
+    border-radius: 48px;
+    background: var(--paper);
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.5), 0 0 0 8px #111 inset;
+    display: flex;
+    flex-direction: column;
+  }
+  .status-bar {
+    height: 47px; flex-shrink: 0;
+    display: flex; align-items: flex-end; justify-content: space-between;
+    padding: 0 28px 6px;
+    font-size: 15px; font-weight: 600; color: var(--ink);
+  }
+
+  .content {
+    flex: 1; overflow-y: auto; overflow-x: hidden;
+    display: flex; flex-direction: column;
+  }
+
+  /* ─── Top bar (back + title) ───────────────────────────────────────── */
+  .top-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 20px 12px;
+    border-bottom: 0.5px solid var(--border);
+  }
+  .back-label {
+    display: flex; align-items: center; gap: 6px;
+    font-family: var(--sans); font-size: 11px; font-weight: 600;
+    letter-spacing: 0.14em; color: var(--muted); text-transform: uppercase;
+  }
+  .back-arrow {
+    font-family: var(--serif); font-size: 14px;
+  }
+  .top-bar-title {
+    font-family: var(--sans); font-size: 11px; font-weight: 600;
+    letter-spacing: 0.18em; color: var(--ink); text-transform: uppercase;
+  }
+  .top-bar-right { width: 60px; }
+
+  /* ─── Page header ──────────────────────────────────────────────────── */
+  .page-header { padding: 20px 20px 18px; }
+  .eyebrow {
+    font-family: var(--sans); font-size: 10px; font-weight: 600;
+    letter-spacing: 0.18em; color: var(--muted-soft); text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .page-title {
+    font-family: var(--serif); font-size: 26px; font-weight: 700;
+    color: var(--ink); line-height: 1.15; letter-spacing: -0.005em; margin: 0;
+  }
+
+  /* ─── Pod — horizontal scroll, snap-to-card ────────────────────────── */
+  .pod {
+    /* Touch-snap horizontal carousel using native CSS — no JS needed */
+    display: flex;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scroll-padding: 0 20px;
+    padding: 0 20px 4px;
+    gap: 12px;
+    scrollbar-width: none;
+  }
+  .pod::-webkit-scrollbar { display: none; }
+
+  .card {
+    flex: 0 0 calc(100% - 40px);   /* full content width minus the 20pt page padding doubled */
+    min-width: 0;
+    scroll-snap-align: start;
+    background: #fff;
+    border: 0.5px solid var(--border);
+    border-radius: 14px;
+    padding: 16px 16px 14px;
+    display: flex; flex-direction: column;
+    min-height: 200px;
+  }
+  .card-eyebrow {
+    font-family: var(--sans); font-size: 9px; font-weight: 600;
+    letter-spacing: 0.18em; color: var(--muted-soft); text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .card-title {
+    font-family: var(--serif); font-size: 16px; font-weight: 700;
+    color: var(--ink); line-height: 1.2; margin: 0 0 12px;
+  }
+  .card-body {
+    flex: 1;
+    display: flex; flex-direction: column;
+    justify-content: space-between;
+  }
+  .card-cta {
+    display: flex; align-items: center; justify-content: flex-end;
+    margin-top: 12px;
+  }
+  .card-cta a {
+    font-family: var(--sans); font-size: 10px; font-weight: 600;
+    letter-spacing: 0.14em; color: var(--ink); text-transform: uppercase;
+    text-decoration: none;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .card-cta a::after {
+    content: "→"; font-size: 12px;
+  }
+
+  /* ─── Card 1: Spectrum ─────────────────────────────────────────────── */
+  .spectrum-track {
+    position: relative;
+    height: 10px;
+    border-radius: 5px;
+    background: linear-gradient(90deg, var(--pass-fg) 0%, var(--gold-display) 50%, var(--accent) 100%);
+    margin: 8px 0 10px;
+  }
+  .spectrum-marker {
+    position: absolute;
+    top: -3px; bottom: -3px;
+    width: 3px;
+    background: var(--ink);
+    border-radius: 2px;
+    left: 64%;       /* example position */
+    box-shadow: 0 0 0 2px rgba(255,255,255,0.9);
+  }
+  .spectrum-axis {
+    display: flex; justify-content: space-between;
+    font-family: var(--sans); font-size: 8px; font-weight: 600;
+    letter-spacing: 0.10em; color: var(--muted-soft); text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+  .spectrum-vals {
+    display: flex; align-items: baseline; gap: 12px;
+    margin-bottom: 8px;
+  }
+  .spectrum-vals .big {
+    font-family: var(--serif); font-size: 24px; font-weight: 700;
+    color: var(--accent); line-height: 1;
+  }
+  .spectrum-vals .label {
+    font-family: var(--sans); font-size: 11px;
+    color: var(--muted);
+  }
+  .spectrum-count {
+    font-family: var(--sans); font-size: 11px;
+    color: var(--muted);
+  }
+  .spectrum-count strong { color: var(--ink); font-weight: 700; }
+
+  /* ─── Card 2: Filter Signal ────────────────────────────────────────── */
+  .filter-row {
+    display: grid;
+    grid-template-columns: 1fr 80px 28px;
+    align-items: center;
+    gap: 10px;
+    padding: 5px 0;
+    border-bottom: 0.5px solid var(--border);
+  }
+  .filter-row:last-of-type { border-bottom: none; }
+  .filter-row.dragging {
+    background: var(--gold-bg);
+    margin: 0 -8px; padding-left: 8px; padding-right: 8px;
+    border-radius: 6px; border-bottom: none;
+  }
+  .filter-row .name {
+    font-family: var(--sans); font-size: 11px; font-weight: 500;
+    color: var(--ink);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .filter-row .bar-wrap {
+    height: 4px; background: var(--cream); border-radius: 2px;
+    overflow: hidden;
+  }
+  .filter-row .bar-fill {
+    height: 100%; background: var(--ink);
+  }
+  .filter-row.dragging .bar-fill { background: var(--gold-display); }
+  .filter-row .score {
+    font-family: var(--serif); font-size: 13px; font-weight: 700;
+    color: var(--ink); text-align: right;
+  }
+  .filter-row.dragging .score { color: var(--gold-display); }
+  .drag-context {
+    font-family: var(--sans); font-size: 10px; color: var(--gold);
+    margin-top: 8px;
+  }
+
+  /* ─── Card 3: Preference Drift ─────────────────────────────────────── */
+  .drift-headline {
+    display: flex; align-items: baseline; gap: 10px;
+    margin-bottom: 12px;
+  }
+  .drift-headline .pct {
+    font-family: var(--serif); font-size: 32px; font-weight: 700;
+    color: var(--gold-display); line-height: 1;
+  }
+  .drift-headline .sub {
+    font-family: var(--sans); font-size: 11px;
+    color: var(--muted); line-height: 1.3;
+  }
+  .drift-row {
+    display: grid; grid-template-columns: 56px 1fr;
+    gap: 10px; padding: 6px 0;
+    border-bottom: 0.5px solid var(--border);
+    font-size: 11px;
+  }
+  .drift-row:last-of-type { border-bottom: none; }
+  .drift-row .axis {
+    font-family: var(--sans); font-weight: 600;
+    color: var(--muted-soft); letter-spacing: 0.10em; text-transform: uppercase;
+    font-size: 9px; padding-top: 2px;
+  }
+  .drift-row .vals {
+    display: flex; flex-direction: column; gap: 2px;
+  }
+  .drift-row .stated {
+    font-family: var(--sans); color: var(--muted-soft);
+    text-decoration: line-through;
+    font-size: 10px;
+  }
+  .drift-row .revealed {
+    font-family: var(--sans); color: var(--ink); font-weight: 500;
+    font-size: 11px;
+  }
+
+  /* ─── Card 4: Synthesis ────────────────────────────────────────────── */
+  .synth-row {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 14px 16px;
+    margin-bottom: 8px;
+  }
+  .synth-cell {
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .synth-cell.full { grid-column: 1 / -1; }
+  .synth-cell .num {
+    font-family: var(--serif); font-size: 24px; font-weight: 700;
+    color: var(--ink); line-height: 1;
+  }
+  .synth-cell .num.down { color: var(--gold-display); }
+  .synth-cell .label {
+    font-family: var(--sans); font-size: 9px; font-weight: 600;
+    letter-spacing: 0.12em; color: var(--muted); text-transform: uppercase;
+  }
+  .synth-delta {
+    font-family: var(--sans); font-size: 10px; color: var(--muted);
+    margin-left: 6px;
+  }
+  .synth-delta.down { color: var(--gold-display); }
+
+  /* ─── Dots ─────────────────────────────────────────────────────────── */
+  .dots {
+    display: flex; gap: 6px; justify-content: center;
+    padding: 12px 0 18px;
+  }
+  .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--border); }
+  .dot.active { background: var(--ink); }
+
+  /* ─── Mini tiles ───────────────────────────────────────────────────── */
+  .mini-section { padding: 0 20px 28px; }
+  .mini-section .section-label {
+    font-family: var(--sans); font-size: 10px; font-weight: 600;
+    letter-spacing: 0.18em; color: var(--muted-soft); text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .mini-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  }
+  .mini-tile {
+    background: var(--cream);
+    border: 0.5px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .mini-tile .num {
+    font-family: var(--serif); font-size: 22px; font-weight: 700;
+    color: var(--ink); line-height: 1;
+  }
+  .mini-tile .num.flagged { color: var(--gold-display); }
+  .mini-tile .lbl {
+    font-family: var(--sans); font-size: 9px; font-weight: 600;
+    letter-spacing: 0.12em; color: var(--muted); text-transform: uppercase;
+    line-height: 1.3;
+  }
+
+  /* ─── Footer caption under phone ───────────────────────────────────── */
+  .frame { display: flex; flex-direction: column; align-items: center; }
+  .label {
+    color: #f4f1ea; font-family: var(--sans); font-size: 11px;
+    letter-spacing: 0.10em; text-transform: uppercase; text-align: center;
+    margin-top: 14px; opacity: 0.7;
+  }
+</style>
+</head>
+<body>
+  <div class="stage">
+    <div class="frame">
+      <div class="phone">
+        <div class="status-bar"><span>9:41</span><span>● ▮▮▮</span></div>
+        <div class="content">
+
+          <div class="top-bar">
+            <a class="back-label" href="#"><span class="back-arrow">‹</span>WORKSPACE</a>
+            <div class="top-bar-title">INSIGHTS</div>
+            <div class="top-bar-right"></div>
+          </div>
+
+          <div class="page-header">
+            <div class="eyebrow">PATTERNS · LAST 30 DAYS</div>
+            <h1 class="page-title">Where you're trending.</h1>
+          </div>
+
+          <!-- ═══ POD ═══════════════════════════════════════════════════ -->
+          <div class="pod">
+
+            <!-- CARD 1: Floor Margin -->
+            <div class="card">
+              <div class="card-eyebrow">FLOOR MARGIN</div>
+              <div class="card-title">Where your Pursue comp lands</div>
+              <div class="card-body">
+                <div>
+                  <div class="spectrum-track">
+                    <div class="spectrum-marker"></div>
+                  </div>
+                  <div class="spectrum-axis">
+                    <span>FLOOR</span>
+                    <span>+20%</span>
+                    <span>+50%+</span>
+                  </div>
+                  <div class="spectrum-vals">
+                    <div class="big">+$15K</div>
+                    <div class="label">average over your $185K floor</div>
+                  </div>
+                  <div class="spectrum-count"><strong>2</strong> of 7 Pursues sit below your floor.</div>
+                </div>
+                <div class="card-cta"><a href="#">Edit floor</a></div>
+              </div>
+            </div>
+
+            <!-- CARD 2: Filter Signal -->
+            <div class="card">
+              <div class="card-eyebrow">FILTER SIGNAL</div>
+              <div class="card-title">Which filter drags scores</div>
+              <div class="card-body">
+                <div>
+                  <div class="filter-row">
+                    <div class="name">Financial Accountability</div>
+                    <div class="bar-wrap"><div class="bar-fill" style="width: 86%"></div></div>
+                    <div class="score">4.3</div>
+                  </div>
+                  <div class="filter-row">
+                    <div class="name">Access to Leadership</div>
+                    <div class="bar-wrap"><div class="bar-fill" style="width: 76%"></div></div>
+                    <div class="score">3.8</div>
+                  </div>
+                  <div class="filter-row dragging">
+                    <div class="name">Clear Success Measures</div>
+                    <div class="bar-wrap"><div class="bar-fill" style="width: 50%"></div></div>
+                    <div class="score">2.5</div>
+                  </div>
+                  <div class="filter-row">
+                    <div class="name">Organizational Impact</div>
+                    <div class="bar-wrap"><div class="bar-fill" style="width: 80%"></div></div>
+                    <div class="score">4.0</div>
+                  </div>
+                  <div class="filter-row">
+                    <div class="name">Role Integrity</div>
+                    <div class="bar-wrap"><div class="bar-fill" style="width: 74%"></div></div>
+                    <div class="score">3.7</div>
+                  </div>
+                  <div class="drag-context">Clear Success Measures · <strong>4↓</strong> from Pursue / Monitor</div>
+                </div>
+                <div class="card-cta"><a href="#">Adjust weight</a></div>
+              </div>
+            </div>
+
+            <!-- CARD 3: Preference Drift -->
+            <div class="card">
+              <div class="card-eyebrow">PREFERENCE DRIFT</div>
+              <div class="card-title">Stated vs. revealed</div>
+              <div class="card-body">
+                <div>
+                  <div class="drift-headline">
+                    <div class="pct">60%</div>
+                    <div class="sub">of your Pursues sit outside<br>your stated preferences.</div>
+                  </div>
+                  <div class="drift-row">
+                    <div class="axis">Loc</div>
+                    <div class="vals">
+                      <div class="stated">NYC · SF · Boston</div>
+                      <div class="revealed">Remote · Austin · Denver</div>
+                    </div>
+                  </div>
+                  <div class="drift-row">
+                    <div class="axis">Comp</div>
+                    <div class="vals">
+                      <div class="stated">$185K floor</div>
+                      <div class="revealed">$172K avg pursued</div>
+                    </div>
+                  </div>
+                  <div class="drift-row">
+                    <div class="axis">Ind</div>
+                    <div class="vals">
+                      <div class="stated">FinTech · SaaS</div>
+                      <div class="revealed">Healthcare · BioTech</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="card-cta"><a href="#">Edit preferences</a></div>
+              </div>
+            </div>
+
+            <!-- CARD 4: Synthesis -->
+            <div class="card">
+              <div class="card-eyebrow">THIS WEEK</div>
+              <div class="card-title">Where the pipeline sits</div>
+              <div class="card-body">
+                <div>
+                  <div class="synth-row">
+                    <div class="synth-cell">
+                      <div class="num">7</div>
+                      <div class="label">Scored</div>
+                    </div>
+                    <div class="synth-cell">
+                      <div class="num">4</div>
+                      <div class="label">In Pursue</div>
+                    </div>
+                    <div class="synth-cell full">
+                      <div style="display: flex; align-items: baseline; gap: 6px;">
+                        <div class="num down">12%</div>
+                        <span class="synth-delta down">↓ vs 35% avg</span>
+                      </div>
+                      <div class="label">Pursue rate · 4-week comparison</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="card-cta"><a href="#">Open pipeline</a></div>
+              </div>
+            </div>
+
+          </div>
+          <!-- END POD -->
+
+          <div class="dots">
+            <div class="dot active"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+          </div>
+
+          <!-- ═══ MINI TILES ═══════════════════════════════════════════ -->
+          <div class="mini-section">
+            <div class="section-label">SUPPORTING SIGNALS</div>
+            <div class="mini-grid">
+              <div class="mini-tile">
+                <div class="num">σ 0.8</div>
+                <div class="lbl">Score variance<br>last 30 days</div>
+              </div>
+              <div class="mini-tile">
+                <div class="num flagged">3</div>
+                <div class="lbl">Stale Pursues<br>over 10 days</div>
+              </div>
+              <div class="mini-tile">
+                <div class="num">7 → 5 → 3</div>
+                <div class="lbl">Scoring momentum<br>last 3 weeks</div>
+              </div>
+              <div class="mini-tile">
+                <div class="num flagged">2</div>
+                <div class="lbl">Hard no breaches<br>last 7 days</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+      <div class="label">Insights · pod + mini tiles · card 1 of 4 visible</div>
+    </div>
+  </div>
+</body>
+</html>

@@ -13,7 +13,7 @@ import MarketPulseCard from "../MarketPulse.jsx";
 import { ScoringProgress as ScoringProgressComponent } from "../VQLoadingScreen.jsx";
 import { ENDPOINTS } from "../../config.js";
 import CoachMark from "../CoachMark.jsx";
-import { VQAdvocateCard } from "../VQAdvocate.jsx";
+// VQAdvocateCard import removed Build 30 — replaced by Insights pod (forthcoming).
 
 // ── URL helpers (mirrors Dashboard.jsx) ────────────────────────────────────
 const MAX_JD  = 12000;
@@ -154,7 +154,7 @@ export default function RoleWorkspace({
   behavioralInsight,
   onDismissInsight,
   onActedOnInsight,
-  onOpenAdvocate,
+  // onOpenAdvocate removed Build 30 — Advocate screen deprecated.
   // Header
   onOpenMenu,
   // i18n
@@ -389,13 +389,9 @@ export default function RoleWorkspace({
           <WsKpiTile value={profile.threshold ? String(profile.threshold) : "—"} label={t?.wsThreshold || "THRESHOLD"} color="var(--gold)" />
         </div>
 
-        {/* VQ Advocate card */}
-        <VQAdvocateCard
-          opportunities={workspaceRoles}
-          profile={profile}
-          onOpen={() => onOpenAdvocate?.()}
-          t={t}
-        />
+        {/* VQAdvocateCard removed Build 30 — the new Insights pod with
+            swipeable cards (Floor Margin · Filter Signal · Preference
+            Drift · Synthesis) will render here in a follow-up commit. */}
 
         {/* Hero card — top match */}
         {scoredRoles[0] && (

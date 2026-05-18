@@ -289,7 +289,9 @@ export default function HamburgerSheet({
 
   const items = [
     { id: "upgrade",  label: t.menuUpgrade  || "Upgrade",         hint: upgradeHint, accent: "gold", icon: <IconUpgrade/>, chevron: true },
-    { id: "advocate", label: t.menuAdvocate || "VQ Advocate",      hint: t.menuHintAdvocate || "Patterns · Coaching · Insights", chevron: true },
+    // VQ Advocate menu entry removed Build 30 — behavioral patterns now
+    // surface inline via the Insights pod on the Workspace tab. The
+    // standalone screen + this entry point have been deprecated.
     { id: "share",    label: t.menuShare    || "Share scorecard…", hint: t.menuHintShare || "Export role as PDF", icon: <IconShare/>, chevron: true },
     { id: "blog",     label: t.menuBlog     || "Blog",             hint: "tryvettedai.com/blog", external: true },
     { id: "settings", label: t.menuSettings || "Settings",         hint: t.menuHintSettings || "Language · Notifications", chevron: true },
