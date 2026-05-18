@@ -25,6 +25,7 @@ import PaywallModal from "./components/PaywallModal.jsx";
 import FiltersStep from "./components/FiltersStep.jsx";
 import { VQLoadingScreen as VQLoadingScreenComponent } from "./components/VQLoadingScreen.jsx";
 import ScoringScreen from "./components/redesign/scoring/ScoringScreen.jsx";
+import ProfileLanding from "./components/redesign/profile/ProfileLanding.jsx";
 import { OnboardStep } from "./components/Onboarding.jsx";
 import Dashboard from "./components/Dashboard.jsx";
 import RoleWorkspace from "./components/workspace/RoleWorkspace.jsx";
@@ -1284,16 +1285,22 @@ export default function App() {
               />
             )}
             {activeTab === "profile" && (
-              <ProfileTab
-                t={t} lang={lang} setLang={setLang}
-                profile={profile} setProfile={setProfile}
-                authUser={authUser} userTier={devTierOverride || userTier}
-                onSignOut={handleSignOut}
-                onEditProfile={(stepId) => { setEditingProfile(true); setEditProfileStep(stepId || null); setStep("onboard"); }}
-                onUpgrade={() => { setShowPaywall(true); }}
-                onOpenMenu={() => setMenuOpen(true)}
-                presentationMode={presentationMode}
-              />
+              // Build-30 redesign: editorial forest "plate" profile.
+              // Legacy ProfileTab kept further down for reference / rollback
+              // but no longer rendered. Section EDIT routes through the
+              // existing onboarding edit flow.
+              <div style={{ position: "relative", minHeight: "100svh" }}>
+                <ProfileLanding
+                  t={t}
+                  profile={profile}
+                  authUser={authUser}
+                  userTier={devTierOverride || userTier}
+                  onSignOut={handleSignOut}
+                  onEditSection={(stepId) => { setEditingProfile(true); setEditProfileStep(stepId || null); setStep("onboard"); }}
+                  onUpgrade={() => { setShowPaywall(true); }}
+                  onOpenMenu={() => setMenuOpen(true)}
+                />
+              </div>
             )}
             {activeTab === "settings" && (
               <SettingsTab
