@@ -1498,3 +1498,137 @@ Build number stayed at 29 — Apple's validation rejection happens before the bi
 **Lesson:** Length-based validation alone is insufficient for anti-bot detection. Real JDs share a small set of keywords across all sources; checking for them catches captcha pages, login walls, and apology prose that all pass naive length floors. Also: any time the model can return non-spec values (like `"UNABLE_TO_EVALUATE"` instead of one of the documented recommendations), the UI must defensively map them to safe defaults.
 **Files:** `netlify/functions/fetch-jd.js`, `src/App.jsx`
 **Commit:** 9702db9
+
+## Error 131 — Push notifications never delivered: register-device function 502'd for the entire history of the app
+**Build:** Discovered May 17, 2026 during Build 30 notification verification work.
+**Side:** Netlify function `register-device.js` + iOS app push pipeline.
+**Symptom:** No user had ever received a push notification despite the in-app permission toggles working and APNs env vars being set in Netlify. The `notify-pipeline` and `notify-reminders` cron jobs ran successfully but had no device tokens to deliver to. Direct curl to send-notification returned token-rejected errors. The diagnostic that surfaced the root cause was a 502 response on the `register-device` endpoint with the runtime error: `Cannot find package '@supabase/supabase-js' imported from /var/task/netlify/functions/register-device.mjs`.
+**Root cause:** `register-device.js` was the ONLY function in the codebase importing `@supabase/supabase-js`. Every other Supabase-touching function (`dashboard-data.js`, `workspace-sweep.js`, `fetch-jd.js`, etc.) used raw `fetch` against Supabase PostgREST. Netlify's function bundler doesn't auto-include the `@supabase/supabase-js` package for this function context, so the deployed `.mjs` couldn't resolve the import. The function crashed at module load with `ERR_MODULE_NOT_FOUND` and returned 502 on every invocation — including the iOS app's attempts to register its APNs token.
+
+This was the silent root cause of every downstream notification symptom: empty `user_devices` table, scheduled jobs sending zero pushes, "I never get notifications" complaints. The function had been broken since the day it was written; nobody noticed because the failure was a 5xx that the iOS app silently swallowed in a fire-and-forget POST.
+**Fix:** Rewrote `register-device.js` using raw `fetch` against Supabase PostgREST — the same pattern as every other Supabase-touching function. Upsert via `POST /rest/v1/user_devices?on_conflict=apple_id,token` with `Prefer: resolution=merge-duplicates,return=minimal`. No external dependency, no bundling risk.
+**Lesson:** A function that's used fire-and-forget (no return value checked) can silently 5xx for months/years without anyone noticing. Going forward: any function POSTed by the iOS app should have its response status logged on the client side at least at WARN level, even on fire-and-forget paths. And consistency matters — if every other function in the codebase uses raw fetch for Supabase, the outlier should be brought in line, not the other way around.
+**Files:** `netlify/functions/register-device.js`
+**Commit:** 4d395dd
+
+## Error 132 — Supabase env var name drift across four notification functions
+**Build:** Discovered May 16, 2026 in early notification debugging.
+**Side:** Netlify functions: `register-device.js`, `notify-reminders.js`, `notify-pipeline.js`, `notify-weekly.js`.
+**Symptom:** All four notification-pipeline functions referenced `process.env.SUPABASE_URL` and `process.env.SUPABASE_SERVICE_KEY` while the rest of the codebase used `VT_DB_URL` and `VT_DB_KEY`. Netlify production has only the `VT_DB_*` names set, so the four functions failed at Supabase auth with no useful error surface — the iOS app couldn't register device tokens, scheduled jobs couldn't read `user_devices`, etc. This was orthogonal to Error 131 but compounded with it.
+**Root cause:** The notification functions were written before the codebase had converged on `VT_DB_*` as the canonical env var names. They drifted and were never reconciled.
+**Fix:** Normalized all four functions to read `process.env.VT_DB_URL || process.env.SUPABASE_URL` (and the key equivalent) so the canonical name is preferred but the legacy name still works during any transition. Also documented `VT_DB_URL`, `VT_DB_KEY`, `PERPLEXITY_API_KEY` in `ENV.md` — they were load-bearing but undocumented.
+**Lesson:** Env var renames need a project-wide grep + reconcile pass, not just a swap in the files touched at the time of the rename. A `||` fallback pattern for env vars is a small cost that prevents the next rename from breaking surfaces nobody remembered.
+**Files:** `netlify/functions/register-device.js`, `notify-reminders.js`, `notify-pipeline.js`, `notify-weekly.js`, `ENV.md`
+**Commit:** 8e080b7, c641f58
+
+## Error 133 — register-device missing CORS allowlist for capacitor://localhost
+**Build:** Discovered May 17, 2026 mid-debug after Error 131 fix.
+**Side:** Netlify function `register-device.js`.
+**Symptom:** Even after fixing the bundling crash, iOS app's device-registration POST failed silently with empty error `{}`. The fetch in the JS bridge code (`src/App.jsx`'s native push token listener) was logging `[push-bridge] register-device failed: {}` — empty body means CORS preflight rejected before the response could be read.
+**Root cause:** `register-device.js`'s ALLOWED_ORIGINS list contained only `https://vettedai.netlify.app`, `https://app.vetted.ai`, and `http://localhost:5173`. The iOS Capacitor WebView's origin is `capacitor://localhost` — that wasn't in the list, so OPTIONS preflight returned a CORS header that didn't permit the actual origin, and the browser rejected the response. The actual POST never executed.
+
+Also: response headers on the POST itself were missing `Access-Control-Allow-Origin` entirely — only the preflight had CORS headers. Modern browsers require ACAO on every response, not just preflight.
+**Fix:** Added `capacitor://localhost`, `https://celebrated-gelato-56d525.netlify.app`, `https://tryvettedai.com` to the allowlist. Extracted CORS headers into helpers (`corsBase`, `jsonHeaders`) and applied to every response shape (200, 400, 401, 403, 500, 503, 204 preflight).
+
+Also caught: `Content-Type: application/json` in a 204 response is a spec gray area that some edge runtimes reject — split `corsBase` (for 204) from `jsonHeaders` (for body responses).
+**Lesson:** The Capacitor WebView origin (`capacitor://localhost`) needs to be in every iOS-callable function's CORS allowlist. Add it to ENV.md or a shared constants file. A grep across `netlify/functions/` for `ALLOWED_ORIGINS` would catch any function missing it.
+**Files:** `netlify/functions/register-device.js`
+**Commits:** 0cf2663, cb3cd65
+
+## Error 134 — Capacitor Push plugin never delivered APNs token to JS handlers despite iOS issuing one
+**Build:** Discovered May 17, 2026 during native-vs-JS pipeline isolation testing.
+**Side:** iOS app + Capacitor `@capacitor/push-notifications` v8.0.3 plugin.
+**Symptom:** `Push.requestPermissions()` returned `granted=true`. `Push.register()` ran without throwing. iOS Settings → Vetted → Notifications showed the Notifications row (app was push-capable). BUT the JS `registration` listener attached via `Push.addListener("registration", ...)` never fired — the JS layer never received the token, so `register-device` was never called.
+
+Confirmed via a direct native AppDelegate diagnostic: `didRegisterForRemoteNotificationsWithDeviceToken` callback fired at the iOS native layer with a valid token (we logged the hex). The token was real and APNs-valid. But the Capacitor plugin's JS bridge never forwarded it to the JS side.
+**Root cause:** Unknown specific bug in `@capacitor/push-notifications` v8.0.3 (or possibly a Capacitor 8 bridge issue). The native plugin received the token from iOS but never invoked its JS callback path. Reproducible on multiple test devices.
+**Fix:** Bypassed the Capacitor plugin entirely. Added a native AppDelegate handler (`didRegisterForRemoteNotificationsWithDeviceToken`) that calls `evaluateJavaScript` on the WKWebView to (a) write the token to `localStorage.vetted_apns_token` and (b) dispatch a `vetted-apns-token` CustomEvent. App.jsx listens for the custom event and reads localStorage on mount — same pattern as the Share Extension URL bridge we built earlier. With this in place, the Capacitor plugin's broken bridge is irrelevant; the token flows native → WebView → JS → register-device endpoint without ever touching the plugin's JS callback.
+**Lesson:** Capacitor plugins, especially official ones, can have silent failures in their bridge layer that no error surface ever indicates. When a plugin is the only thing between native iOS and JS, build a parallel native→WebView path as a backup. Apple's own native callbacks are reliable; the bridge layer is the variable.
+**Files:** `ios/App/App/AppDelegate.swift`, `src/App.jsx` (added native APNs token bridge listener)
+**Commit:** 84c1d6c
+
+## Error 135 — Wrong APNs sandbox endpoint hardcoded; api.sandbox.push.apple.com is stale
+**Build:** Discovered May 17, 2026 by inspecting Apple's Push Notifications Console "Get cURL Command" output.
+**Side:** Netlify function `send-notification.js`.
+**Symptom:** Even after rewriting `send-notification.js` to use native HTTP/2 instead of the deprecated `apn` library, every sandbox-tier push attempt failed with `BadEnvironmentKeyInToken`. Apple's own Push Notifications Console succeeded with the same token + key + bundle ID, against the sandbox environment, with the same JWT shape.
+**Root cause:** Apple renamed the sandbox/development push endpoint from `api.sandbox.push.apple.com` to `api.development.push.apple.com`. The historical alias still resolves (DNS hasn't been pulled) but no longer routes to the modern endpoint that accepts dev-tier device tokens. Every third-party library and most tutorials use the old hostname. Apple's own Console "Get cURL Command" was the only authoritative source revealing the new hostname.
+**Fix:** Changed `APNS_HOSTS.sandbox` constant to `api.development.push.apple.com`.
+**Lesson:** When a third-party library and Apple's own tooling disagree on something this fundamental (the endpoint hostname), Apple's tooling is correct. "Get cURL Command" in Apple's Push Notifications Console is the source of truth for request shape — use it as the reference when implementing APNs from scratch.
+**Files:** `netlify/functions/send-notification.js`
+**Commit:** 96c4070
+
+## Error 136 — Deprecated `apn` library v2.2.0 silently broken on modern Node TLS
+**Build:** Discovered May 17, 2026 mid-debug.
+**Side:** Netlify functions using `apn` package (send-notification, notify-test, notify-reminders, notify-pipeline, notify-weekly).
+**Symptom:** Tokens that Apple's Console proved valid against the sandbox endpoint were rejected with `BadEnvironmentKeyInToken` when sent via the `apn` library's `production: false` config. The retry logic that switched between production and sandbox via `apn.Provider({ production: <bool> })` did not actually route to the right endpoint on modern Node + Netlify Edge.
+**Root cause:** `apn` v2.2.0 was last updated in 2019. Its HTTP/2 client and TLS handling don't work cleanly against modern Apple APNs endpoints. The library would connect, send the JWT, but in the sandbox-routing path return an error response that surfaced as `BadEnvironmentKeyInToken` even when the actual issue was at the connection layer.
+**Fix:** Replaced the `apn` library entirely. `send-notification.js` rewritten to use Node's built-in `http2` module + `jsonwebtoken` (added as direct dependency) for ES256 JWT signing. Direct POST to `api.push.apple.com` or `api.development.push.apple.com`. Parses Apple's JSON error responses for accurate failure reasons. Same prod→sandbox retry logic but at the HTTP level instead of through the library. No `apn` dependency anywhere in the codebase now.
+**Lesson:** A 6-year-old library that's deprecated upstream and unmaintained is going to fail silently against modern infrastructure. When the abstraction layer is the unreliable thing, drop to the underlying protocol. Apple's APNs HTTP/2 API is stable, well-documented, and not that hard to implement directly.
+**Files:** `netlify/functions/send-notification.js`, `package.json`
+**Commit:** f00febb
+
+## Error 137 — APNS_KEY value corrupted in Netlify across multiple paste attempts
+**Build:** Discovered May 17, 2026 during APNs key configuration.
+**Side:** Netlify environment variable storage.
+**Symptom:** Even with the right Key ID + Team ID, every JWT signing attempt failed. Error progression:
+1. First paste via Netlify Web UI textarea: newlines stripped from the `.p8` body. PEM still had BEGIN/END markers. OpenSSL DECODER returned `error:1E08010C:DECODER routines::unsupported`.
+2. Re-paste with explicit Enter key after BEGIN/END: same DECODER error — the textarea was still collapsing whitespace.
+3. Upload via `netlify env:set APNS_KEY "$(cat AuthKey_XXX.p8)" --context production`: the leading `-----BEGIN` was interpreted by netlify-cli's option parser as a flag, value was set without the BEGIN/END headers, `apn` library treated the value as a file path and threw ENOENT on a path containing the masked first bytes of the key.
+4. Reordered CLI args with flags before positional: same parser issue.
+**Root cause:** Three layers of value corruption depending on the paste method. Netlify Web UI textareas collapse whitespace in some configurations. Netlify CLI's argument parser sees `-----` as a flag prefix regardless of quoting.
+**Fix:** Store `APNS_KEY` as base64-encoded `.p8` contents (single line of `[A-Za-z0-9+/=]` — no dashes, no newlines, nothing any parser can mis-interpret). Decode at function runtime: `Buffer.from(APNS_KEY, "base64").toString("utf8")`. Backward compat: if the value still contains `BEGIN PRIVATE KEY`, use as-is (legacy direct-paste). Applied across all five APNs-using functions.
+
+The upload command becomes:
+```
+base64 -i ~/Downloads/AuthKey_XXX.p8 | tr -d '\n' | pbcopy
+# then paste into Netlify Web UI APNS_KEY field
+```
+**Lesson:** When uploading binary or whitespace-sensitive data via any UI or CLI, encode it to a format the toolchain can't mangle (base64 is the obvious choice). Source-of-truth verification: `openssl pkey -in <file> -text -noout` proves the local file is good; if the server-side function says otherwise, the upload corrupted the value.
+**Files:** `netlify/functions/send-notification.js`, `notify-test.js`, `notify-reminders.js`, `notify-pipeline.js`, `notify-weekly.js`
+**Commit:** bbced41
+
+## Error 138 — APNs key + Key ID mismatch from multiple .p8 files
+**Build:** Discovered May 17, 2026 after APNS_KEY format was fixed.
+**Side:** Netlify environment configuration.
+**Symptom:** With `APNS_KEY` properly base64-encoded and decoding to a valid PEM, JWT signing succeeded — but APNs still returned `BadEnvironmentKeyInToken` against both production and sandbox endpoints. The JWT was syntactically valid but Apple rejected it.
+**Root cause:** The user had multiple `.p8` files in `~/Downloads/` from creating multiple APNs keys in Apple Developer Portal during debugging. The `APNS_KEY` value in Netlify was the base64 of one `.p8` file, but `APNS_KEY_ID` was the 10-char identifier of a *different* `.p8` file. The JWT was signed with Key A but claimed `kid: Key B` in the header. Apple correctly rejected because the signature didn't validate against the kid's expected public key.
+
+Also: Apple Developer Portal had three keys total — "Vetted Auth Key," "Vetted Push Notifications," and "Vetted Sign in with Apple." Only the first two had APNs capability enabled. The Sign in with Apple key was unusable for push but its filename pattern was identical, contributing to confusion.
+
+Finally: the user had a personal Apple Developer account AND a business account; the app's bundle ID was registered under the business team. Some `.p8` files had been generated under the personal account, which couldn't sign JWTs for the business team's bundle ID.
+**Fix:** Created one fresh clean APNs key in the business account with the APNs capability explicitly checked. Downloaded the `.p8` immediately (Apple's one-shot download). Uploaded the base64 of THAT file as `APNS_KEY` and the matching 10-char ID as `APNS_KEY_ID`. Verified the pairing with a local Node script (`apns-test.js`) that signed a JWT and POSTed to `api.development.push.apple.com` — returned 200 with empty body, push delivered.
+**Lesson:** APNs key pairing is rigid: the `.p8` file's contents and the 10-char Key ID MUST be from the same key in the same team. Mixing keys (even unintentionally) produces JWTs that look valid but fail at Apple's signature verification, with an error code (`BadEnvironmentKeyInToken`) that misleadingly suggests an environment problem. Always create + upload as a pair, never mix. And when an Apple Developer account is part of multiple teams, every key, App ID, and team ID must be consistently from the same team.
+**Files:** Netlify env vars only (no code changes)
+**Commit:** N/A (operational)
+
+## Error 139 — iOS dev tokens are rejected by production APNs gateway and need explicit retry
+**Build:** Discovered May 17, 2026 during dev-build push testing.
+**Side:** Netlify function `send-notification.js`.
+**Symptom:** Production-signed builds (App Store, TestFlight) get APNs tokens that work against the production endpoint. Xcode-installed dev builds get tokens that only work against the development endpoint. The server has no way to distinguish a dev token from a production token by inspecting the token itself — both are 64-character hex strings.
+**Root cause:** Apple encodes the environment indicator inside the device token bytes, but the wire format doesn't expose it. Sending a dev token to the production endpoint returns `BadDeviceToken` or `BadEnvironmentKeyInToken`. Sending a production token to the development endpoint returns the same.
+**Fix:** `send-notification.js` now tries production first, then retries any failures with reason `BadDeviceToken` or `BadEnvironmentKeyInToken` against the development endpoint. Both successes are merged. The function transparently handles dev-build testing and real-user production push without needing to know in advance which is which.
+
+Optional env var `APNS_FORCE_SANDBOX=1` flips the order (sandbox first) for debug testing where you know all tokens are dev tokens.
+**Lesson:** When you can't tell dev from production tokens by inspection, try one and retry on the well-known environment-mismatch error codes. Don't store environment hints per device — that adds schema and operational cost for no benefit.
+**Files:** `netlify/functions/send-notification.js`
+**Commit:** 085dd5c, 482b817
+
+## Error 140 — SettingsTab crash on Send Test Push diagnostic button
+**Build:** Discovered May 16, 2026 during notify-test rollout.
+**Side:** `src/App.jsx`.
+**Symptom:** Tapping the "Send test push" diagnostic in Profile/Settings crashed the app with `ReferenceError: Can't find variable: authUser`. The button was added but the `SettingsTab` component signature didn't destructure `authUser` from props, so the crash happened before the button could even render its loading state.
+**Root cause:** When `NotifyTestButton` was added inline in `SettingsTab`, the `authUser` prop wasn't threaded through the component's parameter list. JS only flagged this at runtime.
+**Fix:** Added `authUser` to `SettingsTab`'s destructured props and to the call site's prop list.
+**Lesson:** Adding a child component that consumes props the parent never received is a common refactor regression. Worth a quick smoke test (open every settings screen) after touching any settings UI. A TypeScript layer would catch this at build time; absent that, manual QA across tabs is the safety net.
+**Files:** `src/App.jsx`
+**Commit:** 8d6a68e
+
+## Error 141 — VQ Advocate history items rendered in two different font families
+**Build:** Discovered May 16, 2026 during notification UI work.
+**Side:** `src/components/VQAdvocate.jsx`.
+**Symptom:** History section bullet text used Inter sans-serif while the dates in the same row used Libre Baskerville serif (uppercase, tracked). Visually jarring — two type families per row in an editorial-style screen.
+**Root cause:** History row headline used `font-family: var(--font-prose)` (Inter). Date used `font-family: var(--font-data)` (Libre Baskerville). The intentional contrast pattern works elsewhere (eyebrow vs body) but not within a tight one-row list where both fonts sit side by side.
+**Fix:** Switched the headline to `var(--font-display)` at regular weight so the row uses one type family throughout. Dates kept their existing data-style treatment.
+**Lesson:** The two-font system is intentional but the boundary needs to be a clear visual separation (a row apart, a different surface, etc.). Within a single tight row, one type family. Worth a design lint pass on any list/table component.
+**Files:** `src/components/VQAdvocate.jsx`
+**Commit:** 8d6a68e
