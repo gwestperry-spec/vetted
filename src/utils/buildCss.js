@@ -27,6 +27,13 @@ export const buildCss = (dir) => `
     --stage-withdrew-bg:#F0F4F0;--stage-withdrew-fg:#8A9A8A;
     --shadow:none;
     --focus:0 0 0 3px rgba(58,122,58,0.25);
+    /* Build-30 redesign tokens (from colors_and_type.css + pill-flow.jsx) */
+    --cream-warm:#EDF1ED;--gold-bg:#FDF6DE;--gold-border:rgba(184,160,48,0.45);
+    --pass:#C05050;--pass-bg:#F8ECEC;--pass-border:rgba(192,80,80,0.40);
+    --accent-border-strong:rgba(58,122,58,0.40);
+    --on-dark-soft:#C8D4C5;--on-dark-border:rgba(232,240,232,0.16);
+    --dot:#fbbf24;
+    --font-serif:var(--font-display);
     --t-fast:0.15s ease;--t-slow:0.3s ease;--t-bar:0.6s ease;
     --sp-1:4px;--sp-2:6px;--sp-3:8px;--sp-4:10px;--sp-5:12px;--sp-6:14px;--sp-7:16px;--sp-8:20px;--sp-9:24px;--sp-10:28px;--sp-11:32px;--sp-12:48px;
     --r:10px;--r-tile:8px;--r-field:10px;--r-card:12px;--r-pill:20px;
