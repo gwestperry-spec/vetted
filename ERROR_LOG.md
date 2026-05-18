@@ -1792,3 +1792,13 @@ Optional env var `APNS_FORCE_SANDBOX=1` flips the order (sandbox first) for debu
 **Lesson:** Any auto/scroll region in the editorial redesign should default to the `.no-scrollbar` utility. The design vocabulary doesn't permit chrome scroll bars on paper or forest surfaces.
 **Files:** `src/index.css`, `src/components/redesign/score-result/{InsightsLanding,FiltersLanding,CoachLanding,PayLanding}.jsx`, `src/components/redesign/ThoughtCard.jsx`
 **Commit:** 4cc4dae
+
+## Error 159 — notify-test "All 1 failed" with no surfaced reason; sandbox-token mismatch likely
+**Build:** Discovered May 18, 2026 during Build-30 TestFlight notification QA.
+**Side:** `netlify/functions/notify-test.js`, `src/App.jsx` (SettingsTab diagnostic UI).
+**Symptom:** Diagnostic run reported `❌ All 1 push(es) failed at APNs. SUPABASE_ENV: ✓ · APNS_ENV: ✓ · DEVICES: 1 · SENT: 0 · FAILED: 1`. The summary blamed env-var paste or bundle-ID mismatch, but the actual upstream `reason` was only in the response JSON's `devices[]` array — not rendered anywhere in the app's UI. User couldn't act on the failure without manually inspecting the response body or function logs.
+**Root cause:** Two issues compounding. (1) `notify-test.js` hardcoded `production: true` on its `apn.Provider`, so sandbox-issued tokens (Xcode debug builds running on a physical device) were sent to the production gateway, which rejects them with `BadDeviceToken`. The dev/prod mismatch is documented as Error 139 but never had auto-retry. (2) SettingsTab's diagnostic UI rendered the summary + stages line but ignored the `devices[]` array. The actionable detail existed in the response but never made it to the user.
+**Fix:** notify-test now constructs both a production and sandbox `apn.Provider`. Each device is sent against production first; on `BadDeviceToken`, it auto-retries against sandbox and records whichever endpoint actually delivered. Each `devices[]` entry now carries `env`, `status`, optional `reason`, and the upstream `status_code`. SettingsTab renders the full `devices[]` array below the stages line — token tail, env, status, reason, and status code each on their own row.
+**Lesson:** Diagnostic UIs that swallow per-row failure detail are worse than no UI — they create the illusion of debugging info while hiding the only data that would let the user act. Pattern: whenever a function returns an array of per-item results, render the array, not just the summary.
+**Files:** `netlify/functions/notify-test.js`, `src/App.jsx`
+**Commit:** 51bd65d
