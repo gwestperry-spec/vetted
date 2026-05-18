@@ -24,6 +24,7 @@ import WalkthroughModal from "./components/WalkthroughModal.jsx";
 import PaywallModal from "./components/PaywallModal.jsx";
 import FiltersStep from "./components/FiltersStep.jsx";
 import { VQLoadingScreen as VQLoadingScreenComponent } from "./components/VQLoadingScreen.jsx";
+import ScoringScreen from "./components/redesign/scoring/ScoringScreen.jsx";
 import { OnboardStep } from "./components/Onboarding.jsx";
 import Dashboard from "./components/Dashboard.jsx";
 import RoleWorkspace from "./components/workspace/RoleWorkspace.jsx";
@@ -1064,7 +1065,13 @@ export default function App() {
   if (loading && step === "workspace") {
     return (
       <div className="app">
-        <VQLoadingScreenComponent loadingMsg={t.loadingMsg} streamingFilters={streamingFilters} filters={filters} scoringPhase={scoringPhase} t={t} lang={lang} />
+        {/* Build-30 redesign: ScoringScreen replaces VQLoadingScreen as the
+            scoring-in-progress UI. Forest backdrop, rotating verdict seal,
+            cycling anchor Q/A pair, and step trail at the bottom. The
+            legacy VQLoadingScreen import is retained for potential rollback
+            via a feature flag — not removed in case Phase 6 needs to be
+            reverted quickly. */}
+        <ScoringScreen scoringPhase={scoringPhase} />
       </div>
     );
   }

@@ -23,6 +23,8 @@ export default function VerdictSeal({
   paused = true,
   centerContent,
   opacity = 1,
+  outerSpeed = 9,      // seconds per revolution (clockwise)
+  innerSpeed = 6,      // seconds per revolution (clockwise)
 }) {
   const half = size / 2;
   const outerR = half - 14;
@@ -77,21 +79,35 @@ export default function VerdictSeal({
             fill="none"
           />
         </defs>
-        <text
-          fontFamily="var(--font-serif)"
-          fontSize={10}
-          fontWeight={700}
-          letterSpacing="6"
-          fill="var(--on-dark-soft)"
-          style={{ opacity: opacity * 0.85 }}
+        <g
+          style={{
+            transformOrigin: `${half}px ${half}px`,
+            animation: paused ? "none" : `seal-spin-cw ${outerSpeed}s linear infinite`,
+          }}
         >
-          <textPath href="#seal-outer-path" startOffset="0">
-            {repeated}
-          </textPath>
-        </text>
+          <text
+            fontFamily="var(--font-serif)"
+            fontSize={10}
+            fontWeight={700}
+            letterSpacing="6"
+            fill="var(--on-dark-soft)"
+            style={{ opacity: opacity * 0.85 }}
+          >
+            <textPath href="#seal-outer-path" startOffset="0">
+              {repeated}
+            </textPath>
+          </text>
+        </g>
 
         {/* Inner ring — glyphs */}
-        {glyphs}
+        <g
+          style={{
+            transformOrigin: `${half}px ${half}px`,
+            animation: paused ? "none" : `seal-spin-cw ${innerSpeed}s linear infinite`,
+          }}
+        >
+          {glyphs}
+        </g>
 
         {/* Thin separator ring */}
         <circle
@@ -112,6 +128,17 @@ export default function VerdictSeal({
           {centerContent}
         </div>
       )}
+
+      {/* Keyframes — only declared once per mount. Reduced motion disables. */}
+      <style>{`
+        @keyframes seal-spin-cw {
+          from { transform: rotate(0deg); }
+          to   { transform: rotate(360deg); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          [data-seal-spinner] g { animation: none !important; }
+        }
+      `}</style>
     </div>
   );
 }
