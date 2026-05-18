@@ -1,3 +1,4 @@
+import { createPortal } from "react-dom";
 import { ENDPOINTS } from "../config.js";
 import VerdictSeal from "./redesign/VerdictSeal.jsx";
 
@@ -71,16 +72,14 @@ const isNative = () => Boolean(window.Capacitor?.isNativePlatform?.());
 export default function SignInGate({ t, lang, setLang, onSignIn, onGitHubSignIn, authLoading, authError, onClearAuth }) {
   const guidance = authError ? ERROR_GUIDANCE[authError] : null;
 
-  return (
+  const body = (
     <div style={{
-      // Full-bleed forest backdrop — same gradient + grain as the
-      // scoring screen so the seal renders against the identical
-      // environment, not a clipped disk on paper. The whole sign-in
-      // gate now matches the dark vocabulary of Scoring / Resolve /
-      // Profile.
-      position: "relative",
-      minHeight: "100svh",
-      width: "100%",
+      // Portal-rendered onto document.body so the forest fills the
+      // entire viewport — including the iOS safe-area top/bottom and
+      // the centered #root border on larger viewports. Same pattern
+      // as ScoringScreen / ResolveHub / ProfileLanding.
+      position: "fixed", inset: 0,
+      width: "100vw", height: "100dvh",
       paddingTop: "calc(env(safe-area-inset-top, 0px) + 56px)",
       paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 32px)",
       paddingLeft: 24,
@@ -93,6 +92,7 @@ export default function SignInGate({ t, lang, setLang, onSignIn, onGitHubSignIn,
       alignItems: "center",
       overflow: "hidden",
       boxSizing: "border-box",
+      zIndex: 30,
     }}>
       {/* Grain overlay — matches ForestBackdrop on the scoring screen */}
       <div aria-hidden="true" style={{
@@ -349,4 +349,5 @@ export default function SignInGate({ t, lang, setLang, onSignIn, onGitHubSignIn,
       )}
     </div>
   );
+  return typeof document !== "undefined" ? createPortal(body, document.body) : body;
 }
