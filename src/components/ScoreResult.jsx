@@ -678,6 +678,8 @@ export default function ScoreResult({ t, lang, opp, profile, filters, onBack, on
         rationale={opp.recommendation_rationale}
         roleTitle={opp.role_title}
         company={opp.company}
+        location={opp.location || opp.framework_snapshot?.location}
+        scoredSeconds={opp.scored_seconds || opp.framework_snapshot?.scored_seconds}
         onBack={onBack}
         onPillTap={(id) => setView(id)}
         t={t}
