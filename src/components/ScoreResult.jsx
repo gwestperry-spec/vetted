@@ -644,14 +644,62 @@ Respond ONLY with valid JSON (no markdown). Every value must be a plain string �
 }
 
 // ══════════════════════════════════════════════════════════════════════════
+// Build-30 redesign router lives at the top of this component. By default,
+// new scores land on ResolveHub (the redesigned score result). Tapping a
+// pill opens the corresponding landing. The legacy tab-based layout is
+// still reachable via the placeholder pills' "Show legacy" button — kept
+// as a safety net while Phase 3/4/5 land.
+import ResolveHub from "./redesign/score-result/ResolveHub.jsx";
+import InsightsLanding from "./redesign/score-result/InsightsLanding.jsx";
+import PlaceholderLanding from "./redesign/score-result/PlaceholderLanding.jsx";
+
 export default function ScoreResult({ t, lang, opp, profile, filters, onBack, onRemove, onUpdateStatus, userTier, authUser, onUpgrade }) {
   if (!opp) return null;
 
-  // Default to INSIGHTS — the most valuable content
+  // Build-30 view router: "hub" (default) | "insights" | "filters" | "pay" | "coach" | "legacy"
+  const [view, setView] = useState("hub");
+
+  // Default to INSIGHTS for the legacy tab layout (only when view === "legacy")
   const [activeTab, setActiveTab]         = useState("insights");
   const [localStatus, setLocalStatus]     = useState(opp.application_status || "applied");
   const [actionStatus, setActionStatus]   = useState(null); // null | 'passed' | 'saved' | 'applied'
   const [showOverflow, setShowOverflow]   = useState(false);
+
+  // ── New flow renders ──────────────────────────────────────────────────
+  if (view === "hub") {
+    return (
+      <ResolveHub
+        score={opp.overall_score}
+        verdict={opp.recommendation}
+        rationale={opp.recommendation_rationale}
+        roleTitle={opp.role_title}
+        company={opp.company}
+        onBack={onBack}
+        onPillTap={(id) => setView(id)}
+      />
+    );
+  }
+  if (view === "insights") {
+    return (
+      <InsightsLanding
+        opp={opp}
+        onBack={() => setView("hub")}
+        onNext={() => setView("filters")}
+      />
+    );
+  }
+  if (view === "filters" || view === "pay" || view === "coach") {
+    const title = view === "filters" ? "FILTERS" : view === "pay" ? "PAY" : "COACH";
+    return (
+      <PlaceholderLanding
+        title={title}
+        opp={opp}
+        onBack={() => setView("hub")}
+        onShowLegacy={() => { setActiveTab(view); setView("legacy"); }}
+      />
+    );
+  }
+  // ── Legacy layout (everything below) — view === "legacy" ──────────────
 
   const rec   = opp.recommendation || "monitor";
   const theme = getTheme(rec);
