@@ -56,12 +56,19 @@ export default function VerdictSeal({
     );
   }
 
-  // Outer ring text. Single pass of "PURSUE ◆ MONITOR ◆ PASS ◆", stretched
-  // to fill the exact arc circumference via textLength. Browser distributes
-  // whitespace evenly — no Unicode em-space tricks, no looping, the
-  // three verdicts always read evenly spaced regardless of seal size.
-  const circumference = 2 * Math.PI * outerR;
+  // Outer ring text. Single pass of "PURSUE ◆ MONITOR ◆ PASS ◆" with
+  // letter-spacing computed from the seal's actual arc circumference so
+  // the text always fills the ring evenly. WebKit's `textLength` on
+  // `<textPath>` is unreliable on iOS, so we don't rely on it — letter-
+  // spacing is the well-supported lever and we compute it ourselves.
   const outerText = "PURSUE  ◆  MONITOR  ◆  PASS  ◆";
+  const outerFontSize = 11;
+  const circumference = 2 * Math.PI * outerR;
+  // Empirical char advance for Libre Baskerville bold caps ≈ 0.58 × font-size.
+  // Tracking budget = remaining arc length after subtracting natural width.
+  const naturalWidth = outerText.length * outerFontSize * 0.58;
+  const trackingBudget = Math.max(0, circumference - naturalWidth - 8);
+  const outerLetterSpacing = trackingBudget / Math.max(1, outerText.length - 1);
 
   return (
     <div style={{
@@ -90,17 +97,13 @@ export default function VerdictSeal({
         >
           <text
             fontFamily="var(--font-serif)"
-            fontSize={11}
+            fontSize={outerFontSize}
             fontWeight={700}
+            letterSpacing={outerLetterSpacing}
             fill="var(--on-dark-soft)"
             style={{ opacity: opacity * 0.85 }}
           >
-            <textPath
-              href="#seal-outer-path"
-              startOffset="0"
-              textLength={circumference}
-              lengthAdjust="spacing"
-            >
+            <textPath href="#seal-outer-path" startOffset="0">
               {outerText}
             </textPath>
           </text>
