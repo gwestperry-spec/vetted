@@ -1752,3 +1752,13 @@ Optional env var `APNS_FORCE_SANDBOX=1` flips the order (sandbox first) for debu
 **Lesson:** Every LLM-backed function in this app should retry transient codes (429/5xx/529) and surface friendly messages on final failure. Worth retrofitting `anthropic.js`, `anthropic-stream.mjs`, `behavioral-intelligence.js`, `parse-resume.js`, and `market-pulse.js` with the same pattern. Currently only `cover-letter.js` has it.
 **Files:** `netlify/functions/cover-letter.js`
 **Commit:** b763761
+
+## Error 155 — Paywall still advertised VQ Advocate after Build-30 deprecation
+**Build:** Discovered May 18, 2026 during Build-30 paywall QA.
+**Side:** `src/components/PaywallModal.jsx`.
+**Symptom:** Paywall tier comparison listed "VQ Advocate" as a benefit across Free / Signal / Vantage (monthly and lifetime). Build 30 deprecated VQ Advocate as a named feature — its job is now done by the Behavioral Insights pod on the Workspace door. Users were being sold a feature that no longer exists under that name.
+**Root cause:** The paywall bullet lists were authored before the Build-30 redesign and weren't swept when VQAdvocate.jsx and the menu entry were removed.
+**Fix:** Removed the three VQ Advocate bullets (paywallFreeBullet4, paywallSignalBullet5, paywallVantageBullet6) from the FREE_PLAN, MONTHLY, and LIFETIME tier definitions. Free drops from 4 → 3 bullets; Signal + Vantage each drop from 8 → 7. Translation keys for those bullets remain in translations.js across all 7 langs as orphans — harmless dead i18n; can be swept in a future i18n cleanup pass.
+**Lesson:** Whenever a named feature is renamed or replaced, sweep marketing surfaces (paywall, landing page, menu, App Store metadata) — not just the implementation files.
+**Files:** `src/components/PaywallModal.jsx`
+**Commit:** ff5c354
