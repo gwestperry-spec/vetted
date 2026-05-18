@@ -1287,21 +1287,19 @@ export default function App() {
             )}
             {activeTab === "profile" && (
               // Build-30 redesign: editorial forest "plate" profile.
-              // Legacy ProfileTab kept further down for reference / rollback
-              // but no longer rendered. Section EDIT routes through the
-              // existing onboarding edit flow.
-              <div style={{ position: "relative", minHeight: "100svh" }}>
-                <ProfileLanding
-                  t={t}
-                  profile={profile}
-                  authUser={authUser}
-                  userTier={devTierOverride || userTier}
-                  onSignOut={handleSignOut}
-                  onEditSection={(stepId) => { setEditingProfile(true); setEditProfileStep(stepId || null); setStep("onboard"); }}
-                  onUpgrade={() => { setShowPaywall(true); }}
-                  onOpenMenu={() => setMenuOpen(true)}
-                />
-              </div>
+              // ProfileLanding portals onto document.body so the forest
+              // surface is truly edge-to-edge (covers status bar + tab
+              // bar safe areas, no paper border bleeding through).
+              <ProfileLanding
+                t={t}
+                profile={profile}
+                authUser={authUser}
+                userTier={devTierOverride || userTier}
+                onSignOut={handleSignOut}
+                onEditSection={(stepId) => { setEditingProfile(true); setEditProfileStep(stepId || null); setStep("onboard"); }}
+                onUpgrade={() => { setShowPaywall(true); }}
+                onOpenMenu={() => setMenuOpen(true)}
+              />
             )}
             {activeTab === "settings" && (
               <SettingsTab

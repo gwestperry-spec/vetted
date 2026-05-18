@@ -12,6 +12,7 @@
 // setEditProfileStep + setStep("onboard")).
 
 import React from "react";
+import { createPortal } from "react-dom";
 import { COUNTRY_MAP } from "../../../data/countries.js";
 
 const C = {
@@ -221,18 +222,27 @@ export default function ProfileLanding({
 
   const editLabel = (t.profileEdit || "EDIT").toUpperCase();
 
-  return (
+  const body = (
     <div style={{
-      position: "absolute", inset: 0, overflow: "hidden",
+      // Portal-rendered onto document.body so the forest backdrop covers
+      // the iOS safe-area top/bottom and the centered #root border on
+      // larger viewports. Edge-to-edge plate, no paper bleeding through.
+      position: "fixed", inset: 0,
+      width: "100vw", height: "100dvh",
+      overflow: "hidden",
       display: "flex", flexDirection: "column",
+      background: "#0F1F0F",
+      zIndex: 40,
     }}>
       <Backdrop haloY="22%"/>
 
-      {/* Top bar — VETTED + hamburger, on ink */}
+      {/* Top bar — VETTED + hamburger, on ink. Top padding clears the
+          iOS notch via safe-area inset. */}
       <header style={{
         position: "relative", flex: "0 0 auto",
         display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: "54px 8px 6px 20px",
+        paddingTop: "calc(env(safe-area-inset-top, 0px) + 14px)",
+        paddingRight: 8, paddingBottom: 6, paddingLeft: 20,
       }}>
         <div style={{
           fontFamily: F.data, fontSize: 11, letterSpacing: "0.18em",
@@ -241,10 +251,12 @@ export default function ProfileLanding({
         <DarkHamburger onClick={onOpenMenu}/>
       </header>
 
-      {/* Scrollable plate */}
+      {/* Scrollable plate. Bottom padding clears the floating tab bar
+          (~58px) + the iOS home indicator safe-area. */}
       <div style={{
         position: "relative", flex: 1, overflow: "auto",
-        padding: "18px 24px 120px",
+        paddingTop: 18, paddingRight: 24, paddingLeft: 24,
+        paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 120px)",
       }}>
 
         {/* Eyebrow */}
@@ -444,4 +456,5 @@ export default function ProfileLanding({
       </div>
     </div>
   );
+  return typeof document !== "undefined" ? createPortal(body, document.body) : body;
 }
