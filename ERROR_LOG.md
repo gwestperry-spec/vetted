@@ -1762,3 +1762,13 @@ Optional env var `APNS_FORCE_SANDBOX=1` flips the order (sandbox first) for debu
 **Lesson:** Whenever a named feature is renamed or replaced, sweep marketing surfaces (paywall, landing page, menu, App Store metadata) — not just the implementation files.
 **Files:** `src/components/PaywallModal.jsx`
 **Commit:** ff5c354
+
+## Error 156 — SignInGate seal looked "different" from scoring screen despite identical props
+**Build:** Discovered May 18, 2026 during Build-30 sign-in QA, after Errors 149 / 153 ostensibly aligned the two seals.
+**Side:** `src/components/SignInGate.jsx`.
+**Symptom:** User reported the sign-in seal still didn't match the scoring screen visually, even though both call sites passed identical props: `size 220`, `paused false`, `outerSpeed 9`, `innerSpeed 6`, `opacity 0.95`. The VerdictSeal component renders the same SVG at both call sites; the math is the math.
+**Root cause:** Not a seal bug at all — an environment bug. Scoring screen renders the seal on a full-bleed forest backdrop with a 620pt gold halo that bleeds well past the seal. Sign-in screen rendered the seal inside a 240pt circular disk with `overflow: hidden` on paper. Same seal, two visual worlds: one looked embedded in a forest, the other looked like a coin pasted on paper. The user was reading the environmental contrast as a difference in the mark.
+**Fix:** Dropped the disk wrapper entirely. Made the entire sign-in gate full-bleed forest using the same gradient stops, 620pt halo, and overlay grain pattern as ScoringScreen's ForestBackdrop. Recolored every text + chrome element for on-dark: ink → `#EDF2EC`, muted → `#7A9A7A`, accent → `#fbbf24`. Sign-in-with-Apple button inverts to cream-on-ink. Seal now sits directly on the same backdrop the scoring seal sits on — identical environment, no clipped disk.
+**Lesson:** When two components render "the same thing" but read differently, the gap is rarely the component itself once the props match — it's the parent's chrome, padding, or background. Audit the surrounding layout, not just the renderable.
+**Files:** `src/components/SignInGate.jsx`
+**Commit:** b0e700f
