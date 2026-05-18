@@ -73,37 +73,48 @@ export default function SignInGate({ t, lang, setLang, onSignIn, onGitHubSignIn,
 
   return (
     <div style={{
-      maxWidth: 480,
-      margin: "0 auto",
-      paddingTop: 48,
-      paddingBottom: 48,
+      // Full-bleed forest backdrop — same gradient + grain as the
+      // scoring screen so the seal renders against the identical
+      // environment, not a clipped disk on paper. The whole sign-in
+      // gate now matches the dark vocabulary of Scoring / Resolve /
+      // Profile.
+      position: "relative",
+      minHeight: "100svh",
+      width: "100%",
+      paddingTop: "calc(env(safe-area-inset-top, 0px) + 56px)",
+      paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 32px)",
       paddingLeft: 24,
       paddingRight: 24,
-      background: "#FAFAF8",
-      minHeight: "100vh",
+      background:
+        "radial-gradient(130% 90% at 50% 30%, #1F3520 0%, #152715 50%, #0F1F0F 100%)",
+      color: "#EDF2EC",
       display: "flex",
       flexDirection: "column",
       alignItems: "center",
+      overflow: "hidden",
+      boxSizing: "border-box",
     }}>
-      {/* ── Verdict seal — same dimensions + speeds as the scoring
-          screen so the sign-in opens with the identical brand mark in
-          motion (220pt seal on a forest disk, 9s outer / 6s inner). ── */}
+      {/* Grain overlay — matches ForestBackdrop on the scoring screen */}
+      <div aria-hidden="true" style={{
+        position: "absolute", inset: 0, pointerEvents: "none",
+        backgroundImage: "repeating-linear-gradient(0deg, rgba(232,240,232,0.014) 0 1px, transparent 1px 2px), repeating-linear-gradient(90deg, rgba(232,240,232,0.012) 0 1px, transparent 1px 2px)",
+        mixBlendMode: "overlay",
+      }}/>
+
+      {/* Gold halo — identical to the scoring screen's haloY=44% halo */}
+      <div aria-hidden="true" style={{
+        position: "absolute", top: "30%", left: "50%",
+        width: 620, height: 620, transform: "translate(-50%, -50%)",
+        background: "radial-gradient(circle, rgba(251,191,36,0.10) 0%, rgba(251,191,36,0.04) 35%, transparent 65%)",
+        pointerEvents: "none",
+      }}/>
+
+      {/* ── Verdict seal — identical to the scoring screen, no disk
+          wrapper. Sits directly on the forest. ── */}
       <div style={{
-        position: "relative",
-        width: 240, height: 240,
-        marginBottom: 20,
-        borderRadius: "50%",
-        overflow: "hidden",
+        position: "relative", marginBottom: 20,
         display: "flex", alignItems: "center", justifyContent: "center",
-        background:
-          "radial-gradient(130% 90% at 50% 40%, #1F3520 0%, #152715 50%, #0F1F0F 100%)",
-        boxShadow: "0 1px 0 rgba(255,255,255,0.5), 0 10px 28px rgba(15,31,15,0.20)",
       }}>
-        <div style={{
-          position: "absolute", inset: 0,
-          background: "radial-gradient(circle at 50% 40%, rgba(251,191,36,0.10) 0%, rgba(251,191,36,0.04) 35%, transparent 65%)",
-          pointerEvents: "none",
-        }}/>
         <VerdictSeal size={220} paused={false} outerSpeed={9} innerSpeed={6} opacity={0.95}/>
       </div>
 
@@ -112,40 +123,44 @@ export default function SignInGate({ t, lang, setLang, onSignIn, onGitHubSignIn,
         fontFamily: "var(--font-display)",
         fontSize: 32,
         fontWeight: 700,
-        color: "#1A2E1A",
+        color: "#EDF2EC",
         marginTop: 0,
         marginBottom: 0,
+        position: "relative",
       }}>Vetted</h1>
 
       {/* ── Tagline ── */}
       <p style={{
         fontFamily: "var(--font-data)",
         fontSize: 11,
-        color: "#1A2E1A",
+        color: "#7A9A7A",
         letterSpacing: "0.2em",
         textTransform: "uppercase",
         marginTop: 6,
         marginBottom: 0,
+        position: "relative",
       }}>Career Intelligence</p>
 
-      {/* ── Green rule ── */}
+      {/* ── Gold rule ── */}
       <div style={{
         height: 2,
         width: 32,
-        background: "#1A2E1A",
+        background: "rgba(212,188,82,0.55)",
         borderRadius: 1,
         margin: "20px auto",
+        position: "relative",
       }} />
 
       {/* ── Brief copy ── */}
       <p style={{
         fontFamily: "var(--font-prose)",
         fontSize: 14,
-        color: "#3A4A3A",
+        color: "#C8D4C5",
         textAlign: "center",
         maxWidth: 280,
         lineHeight: 1.7,
         marginBottom: 32,
+        position: "relative",
       }}>Score every opportunity against what actually matters to you.</p>
 
       {/* Language switcher moved to the in-app menu (hamburger →
@@ -154,22 +169,23 @@ export default function SignInGate({ t, lang, setLang, onSignIn, onGitHubSignIn,
       {/* ── Error state with actionable guidance ── */}
       {guidance && (
         <div role="alert" style={{
-          background: "#F0F4F0",
-          border: "1px solid #D8E8D8",
+          background: "rgba(232,240,232,0.06)",
+          border: "0.5px solid rgba(232,240,232,0.16)",
           borderRadius: 10,
           padding: "16px",
           marginBottom: 16,
           textAlign: "left",
           width: "100%",
           maxWidth: 320,
+          position: "relative",
         }}>
-          <p style={{ fontWeight: 600, fontSize: 13, color: "#1A2E1A", marginBottom: guidance.steps ? 10 : 0 }}>
+          <p style={{ fontWeight: 600, fontSize: 13, color: "#EDF2EC", marginBottom: guidance.steps ? 10 : 0 }}>
             {guidance.title}
           </p>
           {guidance.steps && (
             <ol style={{ margin: 0, paddingLeft: 18 }}>
               {guidance.steps.map((step, i) => (
-                <li key={i} style={{ fontSize: 12, color: "#1A2E1A", lineHeight: 1.7, marginBottom: 2 }}>
+                <li key={i} style={{ fontSize: 12, color: "#C8D4C5", lineHeight: 1.7, marginBottom: 2 }}>
                   {step}
                 </li>
               ))}
@@ -180,8 +196,8 @@ export default function SignInGate({ t, lang, setLang, onSignIn, onGitHubSignIn,
               onClick={onClearAuth}
               style={{
                 marginTop: 12, width: "100%", padding: "8px 12px",
-                background: "transparent", border: "1px solid #D8E8D8",
-                borderRadius: 8, fontSize: 12, color: "#1A2E1A",
+                background: "transparent", border: "0.5px solid rgba(232,240,232,0.30)",
+                borderRadius: 8, fontSize: 12, color: "#EDF2EC",
                 cursor: "pointer", fontFamily: "var(--font-data)",
                 letterSpacing: ".06em", textTransform: "uppercase",
               }}
@@ -205,8 +221,8 @@ export default function SignInGate({ t, lang, setLang, onSignIn, onGitHubSignIn,
           width: "100%",
           maxWidth: 320,
           minHeight: 52,
-          background: "#1A2E1A",
-          color: "#E8F0E8",
+          background: "#EDF2EC",
+          color: "#0F1F0F",
           border: "none",
           borderRadius: 10,
           fontFamily: "var(--font-prose)",
@@ -216,17 +232,18 @@ export default function SignInGate({ t, lang, setLang, onSignIn, onGitHubSignIn,
           opacity: authLoading ? 0.75 : 1,
           marginTop: 4,
           marginBottom: 16,
+          position: "relative",
         }}
       >
         {authLoading ? (
           <>
-            <span className="spinner" style={{ width: 18, height: 18, borderWidth: 2, borderColor: "rgba(232,240,232,0.3)", borderTopColor: "#E8F0E8" }} aria-hidden="true" />
+            <span className="spinner" style={{ width: 18, height: 18, borderWidth: 2, borderColor: "rgba(15,31,15,0.25)", borderTopColor: "#0F1F0F" }} aria-hidden="true" />
             Signing in…
           </>
         ) : (
           <>
             {/* Apple logo — 384×512 viewBox, aspect ratio 0.75, rendered at 18×24 */}
-            <svg width="18" height="24" viewBox="0 0 384 512" fill="#E8F0E8" aria-hidden="true" style={{ flexShrink: 0 }}>
+            <svg width="18" height="24" viewBox="0 0 384 512" fill="#0F1F0F" aria-hidden="true" style={{ flexShrink: 0 }}>
               <path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"/>
             </svg>
             {guidance ? "Try Again" : "Sign in with Apple"}
@@ -239,12 +256,13 @@ export default function SignInGate({ t, lang, setLang, onSignIn, onGitHubSignIn,
         <>
           <div style={{
             display: "flex", alignItems: "center", gap: 8, width: "100%", maxWidth: 320, margin: "4px 0",
+            position: "relative",
           }}>
-            <div style={{ flex: 1, height: 1, background: "#D8E8D8" }} />
-            <span style={{ fontFamily: "var(--font-data)", fontSize: 10, color: "#1A2E1A", letterSpacing: ".1em", textTransform: "uppercase", whiteSpace: "nowrap" }}>
+            <div style={{ flex: 1, height: 0.5, background: "rgba(232,240,232,0.16)" }} />
+            <span style={{ fontFamily: "var(--font-data)", fontSize: 10, color: "#7A9A7A", letterSpacing: ".1em", textTransform: "uppercase", whiteSpace: "nowrap" }}>
               or on web
             </span>
-            <div style={{ flex: 1, height: 1, background: "#D8E8D8" }} />
+            <div style={{ flex: 1, height: 0.5, background: "rgba(232,240,232,0.16)" }} />
           </div>
           <button
             onClick={onGitHubSignIn}
@@ -270,24 +288,26 @@ export default function SignInGate({ t, lang, setLang, onSignIn, onGitHubSignIn,
       <p style={{
         fontFamily: "var(--font-prose)",
         fontSize: 12,
-        color: "#1A2E1A",
+        color: "#7A9A7A",
         textAlign: "center",
         marginTop: 0,
         marginBottom: 8,
+        position: "relative",
       }}>Free to download · No card required</p>
 
       {/* ── Terms and Privacy ── */}
       <p style={{
         fontFamily: "var(--font-prose)",
         fontSize: 11,
-        color: "#1A2E1A",
+        color: "#7A9A7A",
         textAlign: "center",
         lineHeight: 1.8,
         marginTop: 8,
+        position: "relative",
       }}>
-        <a href={ENDPOINTS.terms} target="_blank" rel="noopener noreferrer" style={{ color: "#1A2E1A", textDecoration: "none" }}>Terms of Use</a>
+        <a href={ENDPOINTS.terms} target="_blank" rel="noopener noreferrer" style={{ color: "#C8D4C5", textDecoration: "none" }}>Terms of Use</a>
         {"  ·  "}
-        <a href={ENDPOINTS.privacy} target="_blank" rel="noopener noreferrer" style={{ color: "#1A2E1A", textDecoration: "none" }}>Privacy Policy</a>
+        <a href={ENDPOINTS.privacy} target="_blank" rel="noopener noreferrer" style={{ color: "#C8D4C5", textDecoration: "none" }}>Privacy Policy</a>
       </p>
 
       {/* ── Blog footer (web only — hidden in native app) ── */}
@@ -297,9 +317,10 @@ export default function SignInGate({ t, lang, setLang, onSignIn, onGitHubSignIn,
           maxWidth: 320,
           marginTop: 20,
           paddingTop: 16,
-          borderTop: "1px solid #E0E8E0",
+          borderTop: "0.5px solid rgba(232,240,232,0.16)",
           paddingBottom: 12,
           textAlign: "center",
+          position: "relative",
         }}>
           <a
             href="/blog"
@@ -308,7 +329,7 @@ export default function SignInGate({ t, lang, setLang, onSignIn, onGitHubSignIn,
               fontFamily: "var(--font-prose)",
               fontSize: 13,
               fontWeight: 500,
-              color: "#2d6a4f",
+              color: "#fbbf24",
               textDecoration: "none",
               letterSpacing: "0.04em",
               marginBottom: 4,
@@ -320,7 +341,7 @@ export default function SignInGate({ t, lang, setLang, onSignIn, onGitHubSignIn,
             fontFamily: "var(--font-prose)",
             fontSize: 11,
             fontWeight: 400,
-            color: "#1A2E1A",
+            color: "#7A9A7A",
           }}>
             tryvettedai.com
           </span>
