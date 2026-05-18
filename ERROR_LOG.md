@@ -1812,3 +1812,13 @@ Optional env var `APNS_FORCE_SANDBOX=1` flips the order (sandbox first) for debu
 **Lesson:** When a component is shipped standalone first and then reused as a sub-component later, audit its internal chrome (headers, padding, dividers) against the outer host's chrome. Two screens calling the same widget shouldn't double up. Same pattern applies if FiltersStep is ever embedded in a third surface.
 **Files:** `src/App.jsx`, `src/components/FiltersStep.jsx`, `src/components/FrameworkPicker.jsx`
 **Commit:** e3f82ca
+
+## Error 161 — Filters tab header scrolled away with content
+**Build:** Discovered May 18, 2026 during Build-30 Filters tab review (immediately after 160).
+**Side:** `src/components/FiltersStep.jsx`.
+**Symptom:** Filters tab page is long (starter framework + core filters + custom filters + suggestions + save). When the user scrolled down to reach custom filters or suggestions, the VETTED wordmark + hamburger button scrolled off the top of the viewport — out of reach until the user scrolled back up. Other tabs keep their chrome accessible.
+**Root cause:** FiltersStep's `<header>` was a normal block element with no positioning. As soon as content pushed below the fold, the header left the viewport with it.
+**Fix:** Set the header to `position: sticky; top: 0; z-index: 10` with a paper background fill (so content scrolling underneath doesn't bleed through) and shifted top padding to `env(safe-area-inset-top, 0px) + 14px` so the sticky bar sits cleanly under the iOS status bar. Header stays pinned while the page scrolls.
+**Lesson:** Sticky vs portal-fixed: use sticky when the surface needs to scroll *behind* the chrome (Filters tab — long content list). Use portal-fixed when the surface is viewport-locked and the chrome is just part of an edge-to-edge canvas (Profile, ScoreEntryV2, ResolveHub).
+**Files:** `src/components/FiltersStep.jsx`
+**Commit:** 9fca76b
