@@ -66,8 +66,19 @@ export default function FiltersStep({ t, lang, filters, setFilters, onBack, onNe
   return (
     <main id="main-content" aria-label="Filter weights" style={{ background: "var(--paper)", minHeight: "100%" }}>
 
-      {/* Header */}
-      <header style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "54px 8px 0 20px" }}>
+      {/* Header — sticky so the VETTED wordmark + hamburger stay
+          pinned to the top of the viewport while the page scrolls.
+          paddingTop pulls from the iOS safe-area inset so the bar sits
+          under the status bar without overlap. */}
+      <header style={{
+        position: "sticky",
+        top: 0,
+        zIndex: 10,
+        background: "var(--paper)",
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        paddingTop: "calc(env(safe-area-inset-top, 0px) + 14px)",
+        paddingRight: 8, paddingBottom: 6, paddingLeft: 20,
+      }}>
         <div style={{ fontFamily: "var(--font-data)", fontSize: 11, letterSpacing: "0.18em", color: "var(--ink)", textTransform: "uppercase" }}>
           VETTED
         </div>
