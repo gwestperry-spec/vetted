@@ -1822,3 +1822,12 @@ Optional env var `APNS_FORCE_SANDBOX=1` flips the order (sandbox first) for debu
 **Lesson:** Sticky vs portal-fixed: use sticky when the surface needs to scroll *behind* the chrome (Filters tab — long content list). Use portal-fixed when the surface is viewport-locked and the chrome is just part of an edge-to-edge canvas (Profile, ScoreEntryV2, ResolveHub).
 **Files:** `src/components/FiltersStep.jsx`
 **Commit:** 9fca76b
+
+## Error 162 — Workspace header lacked safe-area-top padding + non-sticky positioning
+**Build:** Discovered May 18, 2026 alongside the Filters tab sticky-header fix (161).
+**Side:** `src/components/workspace/RoleWorkspace.jsx`.
+**Symptom:** The Workspace tab's VETTED wordmark + hamburger header was a flex-shrink child of a 100dvh "door" container, so it stayed visible while the internal role-history list scrolled. But two latent issues: (1) `paddingTop: 14` only, no safe-area-inset, so on notched / Dynamic-Island devices the wordmark sat under or behind the status bar; (2) any iOS WebView quirk that allowed the parent .app to shift would scroll the header off — the door pattern was correct but had no explicit sticky pin as a safety net.
+**Fix:** Set the header to `position: sticky; top: 0; zIndex: 10` with a paper background fill (paper so content scrolling underneath doesn't bleed through). Top padding now `calc(env(safe-area-inset-top, 0px) + 14px)`. Same pattern as Filters tab (Error 161). Both improvements bundled; the workspace door's existing flex layout is preserved.
+**Lesson:** Anywhere in this app where a header sits on a paper or forest surface, the formula is: `position: sticky; top: 0; zIndex >= 10; background-fill; paddingTop: calc(env(safe-area-inset-top, 0px) + N)`. Codify it as a shared component on a future refactor pass.
+**Files:** `src/components/workspace/RoleWorkspace.jsx`
+**Commit:** 579f348
