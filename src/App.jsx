@@ -32,6 +32,7 @@ import RoleWorkspace from "./components/workspace/RoleWorkspace.jsx";
 import TabBarV2 from "./components/TabBarV2.jsx";
 import HamburgerSheet, { HamburgerButton } from "./components/HamburgerSheet.jsx";
 import MarketPulseCard from "./components/MarketPulse.jsx";
+import MarketPulseV2 from "./components/redesign/market/MarketPulseV2.jsx";
 import ScoreEntry from "./components/ScoreEntry.jsx";
 // VQAdvocate component removed Build 30. Behavioral patterns now surface
 // inline via the Insights pod on the Workspace tab — no standalone screen.
@@ -1442,13 +1443,20 @@ function TabHeader({ onOpenMenu, label = "Open menu" }) {
 }
 
 function MarketTab({ t, profile, authUser, userTier, opportunities, currency, salaryCache, setSalaryCache, insightsCache, setInsightsCache, citationsCache, setCitationsCache, onOpenMenu }) {
+  // Build-30 redesign: personal-cohort briefing replaces the legacy
+  // MarketPulseCard (joyplot + table + chart). Read-only by design — the
+  // cohort is inferred from the user's scored opportunities and findings
+  // come from /market-findings (falls back to a fixture when the
+  // endpoint isn't deployed yet). The legacy component stays in source
+  // for rollback; MarketTab no longer renders it.
   return (
-    <div style={{ background: "var(--paper)", minHeight: "100%" }}>
-      <TabHeader onOpenMenu={onOpenMenu} />
-      <MarketPulseCard t={t} profile={profile} authUser={authUser} userTier={userTier} opportunities={opportunities} currency={currency}
-        salaryCache={salaryCache}   setSalaryCache={setSalaryCache}
-        insightsCache={insightsCache} setInsightsCache={setInsightsCache}
-        citationsCache={citationsCache} setCitationsCache={setCitationsCache}
+    <div style={{ position: "relative", background: "var(--paper)", height: "100dvh", overflow: "hidden" }}>
+      <MarketPulseV2
+        opportunities={opportunities}
+        profile={profile}
+        authUser={authUser}
+        onOpenMenu={onOpenMenu}
+        t={t || {}}
       />
     </div>
   );

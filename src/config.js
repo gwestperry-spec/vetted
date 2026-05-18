@@ -17,6 +17,7 @@ export const ENDPOINTS = {
   behavioralInsights:     `${API_BASE}/.netlify/functions/behavioral-insights`,
   coverLetter:            `${API_BASE}/.netlify/functions/cover-letter`,
   marketPulse:  `${API_BASE}/.netlify/functions/market-pulse`,
+  marketFindings: `${API_BASE}/.netlify/functions/market-findings`,
   fetchJd:          `${API_BASE}/.netlify/functions/fetch-jd`,
   githubAuth:       `${API_BASE}/.netlify/functions/github-auth`,
   registerDevice:   `${API_BASE}/.netlify/functions/register-device`,
