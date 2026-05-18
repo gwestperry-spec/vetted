@@ -56,8 +56,11 @@ export default function VerdictSeal({
     );
   }
 
-  // Outer ring text path
-  const outerText = "PURSUE · MONITOR · PASS · ";
+  // Outer ring text path.
+  // Wider whitespace + bullet separator (•) reads more clearly than the
+  // narrow middot under letter-spacing — without the extra padding the
+  // ring renders as "PASSPURSUE" with letterSpacing eating the gap.
+  const outerText = "PURSUE      •      MONITOR      •      PASS      •      ";
   const repeated = outerText.repeat(3); // enough to fill the circle
 
   return (

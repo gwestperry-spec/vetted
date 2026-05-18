@@ -34,7 +34,7 @@ export default function PayLanding({ opp, profile, onBack, onNext, t = {} }) {
 
   return (
     <div style={{
-      width: "100%", minHeight: "100%", background: "var(--paper)",
+      width: "100%", height: "100dvh", background: "var(--paper)",
       paddingTop: 56,
       display: "flex", flexDirection: "column",
     }}>

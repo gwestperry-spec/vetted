@@ -53,8 +53,8 @@ export default async function handler(req) {
     return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers });
   }
 
-  const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
-  if (!ANTHROPIC_API_KEY) {
+  const ANTHROPIC_KEY = process.env.ANTHROPIC_KEY;
+  if (!ANTHROPIC_KEY) {
     return new Response(JSON.stringify({ error: "Server not configured" }), { status: 503, headers });
   }
 
@@ -105,12 +105,16 @@ Return ONLY the cover letter text — no preamble, no markdown, no signature.`;
     const apiRes = await fetch(ANTHROPIC_URL, {
       method: "POST",
       headers: {
-        "x-api-key": ANTHROPIC_API_KEY,
+        "x-api-key": ANTHROPIC_KEY,
         "anthropic-version": "2023-06-01",
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-5",
+        // Match the model used by other functions in this app
+        // (anthropic.js, anthropic-stream.mjs, etc.). The previous
+        // "claude-sonnet-4-5" alias was unrecognized by the API and
+        // surfaced as a 401 to the client.
+        model: "claude-haiku-4-5-20251001",
         max_tokens: 600,
         temperature: 0.7,
         system: systemPrompt,

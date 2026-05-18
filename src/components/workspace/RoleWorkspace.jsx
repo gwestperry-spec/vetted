@@ -250,7 +250,9 @@ export default function RoleWorkspace({
   }, [authUser?.id, scoredCount]);
 
   // ── Top Matches carousel (top 5 scored non-archived/queued roles) ─────────
+  // Honors the TimeRangeChip so switching range visibly swaps the TOP MATCH.
   const scoredRoles = workspaceRoles
+    .filter(inRange)
     .filter(r => r.vq_score != null && r.status !== "archived" && r.status !== "queued")
     .sort((a,b) => b.vq_score - a.vq_score)
     .slice(0, 5);
@@ -346,12 +348,15 @@ export default function RoleWorkspace({
   }
 
   // ── Derived data ─────────────────────────────────────────────────────────
-  const oppsList = workspaceRoles.filter(r => r.vq_score != null).map(workspaceRoleToOpp);
+  // All counts below honor the active TimeRangeChip so the chip visibly
+  // changes the headline, KPI tiles, and TOP MATCH when toggled.
+  const inRangeRoles = workspaceRoles.filter(inRange);
+  const oppsList = inRangeRoles.filter(r => r.vq_score != null).map(workspaceRoleToOpp);
   const firstName = (profile.name || authUser?.displayName || "").split(" ")[0];
-  const pursueRoles = workspaceRoles.filter(r =>
+  const pursueRoles = inRangeRoles.filter(r =>
     r.status !== "archived" && r.framework_snapshot?.recommendation === "pursue"
   );
-  const totalScored = workspaceRoles.filter(r => r.vq_score != null && r.status !== "archived").length;
+  const totalScored = inRangeRoles.filter(r => r.vq_score != null && r.status !== "archived").length;
   const pursueN = pursueRoles.length;
   const headlineBase = pursueN === 0
     ? (t?.wsHeadlineReady || "Your workspace is ready.")
@@ -390,8 +395,21 @@ export default function RoleWorkspace({
   };
 
   // ══════════════════════════════════════════════════════════════════════════
+  // Pod renders only when data exists (insightsLoading is also surfaced as
+  // a loading skeleton inside the pod). Skip rendering entirely when the
+  // user is below the 5-role threshold to avoid a giant empty box on the
+  // workspace door.
+  const showInsightsPod = !!insightsData && insightsData.eligible !== false;
+
   return (
-    <main id="main-content" aria-label="Role workspace" style={{ background: "var(--paper)", minHeight: "100%" }}>
+    <main id="main-content" aria-label="Role workspace" style={{
+      background: "var(--paper)",
+      // "Door not hallway" — bound the whole workspace to a single screen
+      // height. Only the score-history container inside scrolls; the
+      // headline, KPI tiles, pod, top match, and history header stay put.
+      height: "100dvh",
+      display: "flex", flexDirection: "column", overflow: "hidden",
+    }}>
 
       {/* ── HEADER ──────────────────────────────────────────────────────── */}
       <header style={{
@@ -418,8 +436,10 @@ export default function RoleWorkspace({
         )}
       </header>
 
-      {/* ── Scrollable body ──────────────────────────────────────────────── */}
-      <div style={{ paddingBottom: 100 }}>
+      {/* ── Workspace door ───────────────────────────────────────────────
+          Flex column that fills the screen. Header sticks to the top,
+          score-history takes flex:1 and is the only scrollable region. */}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
 
         {/* Title block — Build-30 redesign typography + time-range chip */}
         <div style={{ padding: "14px 20px 18px" }}>
@@ -452,20 +472,21 @@ export default function RoleWorkspace({
           <WsKpiTile value={profile.threshold ? String(profile.threshold) : "—"} label={t?.wsThreshold || "THRESHOLD"} color="var(--gold)" />
         </div>
 
-        {/* Behavioral Insights pod — 4 swipeable cards. Replaces the legacy
-            VQAdvocateCard banner. Fetches from /behavioral-insights and
-            handles loading / empty / populated states internally. CTAs
-            route to existing destinations (profile edit, filter editor,
-            workspace pipeline). */}
-        <BehavioralInsightsPod
-          data={insightsData}
-          loading={insightsLoading}
-          onEditFloor={() => onEditProfile?.("compensationMin")}
-          onAdjustWeight={() => onEditFilters?.()}
-          onEditPreferences={() => onEditProfile?.("locationPrefs")}
-          onOpenPipeline={() => { /* already on workspace; no-op for now */ }}
-          t={t || {}}
-        />
+        {/* Behavioral Insights pod — only rendered when eligible and data
+            has landed, so the empty PATTERNS box doesn't pad the workspace
+            door with dead space. Loading skeleton is still surfaced if a
+            fetch is in-flight. */}
+        {(showInsightsPod || insightsLoading) && (
+          <BehavioralInsightsPod
+            data={insightsData}
+            loading={insightsLoading}
+            onEditFloor={() => onEditProfile?.("compensationMin")}
+            onAdjustWeight={() => onEditFilters?.()}
+            onEditPreferences={() => onEditProfile?.("locationPrefs")}
+            onOpenPipeline={() => { /* already on workspace; no-op for now */ }}
+            t={t || {}}
+          />
+        )}
 
         {/* Hero card — top match */}
         {scoredRoles[0] && (
@@ -506,8 +527,9 @@ export default function RoleWorkspace({
           )}
         </div>
 
-        {/* Scrollable role history container */}
-        <div style={{ maxHeight: 630, overflowY: "auto", overflowX: "hidden", WebkitOverflowScrolling: "touch" }}>
+        {/* Scrollable role history container — flex:1 inside the door so
+            only this region scrolls and the page itself stays put. */}
+        <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden", WebkitOverflowScrolling: "touch", minHeight: 0 }}>
 
         {/* Search + filter bar */}
         <div style={{ padding: "4px 20px 12px" }}>

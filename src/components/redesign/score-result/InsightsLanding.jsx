@@ -104,9 +104,9 @@ export default function InsightsLanding({ opp, onBack, onNext, t = {} }) {
 
   return (
     <div style={{
-      width: "100%", minHeight: "100%", background: "var(--paper)",
+      width: "100%", height: "100dvh", background: "var(--paper)",
       paddingTop: 56,
-      display: "flex", flexDirection: "column",
+      display: "flex", flexDirection: "column", overflow: "hidden",
     }}>
       <TopBar title={t.pillInsights || "INSIGHTS"} backLabel="VQ" onBack={onBack} />
 
@@ -125,7 +125,7 @@ export default function InsightsLanding({ opp, onBack, onNext, t = {} }) {
       </div>
 
       <div style={{
-        flex: 1, padding: "16px 20px 0",
+        flex: 1, padding: "16px 20px 0", minHeight: 0, overflowY: "auto",
         display: "flex", flexDirection: "column", gap: 10,
       }}>
         {SECTIONS.map((s) => (

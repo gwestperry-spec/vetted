@@ -1336,20 +1336,14 @@ export default function App() {
           </>
         )}
 
-        {/* ── ScoreResult — full screen overlay, no TabBar ──────────────────── */}
+        {/* ── ScoreResult — full screen overlay, no TabBar ────────────────────
+            Build-30: the Hub and its landings carry their own chrome (Close
+            pill on the Hub, TopBar with back-arrow on each landing). The
+            legacy AppHeader + sign-out bar that used to sit above this is
+            intentionally suppressed so the forest backdrop reads edge-to-
+            edge. */}
         {step === "result" && (
           <>
-            <AppHeader t={t} lang={lang} setLang={setLang} noBorder />
-            {authUser && !presentationMode && (
-              <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 12, marginBottom: 8, marginTop: 4 }}>
-                <span style={{ fontSize: 12, color: "var(--muted)", fontFamily: "var(--font-data)" }}>
-                  {(authUser.displayName && authUser.displayName !== "User" ? authUser.displayName : null) || authUser.email || "Signed in"}
-                </span>
-                <button className="btn btn-secondary btn-sm" onClick={handleSignOut} style={{ fontSize: 11, padding: "4px 12px", minHeight: 30 }}>
-                  {t?.profileSignOut || "Sign Out"}
-                </button>
-              </div>
-            )}
             <ScoreResult t={t} lang={lang} opp={currentOpp} profile={profile} filters={filters} userTier={devTierOverride || userTier} authUser={authUser} onUpgrade={(copy) => { setPaywallContext(copy || null); setShowPaywall(true); }} onBack={() => setStep("workspace")}
               onUpdateStatus={(oppId, status) => {
                 const now = new Date().toISOString();

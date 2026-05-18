@@ -16,6 +16,7 @@
 // the rest of the editorial dark surfaces (Scoring, Profile).
 
 import React from "react";
+import { createPortal } from "react-dom";
 import VerdictSeal from "../VerdictSeal.jsx";
 
 // ── Dark palette tokens (mirrors ~/Downloads/score-result-hub.jsx) ─────────
@@ -133,13 +134,17 @@ export default function ResolveHub({
 
   const contextEyebrow = [company, location].filter(Boolean).join(" · ").toUpperCase();
 
-  return (
+  const body = (
     <div style={{
-      position: "relative", width: "100%", minHeight: "100svh",
+      position: "fixed", inset: 0,
+      width: "100vw", height: "100dvh",
       overflow: "hidden",
       paddingTop: "calc(48px + env(safe-area-inset-top, 0px))",
       paddingBottom: "calc(24px + env(safe-area-inset-bottom, 0px))",
+      paddingLeft: "env(safe-area-inset-left, 0px)",
+      paddingRight: "env(safe-area-inset-right, 0px)",
       color: C.onDarkInk,
+      zIndex: 9999,
     }}>
       <ForestBackdrop haloY="44%"/>
 
@@ -253,4 +258,5 @@ export default function ResolveHub({
       )}
     </div>
   );
+  return typeof document !== "undefined" ? createPortal(body, document.body) : body;
 }
