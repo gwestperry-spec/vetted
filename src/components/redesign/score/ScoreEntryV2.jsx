@@ -368,7 +368,7 @@ export default function ScoreEntryV2({
               textWrap: "pretty",
             }}>
               {t.scoreTipBody || (
-                <>Some sites — LinkedIn, Indeed, certain careers pages — block our reader. Easiest fix: long-press the job description, tap <span style={{ fontStyle: "normal", fontWeight: 600 }}>Copy</span>, then paste here.</>
+                <>Some sites — LinkedIn, Indeed, certain careers pages — block our reader. Easiest fix: open the listing, tap the <span style={{ fontStyle: "normal", fontWeight: 600 }}>Share</span> button, then choose <span style={{ fontStyle: "normal", fontWeight: 600 }}>Vetted</span> from the share sheet.</>
               )}
             </div>
             <div style={{
@@ -381,10 +381,10 @@ export default function ScoreEntryV2({
               <span>{t.scoreTipStep1 || "OPEN THE LISTING"}</span>
               <StepArrow/>
               <StepDot n="2"/>
-              <span>{t.scoreTipStep2 || "LONG-PRESS · COPY"}</span>
+              <span>{t.scoreTipStep2 || "TAP SHARE"}</span>
               <StepArrow/>
               <StepDot n="3"/>
-              <span>{t.scoreTipStep3 || "PASTE HERE"}</span>
+              <span>{t.scoreTipStep3 || "CHOOSE VETTED"}</span>
             </div>
           </div>
 
