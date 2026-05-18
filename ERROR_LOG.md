@@ -1654,3 +1654,91 @@ Optional env var `APNS_FORCE_SANDBOX=1` flips the order (sandbox first) for debu
 **Root cause:** Restructuring the entire workspace layout into one square mid-redesign would risk shipping a half-broken workspace. The existing layout has six distinct sections that don't fit one square cleanly. The new pod + typography + chip ship without that restructure; behavior continues to work.
 **Fix planned:** Build 31 (or 32) brings the full square layout — consolidating Top Match hero + scrolling list into one square with internal scroll. Existing sections move into the square or get demoted to a hamburger menu.
 **Files:** `src/components/workspace/RoleWorkspace.jsx`
+
+## Error 145 — cover-letter.js: wrong env var name + invalid model alias → 401
+**Build:** Discovered May 17, 2026 during Build-30 redesign testing on TestFlight.
+**Side:** `netlify/functions/cover-letter.js`.
+**Symptom:** Coach → Draft cover letter rendered the error "Anthropic 401" in red instead of a draft. Every other Anthropic-backed function in the app worked.
+**Root cause:** Two compounding bugs introduced when the file was authored in isolation. (1) Env var read as `process.env.ANTHROPIC_API_KEY`; the rest of the app uses `ANTHROPIC_KEY`. The `if (!ANTHROPIC_API_KEY)` early-return didn't trip because the key resolved to `undefined` and JS coerced it to the `x-api-key` header as the literal string "undefined" → Anthropic returned 401. (2) Model was set to `claude-sonnet-4-5`, which isn't a valid model identifier; even with a valid key the API would have rejected.
+**Fix:** Replaced `ANTHROPIC_API_KEY` → `ANTHROPIC_KEY` and model → `claude-haiku-4-5-20251001` (matches every other function — `anthropic.js`, `anthropic-stream.mjs`, `behavioral-intelligence.js`, `parse-resume.js`).
+**Lesson:** Any new Netlify function in this repo must consume `ANTHROPIC_KEY` and `claude-haiku-4-5-20251001` until a deliberate decision says otherwise. Worth a lint rule that flags `ANTHROPIC_API_KEY` references inside `netlify/functions/`.
+**Files:** `netlify/functions/cover-letter.js`
+**Commit:** 7b496a9
+
+## Error 146 — ScoringScreen rendered as rectangular window not edge-to-edge
+**Build:** Discovered May 17, 2026 during Build-30 scoring-screen TestFlight check.
+**Side:** `src/components/redesign/scoring/ScoringScreen.jsx`.
+**Symptom:** The forest scoring backdrop appeared as a rectangle floating inside the app, with paper showing through the safe-area top/bottom. The component was already `position: fixed; inset: 0; z-index: 50`.
+**Root cause:** `position: fixed` is relative to the nearest containing block — and #root has `display: flex; flex-direction: column; min-height: 100svh` which created a containing context inside the iOS WebView. The fixed element was constrained to #root, not the viewport. The safe-area insets and any centered max-width on the column were leaking around the edges.
+**Fix:** Render the entire ScoringScreen body via `createPortal(body, document.body)`, explicit `100vw × 100dvh`, `z-index: 9999`, with safe-area-inset paddings on top + bottom + sides so the gradient bleeds under the notch and home indicator.
+**Lesson:** "Position fixed" is not enough to escape iOS WebView containing blocks. Any truly fullscreen surface must be portal-rendered onto document.body. Applied the same pattern subsequently to ResolveHub, ProfileLanding, and ScoreEntryV2 (Errors 148–149, 152).
+**Files:** `src/components/redesign/scoring/ScoringScreen.jsx`
+**Commit:** 7b496a9
+
+## Error 147 — TimeRangeChip changed label but didn't filter anything
+**Build:** Discovered May 17, 2026 in Build-30 workspace QA.
+**Side:** `src/components/workspace/RoleWorkspace.jsx`.
+**Symptom:** Switching the chip from 14 DAYS to 24 HOURS or ALL changed the chip's display label but the KPI tiles (PURSUE / SCORED / THRESHOLD), the headline pursue count, the TOP MATCH card, and SCORE HISTORY · N all stayed identical.
+**Root cause:** `timeRange` state existed, `inRange(role)` predicate existed, but `inRange` was only applied to `allVisible` for the history list — the KPI tiles, headline, and TOP MATCH all derived from raw `workspaceRoles` upstream of `allVisible`. So the chip was "wired" but only filtered one downstream surface.
+**Fix:** Built `inRangeRoles = workspaceRoles.filter(inRange)` once at the top of the derived-data block; `pursueRoles`, `totalScored`, `scoredRoles` (TOP MATCH source) all reroute through it. Chip now visibly changes every count + the TOP MATCH within one render.
+**Lesson:** When wiring a global filter to a screen, audit every derived array the UI displays — not just the one closest to the filter UI.
+**Files:** `src/components/workspace/RoleWorkspace.jsx`
+**Commit:** 7b496a9
+
+## Error 148 — ResolveHub showed paper chrome + sign-out bar above the forest
+**Build:** Discovered May 17, 2026 during Build-30 hub QA.
+**Side:** `src/components/redesign/score-result/ResolveHub.jsx`, `src/App.jsx`.
+**Symptom:** When a score completed, the Resolve hub rendered with the legacy AppHeader ("Vetted" wordmark + tagline + language dropdown + sign-out button) sitting above the forest backdrop. The forest started ~150pt down the screen.
+**Root cause:** Two contributors. (1) `step === "result"` in App.jsx still rendered AppHeader + sign-out chrome above `<ScoreResult>` from the legacy flow — every redesign landing renders its own TopBar / Close pill, so the chrome above was just bleeding. (2) ResolveHub used `position: relative; minHeight: 100svh` inside the constrained #root column so even after removing the chrome, the forest didn't extend edge-to-edge.
+**Fix:** Dropped the AppHeader + sign-out block from the `step === "result"` branch entirely. Portal-rendered ResolveHub via the Error-146 pattern: `position: fixed`, `100vw × 100dvh`, safe-area insets, `z-index: 9999`. The Close pill in the hub itself is the only chrome.
+**Files:** `src/components/redesign/score-result/ResolveHub.jsx`, `src/App.jsx`
+**Commit:** 2c0ff3f
+
+## Error 149 — VerdictSeal outer ring read as "PASPURSUE" then "MONITOR / PASS" missing
+**Build:** Discovered May 17, 2026 during Build-30 scoring-screen QA; recurred in two more forms before final fix.
+**Side:** `src/components/redesign/VerdictSeal.jsx`.
+**Symptom v1:** Outer ring rendered `PASPURSUE MONITOR ROTINOM PASPURSUE MONITOR ROTINOM` — the gap between PASS and PURSUE was being eaten. **Symptom v2:** After first fix, the seal at the 158pt sign-in size only rendered `PURSUE … MONITOR` and PASS fell off the visible arc.
+**Root cause v1:** Separator was `" · "` (single ASCII space + middot + single ASCII space) with `letter-spacing: 6` on the `<text>` element. The middot is narrow and letter-spacing eats single ASCII spaces, so visually the words collapsed. **Root cause v1.5:** First fix used `"      •      "` (six regular spaces around bullet) but SVG `<text>` collapses runs of ASCII spaces to a single space — same problem. **Root cause v2:** Second fix used four em-spaces (U+2003, non-collapsible) around the diamond separator. Worked on the 220pt scoring seal but each PURSUE/MONITOR/PASS group then took ~50% of the ring; the 158pt sign-in seal couldn't fit a full repeat so PASS was clipped off the visible arc.
+**Fix:** Single em-space on each side of the `◆` separator, `repeat(2)` worth of text, `xmlSpace="preserve"` + `white-space: pre` on the `<text>` element belt-and-suspenders. All three verdicts visible on every seal size we use (158 / 220 / 244pt). Also bumped sign-in seal from 158 to 220 (Error 153) so it matches the scoring screen exactly.
+**Lesson:** SVG `<text>` collapses runs of ASCII spaces at render time, regardless of CSS `white-space`. Real whitespace inside textPath must come from Unicode whitespace codepoints (em-space U+2003, en-space U+2002, thin-space U+2009) that the renderer cannot collapse. And letter-spacing applies to every glyph including spaces, so a "wide" separator chosen at one font size needs to be re-checked at every size the seal is rendered at.
+**Files:** `src/components/redesign/VerdictSeal.jsx`
+**Commits:** 7b496a9 (v1 attempt), da924e1 (v2 attempt), 2b3dcf2 (final)
+
+## Error 150 — Behavioral Insights pod disappeared after workspace-door fix
+**Build:** Discovered May 18, 2026 in Build-30 workspace TestFlight.
+**Side:** `src/components/workspace/RoleWorkspace.jsx`, `src/components/redesign/insights/BehavioralInsightsPod.jsx`.
+**Symptom:** Workspace no longer rendered the swipeable pattern carousel at all. User had 200+ scored roles, so eligibility should have been true.
+**Root cause:** Self-inflicted regression. While restructuring the workspace into a "door not hallway" (no infinite scroll, only history scrolls internally), I gated the pod behind `showInsightsPod = !!insightsData && insightsData.eligible !== false` to hide a large empty placeholder box when the backend returned `eligible: true` but every sub-aggregation was null (real case for users without comp_floor/location_prefs/recent filter scores). The gate also hid the pod for the (rare) case where data is null AND not loading — and for the (common) case where the user has data but only `synthesis` is populated. Net: pod went away.
+**Fix:** Removed the parent-level gate. Pod always renders. Inside the pod, added a third state: when `eligible: true` but `activeCount === 0`, render a single "Insights are warming up" explainer card pointing the user to Profile to seed comp_floor + location_prefs, so the pod never collapses to an empty Pod-with-no-cards box.
+**Lesson:** When restructuring a parent layout, don't gate child components on data shape — let the child handle its own loading / empty / partial states.
+**Files:** `src/components/workspace/RoleWorkspace.jsx`, `src/components/redesign/insights/BehavioralInsightsPod.jsx`
+**Commit:** bc8e0a6
+
+## Error 151 — Score tab carried redundant KPI strip + Pursue cohort row
+**Build:** Identified May 18, 2026 during ScoreFlowV2 design handoff review.
+**Side:** `src/components/ScoreEntry.jsx`.
+**Symptom:** Score tab rendered a THIS WEEK KPI strip (avg VQ / scored / pursue rate) and a Pursue cohort row above the input slab. Same data lives on Workspace (history) and Pulse (cohort) one tap away — duplicating it on entry diluted the tab's job and added vertical bloat.
+**Root cause:** ScoreEntry pre-dated the Workspace + Pulse split. Originally it was the only home for "here's where you stand"; once Workspace took on history and Pulse took on cohort, the strip and the row never got removed.
+**Fix:** Built `ScoreEntryV2` from the ScoreFlowV2 design handoff. Single-purpose: eyebrow + headline + italic subhead + cream input slab + source chips + tip + empty-state anchor pair. Legacy ScoreEntry kept in source for rollback but no longer rendered. KPIs/cohort removed.
+**Files:** `src/components/redesign/score/ScoreEntryV2.jsx` (new), `src/App.jsx`
+**Commit:** aefa2b8
+
+## Error 152 — Score tab still scrolled despite overflow:hidden on the entry container
+**Build:** Discovered May 18, 2026 after Error 151 fix shipped.
+**Side:** `src/components/redesign/score/ScoreEntryV2.jsx`, `src/App.jsx`.
+**Symptom:** Even after slimming the surface to fit one phone viewport, the Score tab still scrolled vertically on iOS WebView.
+**Root cause:** The entry was wrapped in `<div style={{ height: 100dvh, overflow: hidden }}>` inside the workspace step. That wrapper sat as a sibling of optional tier-banner divs (`pendingTierCheck`, `upgradeSuccess`) and a sibling of `<TabBarV2>` inside `<div className="app">`. When a banner was present, or just from sibling-layout interactions, the parent `.app` could expand past 100svh — and `#root` (min-height 100svh, no max-height) grew to fit, letting the page scroll. `overflow: hidden` on the wrapper clipped its own overflow but not its sibling-driven height.
+**Fix:** Match the Error-146 / 148 pattern: portal-render ScoreEntryV2 onto document.body at `position: fixed; 100vw × 100dvh; z-index: 30` (under the z:100 tab bar). Sibling layout in the workspace step can no longer affect it.
+**Lesson:** "Make this thing 100dvh and hide its overflow" is necessary but not sufficient on iOS WebView when the parent tree has siblings. Portal-render any surface that must be viewport-locked, full stop.
+**Files:** `src/components/redesign/score/ScoreEntryV2.jsx`, `src/App.jsx`
+**Commit:** 0a406f9
+
+## Error 153 — Sign-in seal at 158pt clipped PASS off the visible arc
+**Build:** Discovered May 18, 2026 during sign-in-screen QA.
+**Side:** `src/components/SignInGate.jsx`.
+**Symptom:** Sign-in screen showed the new rotating verdict seal but only PURSUE and MONITOR were visible around the outer ring. PASS never appeared.
+**Root cause:** The seal text is rendered at fixed 10pt font with letter-spacing 6 regardless of seal size. The full string `PURSUE ◆ MONITOR ◆ PASS ◆ ` takes ~360pt of arc. The 158pt seal had a ~484pt circumference — barely fits one full repeat with no margin, and at this size + letter-spacing combination, only ~63% of one repeat rendered before the textPath ran out of visible arc (PASS was past the end).
+**Fix:** Bumped the sign-in seal from 158 → 220pt on a 240pt forest disk, matching the scoring screen exactly (same `outerSpeed: 9`, `innerSpeed: 6`, `opacity: 0.95`). At 220pt the circumference fits a full repeat plus ~75% of a second, so PURSUE / MONITOR / PASS all read clearly. Also dropped LangSwitcher from the sign-in gate per design — language selection lives on the Settings tab.
+**Lesson:** Pair Error 149's lesson: when the same component is used at multiple sizes, verify text-on-arc rendering at each size, not just the largest.
+**Files:** `src/components/SignInGate.jsx`, `src/components/redesign/VerdictSeal.jsx`
+**Commit:** f246f20
