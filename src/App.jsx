@@ -1194,25 +1194,23 @@ export default function App() {
 
             {/* Tab content */}
             {activeTab === "score" && (
-              // Build-30 redesign: single-purpose entry surface. The
-              // legacy ScoreEntry's THIS WEEK KPI strip + Pursue cohort
-              // are intentionally removed — history is Workspace's job,
-              // cohort is Pulse's. Same scoring trigger contract.
-              <div style={{ position: "relative", height: "100dvh", overflow: "hidden" }}>
-                <ScoreEntryV2
-                  onScore={(jd, url) => {
-                    scoreOpportunity(jd, url);
-                    setActiveTab("workspace");
-                    setStep("workspace");
-                  }}
-                  loading={loading}
-                  onOpenMenu={() => setMenuOpen(true)}
-                  authUser={authUser}
-                  prefill={scorePrefill}
-                  onPrefillConsumed={() => setScorePrefill(null)}
-                  t={t}
-                />
-              </div>
+              // Build-30 redesign: single-purpose entry surface.
+              // Portal-rendered onto document.body so the surface is
+              // viewport-locked — no page scroll regardless of what else
+              // is in the workspace step's tree (tier banners etc.).
+              <ScoreEntryV2
+                onScore={(jd, url) => {
+                  scoreOpportunity(jd, url);
+                  setActiveTab("workspace");
+                  setStep("workspace");
+                }}
+                loading={loading}
+                onOpenMenu={() => setMenuOpen(true)}
+                authUser={authUser}
+                prefill={scorePrefill}
+                onPrefillConsumed={() => setScorePrefill(null)}
+                t={t}
+              />
             )}
             {activeTab === "workspace" && (
               <RoleWorkspace

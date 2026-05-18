@@ -17,6 +17,7 @@
 // still works (vetted://score?url=… → prefill prop → auto-submit).
 
 import React, { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { ENDPOINTS } from "../../../config.js";
 
 const C = {
@@ -216,10 +217,16 @@ export default function ScoreEntryV2({
       ? `↳ ${t.scoreSlabUrlDetected || "URL DETECTED"}`
       : `↳ ${wordCount} ${t.scoreSlabWords || "WORDS"}`;
 
-  return (
+  const body = (
     <div style={{
-      background: C.paper, position: "absolute", inset: 0,
-      display: "flex", flexDirection: "column",
+      // Portal-rendered onto document.body so the entry surface is
+      // viewport-locked and can never push the document height past
+      // 100dvh — no page scroll, ever. Tab bar (z 100) sits above
+      // the score tab content (z 30).
+      background: C.paper, position: "fixed", inset: 0,
+      width: "100vw", height: "100dvh",
+      display: "flex", flexDirection: "column", overflow: "hidden",
+      zIndex: 30,
     }}>
       {/* Pinned header + title */}
       <div style={{ flexShrink: 0, background: C.paper }}>
@@ -423,4 +430,5 @@ export default function ScoreEntryV2({
       `}</style>
     </div>
   );
+  return typeof document !== "undefined" ? createPortal(body, document.body) : body;
 }
