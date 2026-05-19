@@ -1851,3 +1851,13 @@ Optional env var `APNS_FORCE_SANDBOX=1` flips the order (sandbox first) for debu
 **Lesson:** On iOS WebView with a centered max-width #root, neither `position: sticky` nor `position: fixed` can be trusted to pin to the viewport when applied to elements inside #root. Standing rule expanded: **any chrome that must pin during scroll must portal to document.body.** Codify a `<PinnedHeader>` shared component on a future refactor that bundles createPortal + position:fixed + safe-area-inset-top + paper background — three of the four tabs now open-code the same pattern.
 **Files:** `src/components/FiltersStep.jsx`, `src/components/workspace/RoleWorkspace.jsx`
 **Commit:** 64ce0f7
+
+## Error 165 — Firebase Analytics wiring overwrote PostHog analytics module
+**Build:** Discovered May 18, 2026 during Build-30 Firebase Analytics setup.
+**Side:** `src/utils/analytics.js`, dependency list (firebase peer).
+**Symptom:** First pass at adding Firebase Analytics replaced the entire contents of `src/utils/analytics.js` with a Firebase-only wrapper, breaking every existing PostHog import across the app (initAnalytics from main.jsx, identifyUser/trackUserSignedIn/trackScoreSubmitted/trackScoreCompleted/trackScoreFailed/trackStreamFallbackTriggered from App.jsx). 13 missing-export errors at build time.
+**Root cause:** I didn't read the file before overwriting it. The existing module was a 171-line PostHog wrapper; I bash-heredoc'd a new 50-line Firebase wrapper over the top. Compounded by a second bug: even after restoring PostHog, the build failed because `@capacitor-firebase/analytics`'s web fallback imports `firebase/analytics`, which wasn't installed as a dependency — vite couldn't resolve the import during static analysis even though my dynamic import is guarded by Capacitor.isNativePlatform().
+**Fix:** Restored the original PostHog wrapper from git (`git show HEAD~1:src/utils/analytics.js > …`), then appended the Firebase helpers below it as a separate section so both providers coexist. Installed `firebase` as a top-level npm dependency so the static import path resolves at build time. Both providers now run side-by-side on native iOS; on web only PostHog runs (Firebase no-ops via Capacitor.isNativePlatform() guard).
+**Lesson:** Always Read a file before overwriting it. Two distinct providers in the same wrapper module need to be kept side-by-side, not replaced. Also: any Capacitor plugin with a "web fallback" likely needs the fallback's dependencies installed at the top level even if the native side is the only target — vite's static analyzer doesn't understand isNativePlatform() guards.
+**Files:** `src/utils/analytics.js`, `package.json`
+**Commit:** 5cebb3a (on top of f5b6d6a)
