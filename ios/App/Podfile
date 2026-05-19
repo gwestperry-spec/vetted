@@ -10,15 +10,14 @@ def capacitor_pods
   pod 'CapacitorCordova', :path => '../../node_modules/@capacitor/ios'
   pod 'CapacitorCommunityAppleSignIn', :path => '../../node_modules/@capacitor-community/apple-sign-in'
   pod 'CapacitorCommunityInAppReview', :path => '../../node_modules/@capacitor-community/in-app-review'
-  pod 'CapacitorFirebaseAnalytics', :path => '../../node_modules/@capacitor-firebase/analytics'
+  # Use the "/Analytics" subspec of @capacitor-firebase/analytics —
+  # NOT the default "Lite" subspec. The Analytics subspec declares
+  # `FirebaseAnalytics/Core` + `FirebaseAnalytics/IdentitySupport`
+  # as dependencies so the plugin target compiles against real
+  # Firebase modules. Without this subspec the plugin compiles in
+  # Lite mode and `import FirebaseCore` in its own Swift file fails.
+  pod 'CapacitorFirebaseAnalytics/Analytics', :path => '../../node_modules/@capacitor-firebase/analytics'
   pod 'CapacitorPushNotifications', :path => '../../node_modules/@capacitor/push-notifications'
-  # @capacitor-firebase/analytics installs in "Lite" mode and expects
-  # the host app to provide Firebase pods. Bring them in explicitly so
-  # `import FirebaseCore` resolves in AppDelegate.swift + the plugin's
-  # wrapper compiles. Without these the build fails with
-  # "No such module 'FirebaseCore'".
-  pod 'Firebase/Core'
-  pod 'Firebase/Analytics'
 end
 
 project 'App.xcodeproj'
