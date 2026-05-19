@@ -12,6 +12,13 @@ def capacitor_pods
   pod 'CapacitorCommunityInAppReview', :path => '../../node_modules/@capacitor-community/in-app-review'
   pod 'CapacitorFirebaseAnalytics', :path => '../../node_modules/@capacitor-firebase/analytics'
   pod 'CapacitorPushNotifications', :path => '../../node_modules/@capacitor/push-notifications'
+  # @capacitor-firebase/analytics installs in "Lite" mode and expects
+  # the host app to provide Firebase pods. Bring them in explicitly so
+  # `import FirebaseCore` resolves in AppDelegate.swift + the plugin's
+  # wrapper compiles. Without these the build fails with
+  # "No such module 'FirebaseCore'".
+  pod 'Firebase/Core'
+  pod 'Firebase/Analytics'
 end
 
 project 'App.xcodeproj'
