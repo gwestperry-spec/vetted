@@ -179,8 +179,9 @@ async function incrementScoreCount(appleId) {
 }
 
 // ─── Anthropic proxy ───────────────────────────────────────────────────────
-function proxyToAnthropic(safeBody, origin) {
-  return new Promise((resolve) => {
+// Single-request helper (no retry).
+function singleAnthropicRequest(safeBody) {
+  return new Promise((resolve, reject) => {
     const options = {
       hostname: "api.anthropic.com",
       path: "/v1/messages",
@@ -192,31 +193,55 @@ function proxyToAnthropic(safeBody, origin) {
         "Content-Length": Buffer.byteLength(safeBody),
       },
     };
-
     const req = https.request(options, (res) => {
       let data = "";
       res.on("data", (chunk) => { data += chunk; });
-      res.on("end", () => {
-        resolve({
-          statusCode: res.statusCode || 200,
-          headers: corsHeaders(origin),
-          body: data,
-        });
-      });
+      res.on("end", () => resolve({ statusCode: res.statusCode || 200, body: data }));
     });
-
-    req.on("error", (error) => {
-      console.error("Anthropic proxy error:", error.message);
-      resolve({
-        statusCode: 500,
-        headers: corsHeaders(origin),
-        body: JSON.stringify({ error: error.message }),
-      });
-    });
-
+    req.on("error", reject);
     req.write(safeBody);
     req.end();
   });
+}
+
+// Retry on transient upstream conditions (429/5xx/529). Caller still sees
+// raw upstream body on success; on final failure we wrap the upstream
+// status in a friendly message but keep the raw detail for ops.
+const RETRIABLE_UPSTREAM = new Set([429, 500, 502, 503, 504, 529]);
+const MAX_ATTEMPTS = 3;
+
+async function proxyToAnthropic(safeBody, origin) {
+  let lastStatus = 0;
+  let lastBody = "";
+  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+    try {
+      const r = await singleAnthropicRequest(safeBody);
+      if (r.statusCode < 400) {
+        return { statusCode: r.statusCode, headers: corsHeaders(origin), body: r.body };
+      }
+      lastStatus = r.statusCode;
+      lastBody = r.body;
+      if (!RETRIABLE_UPSTREAM.has(r.statusCode) || attempt === MAX_ATTEMPTS - 1) break;
+      // Linear backoff: 800ms → 1800ms.
+      await new Promise((r2) => setTimeout(r2, 800 + attempt * 1000));
+    } catch (err) {
+      lastStatus = 0;
+      lastBody = JSON.stringify({ error: err?.message || "network error" });
+      if (attempt === MAX_ATTEMPTS - 1) break;
+      await new Promise((r2) => setTimeout(r2, 800 + attempt * 1000));
+    }
+  }
+  // Final failure — map upstream status to a friendly message but
+  // preserve the raw upstream body in `detail` for ops visibility.
+  let friendly = "The scoring model couldn't reach Anthropic. Try again in a moment.";
+  if (lastStatus === 429)                          friendly = "The scoring model is rate-limited. Try again in a moment.";
+  else if (lastStatus === 529)                      friendly = "The scoring model is overloaded right now. Try again in a moment.";
+  else if (lastStatus >= 500 && lastStatus < 600)   friendly = "The scoring model is having a hiccup. Try again in a moment.";
+  return {
+    statusCode: 502,
+    headers: corsHeaders(origin),
+    body: JSON.stringify({ error: friendly, detail: `upstream ${lastStatus || "network"}: ${lastBody.slice(0, 200)}` }),
+  };
 }
 
 // ─── Handler ───────────────────────────────────────────────────────────────

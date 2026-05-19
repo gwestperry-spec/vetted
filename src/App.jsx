@@ -215,7 +215,14 @@ export default function App() {
   const [error, setError] = useState("");
   const [scoringPhase, setScoringPhase] = useState(0);
   const [streamingFilters, setStreamingFilters] = useState([]);
-  const [showPaywall, setShowPaywall]   = useState(false);
+  const [showPaywall, setShowPaywallState] = useState(false);
+  // Wrap setShowPaywall so every opening fires a `paywall_opened`
+  // analytics event with the current context. PaywallContext carries
+  // why the user landed here (scoring_limit, manual, compare, etc.).
+  function setShowPaywall(open) {
+    if (open) logEvent("paywall_opened", { context: paywallContext || "manual", tier: userTier || "free" });
+    setShowPaywallState(open);
+  }
   // showAdvocate state removed Build 30 — Advocate screen deprecated.
   const [upgradeSuccess, setUpgradeSuccess] = useState(false);
   const [showWalkthrough, setShowWalkthrough] = useState(false);
@@ -1423,9 +1430,12 @@ export default function App() {
           onClose={(reason, tier) => {
             setShowPaywall(false);
             setPaywallContext(null);
+            logEvent("paywall_closed", { reason: reason || "dismiss", tier: tier || "" });
             if (reason === "iap_success" && tier) {
               setUserTier(tier);
               setUpgradeSuccess(true);
+              logEvent("paywall_purchase", { tier });
+              setUserProperty("tier", tier);
               if (pendingWorkspaceAction.current) {
                 pendingWorkspaceAction.current();
                 pendingWorkspaceAction.current = null;

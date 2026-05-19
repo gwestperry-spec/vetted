@@ -15,6 +15,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import TopBar from "../TopBar.jsx";
 import { ENDPOINTS } from "../../../config.js";
+import { logEvent } from "../../../utils/analytics.js";
 
 const LS_KEY = (id) => `vetted:coverLetterDraft:${id || "default"}`;
 
@@ -78,6 +79,10 @@ export default function CoverLetterDraft({
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "Draft generation failed.");
       setDraft(data.draft || "");
+      logEvent("coach_drafted", {
+        verdict: opp?.recommendation || "",
+        word_count: (data.draft || "").trim().split(/\s+/).filter(Boolean).length,
+      });
     } catch (e) {
       setErr(e.message);
     } finally {

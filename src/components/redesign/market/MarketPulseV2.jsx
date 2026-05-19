@@ -112,7 +112,75 @@ function buildCohort(rows, profile) {
   };
 }
 
+// Build a one-line cohort label from a set of role titles using a
+// seniority + function + (optional) geography pattern. Reads more
+// editorial than dumping the first-3 raw titles.
+//
+//   "VP & Sr. Director · Ops + CS"
+//   "Director · Eng + Product"
+//   "Head of · Ops"
+//
+// Heuristic — fully local, no LLM call. The taxonomy can grow over time;
+// any title that doesn't match a known pattern is dropped from the
+// classification, so labels only show what was confidently identified.
+const SENIORITY_PATTERNS = [
+  { match: /\b(c[eo]o|cfo|cto|cmo|chief)\b/i,                  label: "C-suite" },
+  { match: /\b(svp|senior\s+vp|sr\.?\s*vp)\b/i,                 label: "SVP" },
+  { match: /\b(vp|vice\s+president)\b/i,                       label: "VP" },
+  { match: /\bhead\s+of\b/i,                                    label: "Head of" },
+  { match: /\b(sr\.?\s*director|senior\s+director|sr\.?\s*dir)\b/i, label: "Sr. Director" },
+  { match: /\bdirector\b/i,                                    label: "Director" },
+  { match: /\b(sr\.?\s*manager|senior\s+manager)\b/i,           label: "Sr. Manager" },
+  { match: /\bmanager\b/i,                                     label: "Manager" },
+];
+const FUNCTION_PATTERNS = [
+  { match: /\b(operations|operating|ops)\b/i,                  label: "Ops" },
+  { match: /\b(customer\s+success|cs\b|cx\b)/i,                label: "CS" },
+  { match: /\b(go[- ]?to[- ]?market|gtm|revops|rev\s*ops)\b/i,  label: "GTM" },
+  { match: /\b(sales|cro|revenue)\b/i,                         label: "Sales" },
+  { match: /\b(product|pm\b)/i,                                label: "Product" },
+  { match: /\b(engineering|engineer|eng\b|infra|platform)\b/i, label: "Engineering" },
+  { match: /\b(supply\s+chain|procurement|sourcing)\b/i,       label: "Supply Chain" },
+  { match: /\b(finance|fp&a|controller|treasurer)\b/i,         label: "Finance" },
+  { match: /\b(marketing|brand|demand|growth)\b/i,             label: "Marketing" },
+  { match: /\b(people|talent|hr|chro)\b/i,                     label: "People" },
+  { match: /\b(food|culinary|quality\s+assurance|qa\b|food\s+safety)\b/i, label: "Food / Quality" },
+];
+
+function classifyByPatterns(text, patterns) {
+  const found = new Set();
+  for (const p of patterns) {
+    if (p.match.test(text)) found.add(p.label);
+  }
+  return [...found];
+}
+
+function joinHumanly(items, sep = " + ", maxItems = 2) {
+  const trimmed = items.slice(0, maxItems);
+  if (trimmed.length === 0) return "";
+  if (trimmed.length === 1) return trimmed[0];
+  return trimmed.join(sep);
+}
+
 function cohortLabel(rows) {
+  if (!rows.length) return "Your scored roles";
+  const allTitles = rows.map(r => r.title || "").join(" · ");
+
+  // Seniority — keep top 2 in order of canonical hierarchy.
+  const seniorityFound = classifyByPatterns(allTitles, SENIORITY_PATTERNS);
+  const seniorityOrder = SENIORITY_PATTERNS.map(p => p.label);
+  const seniorities = seniorityOrder.filter(s => seniorityFound.includes(s)).slice(0, 2);
+
+  // Function — top 2 by appearance order in the patterns list.
+  const functions = classifyByPatterns(allTitles, FUNCTION_PATTERNS).slice(0, 2);
+
+  const seniorityText = joinHumanly(seniorities, " & ", 2);
+  const functionText  = joinHumanly(functions,  " + ", 2);
+
+  if (seniorityText && functionText) return `${seniorityText} · ${functionText}`;
+  if (seniorityText)                  return seniorityText;
+  if (functionText)                   return functionText;
+  // Fall back to top-3 unique title fragments (legacy heuristic).
   const titles = [...new Set(rows.map(r => (r.title || "").split(/[,·]/)[0].trim()))]
     .filter(Boolean).slice(0, 3).join(" · ");
   return titles || "Your scored roles";
