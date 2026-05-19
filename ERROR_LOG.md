@@ -1861,3 +1861,13 @@ Optional env var `APNS_FORCE_SANDBOX=1` flips the order (sandbox first) for debu
 **Lesson:** Always Read a file before overwriting it. Two distinct providers in the same wrapper module need to be kept side-by-side, not replaced. Also: any Capacitor plugin with a "web fallback" likely needs the fallback's dependencies installed at the top level even if the native side is the only target — vite's static analyzer doesn't understand isNativePlatform() guards.
 **Files:** `src/utils/analytics.js`, `package.json`
 **Commit:** 5cebb3a (on top of f5b6d6a)
+
+## Error 166 — Firebase build failed: "No such module 'FirebaseCore'" — plugin is Lite-mode
+**Build:** Discovered May 18, 2026 during Build-30 Firebase Analytics setup, immediately after Errors 165 cleared.
+**Side:** `ios/App/Podfile`.
+**Symptom:** Xcode rebuild failed with `No such module 'FirebaseCore'` in two places: (1) `ios/App/App/AppDelegate.swift` at the new `import FirebaseCore` line, and (2) inside `Pods/CapacitorFirebaseAnalytics/.../FirebaseAnalytics.swift` (the plugin's own wrapper, which also imports FirebaseCore).
+**Root cause:** `@capacitor-firebase/analytics` installs in "Lite" mode by default — its podspec declares no dependency on FirebaseCore or FirebaseAnalytics. The plugin author's design expects the host app to bring its own Firebase pods. Without those, the plugin compiles against missing symbols and AppDelegate can't import FirebaseCore.
+**Fix:** Added `pod 'Firebase/Core'` and `pod 'Firebase/Analytics'` under `capacitor_pods` in the Podfile. `pod install` brought in Firebase 12.13.0 + FirebaseAnalytics + the dependency graph (FirebaseCoreInternal, FirebaseInstallations, GoogleAdsOnDeviceConversion, GoogleAppMeasurement, GoogleUtilities, PromisesObjC, nanopb). Build resolves cleanly after.
+**Lesson:** "Lite mode" Capacitor plugins shift native-dep responsibility to the host Podfile. When installing any @capacitor-firebase/* plugin or similar Lite-mode wrapper, audit its podspec — if it doesn't declare its upstream deps, you must add them yourself. Worth a comment in the Podfile next to any future Capacitor plugin that follows this pattern.
+**Files:** `ios/App/Podfile`, `ios/App/Podfile.lock`
+**Commit:** a86e459
