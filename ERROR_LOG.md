@@ -1883,3 +1883,18 @@ Optional env var `APNS_FORCE_SANDBOX=1` flips the order (sandbox first) for debu
 **Lesson:** When a Capacitor plugin's podspec declares subspecs (`s.subspec '…'`), you MUST pick one explicitly with the `/SubspecName` syntax in the Podfile, otherwise CocoaPods uses `s.default_subspec` (which may be a stub). Host-target pods don't satisfy pod-target deps — every pod target compiles against only what its own podspec declares. Worth a Podfile audit anytime a Capacitor `@capacitor-firebase/*` (or similar Lite-mode) plugin is added.
 **Files:** `ios/App/Podfile`, `ios/App/App.xcodeproj/project.pbxproj`
 **Commit:** 196af96
+
+## Error 168 — Pre-submission punch list executed in one omnibus commit
+**Build:** Logged May 19, 2026 as the rollup of all pre-Build-30-submission code work.
+**Side:** `ios/App/App/Info.plist`, `ios/App/App.xcodeproj/project.pbxproj`, `package.json`, `src/App.jsx`, `src/components/redesign/score-result/CoverLetterDraft.jsx`, `src/components/redesign/market/MarketPulseV2.jsx`, `netlify/functions/anthropic.js`, `BUILD_30_SUBMISSION.md` (new).
+**Symptom:** Build 30 was code-complete but had 6 loose pre-submission items that needed to be in the archive: version bump, SKAdNetwork plist block, more analytics events, cohort label upgrade, retry pattern in the main scoring function, and the submission paperwork (release notes, privacy disclosure, screenshot list).
+**Fix:** Single commit covering all six.
+  - MARKETING_VERSION bumped 2.2.4 → 2.3.0 across pbxproj + package.json. Build number stays 30.
+  - 15 SKAdNetworkIdentifier entries added to Info.plist with a comment pointing at the Google refresh URL.
+  - Wrapped setShowPaywall in a custom function that fires `paywall_opened` on every display (context + tier). Added `paywall_closed`, `paywall_purchase`, and `coach_drafted` events. `setUserProperty("tier", tier)` fires after a successful IAP so GA4 segments reflect the upgrade.
+  - Replaced MarketPulseV2's cohort-label heuristic with a seniority + function pattern-match. Produces editorial labels like "VP & Sr. Director · Ops + CS" instead of raw title fragments. Local; no LLM call.
+  - Retrofitted the cover-letter retry-and-friendly-message pattern (from Error 154) into anthropic.js — the main scoring proxy. 3 attempts with linear backoff on 429 / 5xx / 529. Lesson 154's lint rule expanded across the rest of the LLM-backed functions is now a follow-up.
+  - Wrote BUILD_30_SUBMISSION.md with paste-ready release notes, full App Privacy disclosure with every data type, screenshot capture order, and a top-to-bottom submission checklist. Saves the next session from re-figuring out what Apple requires.
+**Lesson:** Pre-submission paperwork (privacy disclosure, screenshots, release notes) is as much "code" as the actual build — codify it in a markdown file in the repo so future submissions are 30 minutes of copy-paste, not 2 hours of re-research.
+**Files:** see "Side"
+**Commit:** 81b5610
