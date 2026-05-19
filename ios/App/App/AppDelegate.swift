@@ -3,6 +3,7 @@ import Capacitor
 import WebKit
 import UserNotifications
 import os.log
+import FirebaseCore
 
 private let shareLog = OSLog(subsystem: "com.vettedai.app", category: "share-fallback")
 private let pushLog = OSLog(subsystem: "com.vettedai.app", category: "push-diagnostic")
@@ -22,6 +23,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     private let pendingShareMaxAgeSeconds: TimeInterval = 300
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+        // Configure Firebase as the very first thing at launch. Reads the
+        // GoogleService-Info.plist bundled with the app (com.vettedai.app).
+        // Required by FirebaseAnalytics, which is wired in via the
+        // @capacitor-firebase/analytics plugin.
+        FirebaseApp.configure()
+
         // Capacitor auto-registers plugins (SignInWithApple, StoreKit, Print)
         // that conform to CAPBridgedPlugin when the bridge initialises.
         // Push permission is requested by usePushNotifications.js after the

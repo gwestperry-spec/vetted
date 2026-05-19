@@ -33,6 +33,7 @@ import TabBarV2 from "./components/TabBarV2.jsx";
 import HamburgerSheet, { HamburgerButton } from "./components/HamburgerSheet.jsx";
 import MarketPulseCard from "./components/MarketPulse.jsx";
 import MarketPulseV2 from "./components/redesign/market/MarketPulseV2.jsx";
+import { logEvent, logScreen, setUserId, setUserProperty } from "./utils/analytics.js";
 import ScoreEntry from "./components/ScoreEntry.jsx";
 import ScoreEntryV2 from "./components/redesign/score/ScoreEntryV2.jsx";
 // VQAdvocate component removed Build 30. Behavioral patterns now surface
@@ -352,8 +353,19 @@ export default function App() {
       prevAuthIdRef.current = authUser.id;
       identifyUser(authUser.id, { tier: userTier });
       trackUserSignedIn({ method: "apple" });
+      // Firebase Analytics: bind user identity + tier so GA4 reports
+      // segment by free / signal / vantage and the user-explorer surface
+      // attributes events to the right anonymous user.
+      setUserId(authUser.id);
+      setUserProperty("tier", userTier || "free");
+      setUserProperty("lang", lang || "en");
+      logEvent("sign_in", { method: "apple" });
     }
   }, [authUser?.id, userTier]);
+
+  // Fire a GA4 screen_view whenever the active tab changes so funnel
+  // analysis can attribute per-tab dwell + transitions.
+  useEffect(() => { logScreen(`tab_${activeTab}`); }, [activeTab]);
 
   // ── Show walkthrough on first workspace visit ─────────────────────────────
   useEffect(() => {
@@ -671,6 +683,7 @@ export default function App() {
     setLoading(true); setScoringPhase(0); setStreamingFilters([]); setError("");
     announce(t.loadingMsg);
     const scoreStartMs = Date.now();
+    logEvent("score_started", { has_url: !!sourceUrl, jd_chars: jd?.length || 0 });
 
     // Pre-queue workspace role so it appears immediately (URL-sourced roles only)
     const wsRoleId = `ws_${Date.now()}`;
@@ -959,6 +972,12 @@ export default function App() {
       // Stamp role_id onto currentOpp so onRemove can target the correct workspace row
       setCurrentOpp({ ...enriched, role_id: finalRoleId });
       setStep("result");
+      logEvent("score_completed", {
+        vq: Number(result.overall_score?.toFixed?.(1) || result.overall_score),
+        verdict: result.recommendation,
+        company: (result.company || "unknown").slice(0, 80),
+        elapsed_ms: Date.now() - scoreStartMs,
+      });
       upsertWorkspaceRoleLocal({
         role_id:    finalRoleId,
         title:      result.role_title,

@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 70;
+	objectVersion = 56;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -19,6 +19,7 @@
 		6915F6592F8378A000E008F0 /* StoreKitPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6915F6582F8378A000E008F0 /* StoreKitPlugin.swift */; };
 		69AD87CA2F79182700447573 /* SignInWithApple.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69AD87C92F79182700447573 /* SignInWithApple.swift */; };
 		A084ECDBA7D38E1E42DFC39D /* Pods_App.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AF277DCFFFF123FFC6DF26C7 /* Pods_App.framework */; };
+		AA178DFD9F617E11E4078E13 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 924784B16A70564CE9FB23BA /* GoogleService-Info.plist */; };
 		D4DC42FDF29C400F81019BBA /* PrintPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB34A51379C14790A161E986 /* PrintPlugin.swift */; };
 /* End PBXBuildFile section */
 
@@ -60,6 +61,7 @@
 		6915F6582F8378A000E008F0 /* StoreKitPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreKitPlugin.swift; sourceTree = "<group>"; };
 		69AD87C82F79160D00447573 /* App.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = App.entitlements; sourceTree = "<group>"; };
 		69AD87C92F79182700447573 /* SignInWithApple.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignInWithApple.swift; sourceTree = "<group>"; };
+		924784B16A70564CE9FB23BA /* GoogleService-Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; name = "GoogleService-Info.plist"; path = "App/GoogleService-Info.plist"; sourceTree = "<group>"; };
 		AB34A51379C14790A161E986 /* PrintPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrintPlugin.swift; sourceTree = "<group>"; };
 		AF277DCFFFF123FFC6DF26C7 /* Pods_App.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_App.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		AF51FD2D460BCFE21FA515B2 /* Pods-App.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-App.release.xcconfig"; path = "Pods/Target Support Files/Pods-App/Pods-App.release.xcconfig"; sourceTree = "<group>"; };
@@ -68,7 +70,7 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		564F3E252FB166E800470CCF /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+		564F3E252FB166E800470CCF /* Exceptions for "VettedShareExtension" folder in "VettedShareExtension" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
@@ -78,7 +80,18 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		564F3E1B2FB166E700470CCF /* VettedShareExtension */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (564F3E252FB166E800470CCF /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = VettedShareExtension; sourceTree = "<group>"; };
+		564F3E1B2FB166E700470CCF /* VettedShareExtension */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				564F3E252FB166E800470CCF /* Exceptions for "VettedShareExtension" folder in "VettedShareExtension" target */,
+			);
+			explicitFileTypes = {
+			};
+			explicitFolders = (
+			);
+			path = VettedShareExtension;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -144,9 +157,10 @@
 				504EC3131FED79650016851F /* Info.plist */,
 				2FAD9762203C412B000D30F8 /* config.xml */,
 				50B271D01FEDC1A000F3C39B /* public */,
+				924784B16A70564CE9FB23BA /* GoogleService-Info.plist */,
 			);
 			path = App;
-			sourceTree = "<group>";
+			sourceTree = SOURCE_ROOT;
 		};
 		7F8756D8B27F46E3366F6CEA /* Pods */ = {
 			isa = PBXGroup;
@@ -197,8 +211,6 @@
 				564F3E1B2FB166E700470CCF /* VettedShareExtension */,
 			);
 			name = VettedShareExtension;
-			packageProductDependencies = (
-			);
 			productName = VettedShareExtension;
 			productReference = 564F3E1A2FB166E700470CCF /* VettedShareExtension.appex */;
 			productType = "com.apple.product-type.app-extension";
@@ -230,8 +242,6 @@
 				Base,
 			);
 			mainGroup = 504EC2FB1FED79650016851F;
-			packageReferences = (
-			);
 			productRefGroup = 504EC3051FED79650016851F /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -253,6 +263,7 @@
 				50379B232058CBB4000EE86E /* capacitor.config.json in Resources */,
 				504EC30D1FED79650016851F /* Main.storyboard in Resources */,
 				2FAD9763203C412B000D30F8 /* config.xml in Resources */,
+				AA178DFD9F617E11E4078E13 /* GoogleService-Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
