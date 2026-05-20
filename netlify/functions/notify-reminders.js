@@ -60,23 +60,32 @@ function makeProvider() {
 export default async function handler(req, context) {
   const now = new Date().toISOString();
   console.log("[notify-reminders] firing at", now);
-
-  // ── 1. Fetch due reminders with role info ────────────────────────────────
-  const reminders = await sbGet(
-    `/workspace_reminders?completed=eq.false&push_sent_at=is.null&remind_at=lte.${encodeURIComponent(now)}&select=id,apple_id,label,workspace_role_id,workspace_roles(title,company,role_id)&limit=200`
-  );
-
-  if (!reminders.length) {
-    console.log("[notify-reminders] no due reminders");
-    return new Response("ok", { status: 200 });
-  }
-
-  console.log(`[notify-reminders] ${reminders.length} due reminder(s)`);
-
-  // ── 2. Build provider once, reuse for all sends ──────────────────────────
-  const provider = makeProvider();
   let sent = 0;
   let failed = 0;
+  const stageErrors = [];
+  let provider = null;
+
+  try {
+    // ── 1. Fetch due reminders with role info ────────────────────────────────
+    let reminders = [];
+    try {
+      reminders = await sbGet(
+        `/workspace_reminders?completed=eq.false&push_sent_at=is.null&remind_at=lte.${encodeURIComponent(now)}&select=id,apple_id,label,workspace_role_id,workspace_roles(title,company,role_id)&limit=200`
+      );
+    } catch (err) {
+      console.error("[notify-reminders] STAGE fetch failed:", err?.message);
+      stageErrors.push({ stage: "fetch", error: err?.message });
+    }
+
+    if (!reminders.length) {
+      console.log("[notify-reminders] no due reminders");
+      return new Response(JSON.stringify({ sent: 0, failed: 0, stageErrors }), { status: 200 });
+    }
+
+    console.log(`[notify-reminders] ${reminders.length} due reminder(s)`);
+
+    // ── 2. Build provider once, reuse for all sends ──────────────────────────
+    provider = makeProvider();
 
   for (const reminder of reminders) {
     try {
@@ -134,7 +143,12 @@ export default async function handler(req, context) {
     }
   }
 
-  provider.shutdown();
-  console.log(`[notify-reminders] done — sent: ${sent}, failed: ${failed}`);
-  return new Response(JSON.stringify({ sent, failed }), { status: 200 });
+  } catch (err) {
+    console.error("[notify-reminders] fatal:", err?.stack || err?.message || err);
+    stageErrors.push({ stage: "outer", error: err?.message || String(err) });
+  } finally {
+    try { provider?.shutdown(); } catch { /* already shut down */ }
+  }
+  console.log(`[notify-reminders] done — sent: ${sent}, failed: ${failed}, stageErrors: ${stageErrors.length}`);
+  return new Response(JSON.stringify({ sent, failed, stageErrors }), { status: 200 });
 }

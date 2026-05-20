@@ -58,27 +58,37 @@ async function alreadySentThisWeek(appleId, type) {
 export default async function handler(req, context) {
   const now = new Date();
   console.log("[notify-weekly] firing at", now.toISOString());
-
-  // Get all distinct users with device tokens opted into digest
-  const devices = await sbGet(
-    `/user_devices?notif_digest=eq.true&select=apple_id,token,lang`
-  );
-
-  // Group tokens + lang by user
-  const userTokens = {};
-  const userLang   = {};
-  for (const d of devices) {
-    if (!userTokens[d.apple_id]) userTokens[d.apple_id] = [];
-    userTokens[d.apple_id].push(d.token);
-    if (!userLang[d.apple_id]) userLang[d.apple_id] = d.lang || "en";
-  }
-
-  const users = Object.keys(userTokens);
-  console.log(`[notify-weekly] ${users.length} opted-in user(s)`);
-
-  const weekAgo = new Date(Date.now() - 7 * 86400_000).toISOString();
-  const provider = makeProvider();
   let totalSent = 0;
+  const stageErrors = [];
+  let provider = null;
+
+  try {
+    // Get all distinct users with device tokens opted into digest
+    let devices = [];
+    try {
+      devices = await sbGet(
+        `/user_devices?notif_digest=eq.true&select=apple_id,token,lang`
+      );
+    } catch (err) {
+      console.error("[notify-weekly] STAGE devices fetch failed:", err?.message);
+      stageErrors.push({ stage: "devices", error: err?.message });
+      return new Response(JSON.stringify({ sent: 0, stageErrors }), { status: 200 });
+    }
+
+    // Group tokens + lang by user
+    const userTokens = {};
+    const userLang   = {};
+    for (const d of devices) {
+      if (!userTokens[d.apple_id]) userTokens[d.apple_id] = [];
+      userTokens[d.apple_id].push(d.token);
+      if (!userLang[d.apple_id]) userLang[d.apple_id] = d.lang || "en";
+    }
+
+    const users = Object.keys(userTokens);
+    console.log(`[notify-weekly] ${users.length} opted-in user(s)`);
+
+    const weekAgo = new Date(Date.now() - 7 * 86400_000).toISOString();
+    provider = makeProvider();
 
   for (const appleId of users) {
     try {
@@ -128,7 +138,12 @@ export default async function handler(req, context) {
     }
   }
 
-  provider.shutdown();
-  console.log(`[notify-weekly] done — total sent: ${totalSent}`);
-  return new Response(JSON.stringify({ sent: totalSent }), { status: 200 });
+  } catch (err) {
+    console.error("[notify-weekly] fatal:", err?.stack || err?.message || err);
+    stageErrors.push({ stage: "outer", error: err?.message || String(err) });
+  } finally {
+    try { provider?.shutdown(); } catch { /* already shut down */ }
+  }
+  console.log(`[notify-weekly] done — total sent: ${totalSent}, stageErrors: ${stageErrors.length}`);
+  return new Response(JSON.stringify({ sent: totalSent, stageErrors }), { status: 200 });
 }

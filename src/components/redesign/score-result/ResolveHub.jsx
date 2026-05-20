@@ -214,7 +214,10 @@ export default function ResolveHub({
           letterSpacing: "0.28em",
         }}>{verdictUpper}</div>
 
-        {/* Italic recommendation rationale */}
+        {/* Italic recommendation rationale — clamped to 4 lines on the
+            hub so it can't crash into the absolute-positioned READ
+            DEEPER grid below. The full text lives in the Insights
+            landing's Honest Fit tile (one tap away). */}
         {rationale && (
           <div style={{
             marginTop: 12,
@@ -222,6 +225,10 @@ export default function ResolveHub({
             fontStyle: "italic", color: C.onDarkSoft, lineHeight: 1.45,
             maxWidth: 320, textAlign: "center", padding: "0 32px",
             textWrap: "pretty",
+            display: "-webkit-box",
+            WebkitLineClamp: 4,
+            WebkitBoxOrient: "vertical",
+            overflow: "hidden",
           }}>{rationale}</div>
         )}
       </div>

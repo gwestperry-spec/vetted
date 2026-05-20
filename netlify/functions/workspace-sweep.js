@@ -78,8 +78,18 @@ exports.handler = async (event) => {
     return { statusCode: 401, body: JSON.stringify({ error: "Unauthorized" }) };
   }
 
-  const result = await deleteStaleRows();
   const source = isScheduled ? "scheduled" : "manual";
+  let result;
+  try {
+    result = await deleteStaleRows();
+  } catch (err) {
+    // The promise rejection path inside deleteStaleRows (DNS error,
+    // connection refused, etc.) would otherwise reach Netlify's
+    // runtime and surface as 502. Catch + structured 200 so the
+    // scheduler keeps firing and the error is observable to ops.
+    console.error("[workspace_sweep] fatal:", err?.stack || err?.message || err);
+    result = { deleted: 0, error: err?.message || String(err) };
+  }
   console.log(`[workspace_sweep] source=${source} deleted=${result.deleted} error=${result.error || "none"}`);
 
   return {
