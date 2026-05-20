@@ -1337,6 +1337,7 @@ export default function App() {
                 authUser={authUser}
                 onSignOut={handleSignOut}
                 onOpenMenu={() => setMenuOpen(true)}
+                devTierOverride={devTierOverride}
                 presentationMode={presentationMode}
                 onTogglePresentationMode={() => setPresentationMode(prev => {
                   const next = !prev;
@@ -1715,7 +1716,7 @@ function useNotifPrefs(authUser) {
   return { get, toggle };
 }
 
-function SettingsTab({ t, lang, onLangChange, authUser, onSignOut, onOpenMenu, presentationMode, onTogglePresentationMode }) {
+function SettingsTab({ t, lang, onLangChange, authUser, onSignOut, onOpenMenu, devTierOverride, presentationMode, onTogglePresentationMode }) {
   const [showLangPicker, setShowLangPicker] = React.useState(false);
   const notif = useNotifPrefs(authUser);
 
@@ -1874,7 +1875,10 @@ function SettingsTab({ t, lang, onLangChange, authUser, onSignOut, onOpenMenu, p
           </a>
         </div>
 
-        {/* Presentation Mode */}
+        {/* Presentation Mode — dev/marketing utility, gated behind the
+            7-tap VETTED unlock. End users have no reason to hide their own
+            name/email from themselves; this exists for screen-recording demos. */}
+        {devTierOverride && (
         <div style={{ padding: "0 20px" }}>
           <button
             onClick={onTogglePresentationMode}
@@ -1904,6 +1908,7 @@ function SettingsTab({ t, lang, onLangChange, authUser, onSignOut, onOpenMenu, p
             </div>
           </button>
         </div>
+        )}
 
         {/* App version */}
         <div style={{ padding: "24px 20px 0" }}>
