@@ -1898,3 +1898,41 @@ Optional env var `APNS_FORCE_SANDBOX=1` flips the order (sandbox first) for debu
 **Lesson:** Pre-submission paperwork (privacy disclosure, screenshots, release notes) is as much "code" as the actual build — codify it in a markdown file in the repo so future submissions are 30 minutes of copy-paste, not 2 hours of re-research.
 **Files:** see "Side"
 **Commit:** 81b5610
+
+## Error 169 — notify-pipeline returned 502 on every cron tick; killed 3 notification types
+**Build:** Discovered May 19, 2026 during a "prove the push pipeline works" debug session — user reported they'd never received Reminders / Follow-Ups / Pipeline Nudges / Timeline Check-Ins / Weekly Recap despite all five toggles enabled.
+**Side:** `netlify/functions/notify-pipeline.js`, `src/App.jsx` (useNotifPrefs hook).
+**Symptom:** Manual curl against the deployed function returned `HTTP 502 "error code: 502"`. The function was scheduled hourly via Netlify cron and silently failing every run — three of the five notification types route through it (Pipeline Nudges → staleness stage; Application Follow-Ups → follow_up stage; Timeline Check-Ins → timeline stage).
+**Root cause (compound):**
+(1) `notify-pipeline.js` was structured as `try { …all three stages… } finally { provider.shutdown(); }` with **no outer catch handler**. Any throw inside any stage propagated up, the `finally` ran provider.shutdown(), then the unhandled error reached Netlify's runtime which returned 502. The scheduler treated every cron run as a complete failure.
+(2) The follow_up stage queried `workspace_roles?application_status=eq.applied&status_updated_at=lte.X` — those columns existed on the legacy `opportunities` table but were never carried over to `workspace_roles` during the workspace schema refactor. Current schema uses `status` (enum that includes `'applied'`) and `updated_at`. Supabase REST returned HTTP 400 on every cron tick, which became the 502.
+(3) The timeline stage's applications-count helper had the same stale `application_status=eq.applied` reference — silent failure under the per-user inner try/catch, but still cost ~50ms per user for nothing.
+**Fix:** Three layers:
+- Each stage (staleness / follow_up / timeline) now does its own sbRpc/sbGet under a local try/catch. A failure in one stage no longer kills the other two.
+- Stage failures are captured in a `stageErrors[]` array and returned to the caller for ops visibility.
+- The outer block gained a real catch handler that logs + records the error and still returns HTTP 200 with `{ sent, stageErrors }`. The cron scheduler sees successful runs again.
+- Fixed both follow_up + timeline queries to use the actual schema columns (`status=eq.applied`, `updated_at`).
+After deploy, the function returns `{"sent":0,"stageErrors":[]}` consistently — meaning all three stages run clean, just no users currently matching trigger conditions.
+**Lesson:** Any scheduled function should structure as outer-try-with-diagnostic-return: never let a throw reach the runtime, always return 200 with a structured payload that surfaces stage-level failures. Otherwise the scheduler keeps firing into a black hole. Worth a sweep across the other cron functions (notify-reminders, notify-weekly, workspace-sweep) to apply the same pattern.
+**Files:** `netlify/functions/notify-pipeline.js`
+**Commits:** 889b7c5, 2258bf8, 85f0c6d
+
+## Error 170 — Settings notification toggles were localStorage-only, never persisted to Supabase
+**Build:** Discovered May 19, 2026 in the same debug session as Error 169.
+**Side:** `src/App.jsx` (useNotifPrefs hook).
+**Symptom:** Users could flip the 5 notification toggles in Settings (Reminders / Application Follow-Ups / Pipeline Nudges / Timeline Check-Ins / Weekly Recap) and the UI persisted across launches, but the cron functions that filter on `user_devices.notif_*` columns never saw the change. Toggle off → still received pushes; toggle on → defaults already covered it.
+**Root cause:** `useNotifPrefs` wrote toggle state to `localStorage` under key `vetted_notif_prefs` and read it back on next mount. Zero code paths called register-device to push the prefs to Supabase. The cron functions queried `user_devices.notif_reminders=eq.true` etc.; the only values that table ever saw were the defaults written by `register-device.js` at first-time registration (all five defaulting to `true`). So in practice users always received notifications regardless of toggle state — making the toggles entirely cosmetic AND making opt-out impossible.
+**Fix:** Hook now accepts `authUser` as a parameter and, on each toggle, POSTs the full prefs map to register-device with the user's apple_id + cached APNs token. register-device.js is an upsert keyed on (apple_id, token) so it updates the existing row's notif_* columns rather than creating duplicates. localStorage persistence kept as the read-side cache so the UI is responsive without a round-trip on every render.
+**Lesson:** UI controls that drive backend behavior need an end-to-end verification path — flipping the toggle, hitting the cron, and confirming the row state changed. Worth a sweep of every Settings control to confirm each one actually plumbs to the DB.
+**Files:** `src/App.jsx`
+**Commit:** 2258bf8
+
+## Error 171 — SKStoreReviewController submit silently no-ops on TestFlight (expected Apple behavior)
+**Build:** Discovered May 19, 2026 during pre-submission TestFlight QA.
+**Side:** Apple's `SKStoreReviewController` API — not a bug in Vetted code.
+**Symptom:** User triggered the in-app review prompt (which appears after the Score → Resolve dwell window per `useReviewPrompt.js`'s eligibility heuristic), tapped stars, tapped Submit, and nothing visible happened.
+**Root cause:** Apple intentionally disables real review submission on TestFlight installs, Xcode debug runs, and sandbox-paid builds — the prompt UI still renders so developers can verify the trigger point, but Submit is a no-op. Apple provides no feedback channel (no toast, no confirmation), in any environment, on purpose. This is the same behavior in production: tap Submit → modal dismisses → nothing else visible. The rating is recorded internally and may or may not appear publicly within 24-72h based on Apple's opaque heuristics.
+**Fix:** None required. Documenting here so future "review submit doesn't work" reports route directly to "expected, ship the build to the public App Store and re-test."
+**Lesson:** Apple's review API has zero per-tap acknowledgement by design. When QAing the review prompt, only verify (a) it fires at the right moment per the eligibility rules, (b) tapping a star + Submit dismisses the modal cleanly. Do NOT expect any feedback that the submission "succeeded."
+**Files:** `src/hooks/useReviewPrompt.js`, `ios/App/App/StoreKitPlugin.swift`
+**Commit:** n/a (no code change)
