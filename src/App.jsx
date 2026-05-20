@@ -1664,14 +1664,49 @@ function ProfileTab({ t, lang, setLang, profile, authUser, userTier, onSignOut, 
 }
 
 const NOTIF_PREFS_KEY = "vetted_notif_prefs";
-function useNotifPrefs() {
+function useNotifPrefs(authUser) {
   const [prefs, setPrefs] = React.useState(() => {
     try { return JSON.parse(localStorage.getItem(NOTIF_PREFS_KEY) || "{}"); } catch { return {}; }
   });
+  // Persist the full prefs map to the user's user_devices row in Supabase
+  // via register-device. That endpoint upserts on apple_id+token and
+  // writes notif_reminders / notif_follow_up / notif_staleness /
+  // notif_timeline / notif_digest — the exact columns the scheduled
+  // cron functions filter on. Before this hook persisted to DB, the
+  // toggles were localStorage-only — flipping them changed nothing
+  // about delivery, since the cron functions only read DB state.
+  async function persist(next) {
+    if (!authUser?.id) return;
+    let token = "";
+    try { token = localStorage.getItem("vetted_apns_token") || ""; } catch { /* ignore */ }
+    if (!token) return; // no device registered yet — defaults stand
+    try {
+      await fetch(ENDPOINTS.registerDevice, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          appleId:      authUser.id,
+          sessionToken: authUser.sessionToken || "",
+          token,
+          platform:     "ios",
+          prefs: {
+            reminders: next.reminders ?? true,
+            followUp:  next.followUp  ?? true,
+            staleness: next.staleness ?? true,
+            timeline:  next.timeline  ?? true,
+            digest:    next.digest    ?? true,
+          },
+        }),
+      });
+    } catch (err) {
+      console.warn("[notif-prefs] persist failed (will retry on next change):", err?.message);
+    }
+  }
   function toggle(key) {
     setPrefs(prev => {
       const next = { ...prev, [key]: !( prev[key] ?? true) };
       localStorage.setItem(NOTIF_PREFS_KEY, JSON.stringify(next));
+      persist(next);
       return next;
     });
   }
@@ -1681,7 +1716,7 @@ function useNotifPrefs() {
 
 function SettingsTab({ t, lang, onLangChange, authUser, onSignOut, onOpenMenu, presentationMode, onTogglePresentationMode }) {
   const [showLangPicker, setShowLangPicker] = React.useState(false);
-  const notif = useNotifPrefs();
+  const notif = useNotifPrefs(authUser);
 
   const LANG_NAMES_LOCAL = {
     en: "English", es: "Español", pt: "Português", zh: "中文",

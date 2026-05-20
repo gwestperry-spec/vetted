@@ -145,11 +145,18 @@ export default async function handler(req, context) {
     }
 
     // ── 2. FOLLOW_UP — applied roles with no update in 10+ days ────────────
+    // workspace_roles uses `status` (enum value 'applied') + `updated_at`,
+    // not the legacy `application_status` / `status_updated_at` columns
+    // from the old `opportunities` table. updated_at is bumped on any
+    // field change, not just status, so this is slightly noisy — but
+    // good enough until a proper status_updated_at column lands in a
+    // future migration. Cooldown check in alreadySent() catches repeat
+    // sends.
     const cutoff = new Date(Date.now() - 10 * 86400_000).toISOString();
     let appliedRoles = [];
     try {
       appliedRoles = await sbGet(
-        `/workspace_roles?application_status=eq.applied&status_updated_at=lte.${encodeURIComponent(cutoff)}&select=apple_id,role_id,title,company&limit=500`
+        `/workspace_roles?status=eq.applied&updated_at=lte.${encodeURIComponent(cutoff)}&select=apple_id,role_id,title,company&limit=500`
       );
       console.log(`[notify-pipeline] ${appliedRoles.length} follow-up candidate(s)`);
     } catch (err) {
