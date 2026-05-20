@@ -144,51 +144,13 @@ export default async function handler(req, context) {
       }
     }
 
-    // ── 2. FOLLOW_UP — applied roles with no update in 10+ days ────────────
-    // workspace_roles uses `status` (enum value 'applied') + `updated_at`,
-    // not the legacy `application_status` / `status_updated_at` columns
-    // from the old `opportunities` table. updated_at is bumped on any
-    // field change, not just status, so this is slightly noisy — but
-    // good enough until a proper status_updated_at column lands in a
-    // future migration. Cooldown check in alreadySent() catches repeat
-    // sends.
-    const cutoff = new Date(Date.now() - 10 * 86400_000).toISOString();
-    let appliedRoles = [];
-    try {
-      appliedRoles = await sbGet(
-        `/workspace_roles?status=eq.applied&updated_at=lte.${encodeURIComponent(cutoff)}&select=apple_id,role_id,title,company&limit=500`
-      );
-      console.log(`[notify-pipeline] ${appliedRoles.length} follow-up candidate(s)`);
-    } catch (err) {
-      console.error("[notify-pipeline] STAGE follow_up query failed:", err?.message);
-      stageErrors.push({ stage: "follow_up", error: err?.message });
-    }
-
-    for (const role of appliedRoles) {
-      const { apple_id, role_id, title, company } = role;
-      try {
-        if (await alreadySent(apple_id, "follow_up", role_id, 10)) continue;
-
-        const devices = await sbGet(`/user_devices?apple_id=eq.${encodeURIComponent(apple_id)}&notif_follow_up=eq.true&select=token,lang`);
-        const tokens = devices.map(d => d.token).filter(Boolean);
-        if (!tokens.length) continue;
-
-        const copy      = getCopy(devices[0]?.lang || "en");
-        const roleLabel = title || "This role";
-        const sent = await sendPush(
-          provider, tokens,
-          `${roleLabel}${company ? ` · ${company}` : ""}`,
-          copy.followUpBody,
-          { type: "follow_up", roleId: role_id }
-        );
-        if (sent > 0) {
-          await logSent(apple_id, "follow_up", role_id);
-          totalSent += sent;
-        }
-      } catch (err) {
-        console.error(`[notify-pipeline] follow_up error for ${apple_id}/${role_id}:`, err.message);
-      }
-    }
+    // ── FOLLOW_UP stage removed ────────────────────────────────────────────
+    // The Mark Applied UI was buried in the Build-30 workspace redesign,
+    // so this stage had no inputs and produced zero pushes. Application
+    // tracking is off-app territory (Huntr / Teal / inbox); Vetted is the
+    // decision layer, not the pipeline tracker. If a Mark Applied flow
+    // ever returns with a real UX, this stage can be revived from git
+    // history — see commit before 7211f0d for the full implementation.
 
     // ── 3. TIMELINE — milestone nudges based on user's stated landing window ──
     // Milestones by timeline value (days since search start):

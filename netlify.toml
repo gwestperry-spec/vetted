@@ -123,13 +123,14 @@
 [functions."fetch-jd"]
   timeout = 20
 
-# Reminder push — runs every hour, checks for due reminders
-[functions."notify-reminders"]
-  schedule = "0 * * * *"
-  timeout  = 30
+# notify-reminders schedule removed in the notification cleanup.
+# Reminder UI was dropped from the workspace in Build 30 and never
+# replaced; the function had no rows to read. File retained in source
+# for git history but no longer fires on cron.
 
 # Pipeline notifications — daily at 14:00 UTC (10am ET / 7am PT)
-# Sends: staleness nudge (7+ days no score) + application follow-up (10+ days) + timeline milestones
+# Sends: staleness nudge (7+ days no score) + timeline milestones
+# (application follow-up stage removed alongside the reminder UI cleanup)
 [functions."notify-pipeline"]
   schedule = "0 14 * * *"
   timeout  = 60

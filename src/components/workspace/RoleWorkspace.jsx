@@ -8,7 +8,9 @@ import { createPortal } from "react-dom";
 import RoleCard from "./RoleCard.jsx";
 import CompareQueue from "./CompareQueue.jsx";
 import WorkspaceEmptyState from "./WorkspaceEmptyState.jsx";
-import WorkspaceReminderModal from "./WorkspaceReminderModal.jsx";
+// WorkspaceReminderModal import removed in the notification cleanup —
+// reminders were dropped from the workspace UI and the entire feature
+// retired. Modal file retained in source for git history.
 import LangSwitcher from "../LangSwitcher.jsx";
 import MarketPulseCard from "../MarketPulse.jsx";
 import { ScoringProgress as ScoringProgressComponent } from "../VQLoadingScreen.jsx";
@@ -642,16 +644,7 @@ export default function RoleWorkspace({
 
       </div>
 
-      {/* ── Reminder modal ── */}
-      {reminderTarget && (
-        <WorkspaceReminderModal
-          role={reminderTarget.role}
-          existing={reminderTarget.existing}
-          onSave={handleSaveReminder}
-          onClose={() => setReminderTarget(null)}
-          t={t}
-        />
-      )}
+      {/* Reminder modal removed — reminders feature retired. */}
 
     </main>
   );

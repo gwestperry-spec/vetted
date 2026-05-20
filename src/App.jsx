@@ -1690,8 +1690,9 @@ function useNotifPrefs(authUser) {
           token,
           platform:     "ios",
           prefs: {
-            reminders: next.reminders ?? true,
-            followUp:  next.followUp  ?? true,
+            // Reminders + Application Follow-Ups removed in the
+            // notification cleanup — Vetted's notifications are
+            // observation-only now, not user-set.
             staleness: next.staleness ?? true,
             timeline:  next.timeline  ?? true,
             digest:    next.digest    ?? true,
@@ -1806,10 +1807,11 @@ function SettingsTab({ t, lang, onLangChange, authUser, onSignOut, onOpenMenu, p
             <div style={{ fontFamily: "var(--font-display)", fontSize: 17, fontWeight: 500, color: "var(--ink)", lineHeight: 1.2 }}>
               {t.settingsNotifications || "Notifications"}
             </div>
+            <div style={{ fontFamily: "var(--font-prose)", fontSize: 12.5, fontStyle: "italic", color: "#8A9A8A", marginTop: 4, lineHeight: 1.45 }}>
+              {t.settingsNotifSubhead || "Vetted notifies you when the system has something to report. You don't set notifications — the app surfaces what it observes."}
+            </div>
           </div>
           {[
-            { key: "reminders",  label: t.notifReminders  || "Reminders",                desc: t.notifRemindersDesc  || "Alerts you set on roles" },
-            { key: "followUp",   label: t.notifFollowUp   || "Application Follow-Ups", desc: t.notifFollowUpDesc   || "10 days after applying with no update" },
             { key: "staleness",  label: t.notifStaleness  || "Pipeline Nudges",        desc: t.notifStalenessDesc  || "When you haven't scored in 7 days" },
             { key: "timeline",   label: t.notifTimeline   || "Timeline Check-Ins",     desc: t.notifTimelineDesc   || "Milestone nudges based on your landing window" },
             { key: "digest",     label: t.notifDigest     || "Weekly Recap",           desc: t.notifDigestDesc     || "Sunday summary of your week's activity" },
