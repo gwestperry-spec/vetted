@@ -488,7 +488,7 @@ disclosure — automatic Apple Review rejection.
 
 ### Build 30 — Ready to submit
 
-- **Version:** 2.3.0, build 30
+- **Version:** 2026.05.001, build 30
 - **Bundle:** com.vettedai.app
 - **Code state:** main HEAD is production-ready. Demo bootstrap fully reverted.
 - **Screenshots:** 6 per device × 2 devices in
@@ -658,7 +658,7 @@ This session's work spans:
 - Notification pipeline debugging (502 → fix → verify)
 - Settings toggles wired to DB (was localStorage-only)
 - Reminders + Follow-Ups feature retirement
-- Pre-submission omnibus (v2.3.0, SKAdNetwork, more events, retry, docs)
+- Pre-submission omnibus (v2026.05.001, SKAdNetwork, more events, retry, docs)
 - Demo bootstrap → screenshot capture → revert
 - Various hot-fixes (scroll bars, layout collisions, sticky vs fixed)
 
@@ -671,7 +671,7 @@ Critical commits (most recent first; check `git log --oneline -50` for full):
 - `b763761` — cover-letter retry + friendly errors
 - `00afbff` — App Store screenshots full set
 - `6ccd73c` — sign-in screenshots fix
-- `81b5610` — pre-submission omnibus (v2.3.0)
+- `81b5610` — pre-submission omnibus (v2026.05.001)
 - `f246f20` — sign-in seal matches scoring screen
 - `aa5d4b9` — VerdictSeal compute letter-spacing
 - `b0e700f` — SignInGate full forest
