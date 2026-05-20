@@ -256,7 +256,7 @@ export default async function handler(req, context) {
         // Count how many roles scored + applied
         const [scoredRoles, appliedRoles2] = await Promise.all([
           sbGet(`/workspace_roles?apple_id=eq.${encodeURIComponent(apple_id)}&status=neq.queued&select=vq_score&limit=200`),
-          sbGet(`/workspace_roles?apple_id=eq.${encodeURIComponent(apple_id)}&application_status=eq.applied&select=role_id&limit=200`),
+          sbGet(`/workspace_roles?apple_id=eq.${encodeURIComponent(apple_id)}&status=eq.applied&select=role_id&limit=200`),
         ]);
 
         const daysLeft = Math.max(0, windowDays - daysSinceStart);
