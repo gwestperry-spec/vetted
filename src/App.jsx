@@ -1809,12 +1809,16 @@ function SettingsTab({ t, lang, onLangChange, authUser, onSignOut, onOpenMenu, p
               </div>
             </button>
           ))}
-          <div style={{ borderTop: "0.5px solid var(--border)", marginTop: 4 }} />
-          {/* Send test push — diagnostic, visible to all users so user-reported
-              "I never get notifications" can be self-served. Runs the full
-              pipeline (Supabase env → APNs env → device lookup → APNs send)
-              and shows a structured result. */}
-          <NotifyTestButton authUser={authUser} t={t} />
+          {/* Send test push — gated behind the dev-tap unlock (7 taps on
+              the VETTED wordmark on the workspace header). End users never
+              see this; it's a developer diagnostic for the push pipeline
+              that the Errors 131-141 cycle relied on. */}
+          {devTierOverride && (
+            <>
+              <div style={{ borderTop: "0.5px solid var(--border)", marginTop: 4 }} />
+              <NotifyTestButton authUser={authUser} t={t} />
+            </>
+          )}
         </div>
 
         {/* Support */}
