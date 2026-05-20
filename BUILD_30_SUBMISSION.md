@@ -1,6 +1,12 @@
 # Build 30 · App Store Submission Checklist
 
-Version: **2.3.0** · Build: **30** · Bundle: **com.vettedai.app**
+Version: **2026.05.001** · Build: **30** · Bundle: **com.vettedai.app**
+
+Versioning scheme: date-based (`YYYY.MM.NNN`). `2026.05.001` = first
+build shipped in May 2026. Apple compares versions component-by-
+component, so `2026.05.001` cleanly supersedes the prior `2.2.4`
+release. Build number (`CURRENT_PROJECT_VERSION`) stays sequential at
+`30` and increments by 1 per submission.
 
 ---
 
@@ -118,7 +124,7 @@ template in Sketch / Figma / Pages if you want chrome overlays.
 
 ## Submission checklist (work top to bottom)
 
-- [ ] Bump version to 2.3.0 / build 30 — **DONE in this commit**
+- [x] Bump version to 2026.05.001 / build 30 — **DONE**
 - [ ] Confirm App Privacy disclosure (see above)
 - [ ] Capture 6 screenshots from a real device (or release simulator)
 - [ ] Write App Store Connect "What's New" using release notes above

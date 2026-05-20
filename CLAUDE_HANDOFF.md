@@ -28,7 +28,14 @@ scratch and without repeating the mistakes catalogued in `ERROR_LOG.md`.
 - **Analytics:** PostHog (existing) + Firebase Analytics (added Build 30)
 - **Repository:** `https://github.com/gwestperry-spec/vetted.git` (main branch)
 - **Production URL:** `https://tryvettedai.com` (Netlify)
-- **Current version:** 2.3.0 build 30 — ready for App Store Connect upload as of session end
+- **Current version:** 2026.05.001 build 30 — ready for App Store Connect upload as of session end
+- **Versioning scheme:** date-based `YYYY.MM.NNN`. `2026.05.001` = first
+  build shipped in May 2026. Do not revert to semver. Apple compares
+  versions component-by-component so this cleanly supersedes the prior
+  semver `2.2.4`. Future builds bump NNN within the same month, or roll
+  to `YYYY.MM.001` in a new month. `CURRENT_PROJECT_VERSION` (build
+  number) stays sequential at 30 and increments by 1 per App Store
+  submission, regardless of marketing version.
 
 ---
 
