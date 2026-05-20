@@ -102,11 +102,23 @@ export default async function handler(req, context) {
 
   const provider = makeProvider();
   let totalSent = 0;
+  const stageErrors = [];
 
   try {
     // ── 1. STALENESS — users who haven't scored in 7+ days ─────────────────
-    const staleUsers = await sbRpc("users_not_scored_since", { days_ago: 7 });
-    console.log(`[notify-pipeline] ${staleUsers.length} stale user(s)`);
+    // Wrap each stage in its own try/catch so a missing Postgres RPC
+    // (or any other systemic failure) in one stage doesn't take down
+    // the entire run. Previously a throw here returned a raw 502 to
+    // any caller — including the Netlify scheduler — silently breaking
+    // all three notification types this function powers.
+    let staleUsers = [];
+    try {
+      staleUsers = await sbRpc("users_not_scored_since", { days_ago: 7 });
+      console.log(`[notify-pipeline] ${staleUsers.length} stale user(s)`);
+    } catch (err) {
+      console.error("[notify-pipeline] STAGE staleness RPC failed:", err?.message);
+      stageErrors.push({ stage: "staleness", error: err?.message });
+    }
 
     for (const { apple_id } of staleUsers) {
       try {
@@ -134,10 +146,16 @@ export default async function handler(req, context) {
 
     // ── 2. FOLLOW_UP — applied roles with no update in 10+ days ────────────
     const cutoff = new Date(Date.now() - 10 * 86400_000).toISOString();
-    const appliedRoles = await sbGet(
-      `/workspace_roles?application_status=eq.applied&status_updated_at=lte.${encodeURIComponent(cutoff)}&select=apple_id,role_id,title,company&limit=500`
-    );
-    console.log(`[notify-pipeline] ${appliedRoles.length} follow-up candidate(s)`);
+    let appliedRoles = [];
+    try {
+      appliedRoles = await sbGet(
+        `/workspace_roles?application_status=eq.applied&status_updated_at=lte.${encodeURIComponent(cutoff)}&select=apple_id,role_id,title,company&limit=500`
+      );
+      console.log(`[notify-pipeline] ${appliedRoles.length} follow-up candidate(s)`);
+    } catch (err) {
+      console.error("[notify-pipeline] STAGE follow_up query failed:", err?.message);
+      stageErrors.push({ stage: "follow_up", error: err?.message });
+    }
 
     for (const role of appliedRoles) {
       const { apple_id, role_id, title, company } = role;
@@ -186,11 +204,17 @@ export default async function handler(req, context) {
     };
 
     // Fetch users who have a timeline set and have device tokens opted in
-    const timelineDevices = await sbGet(
-      `/user_devices?notif_timeline=eq.true&select=apple_id`
-    );
-    const timelineUsers = [...new Set(timelineDevices.map(d => d.apple_id))];
-    console.log(`[notify-pipeline] ${timelineUsers.length} timeline user(s) to check`);
+    let timelineUsers = [];
+    try {
+      const timelineDevices = await sbGet(
+        `/user_devices?notif_timeline=eq.true&select=apple_id`
+      );
+      timelineUsers = [...new Set(timelineDevices.map(d => d.apple_id))];
+      console.log(`[notify-pipeline] ${timelineUsers.length} timeline user(s) to check`);
+    } catch (err) {
+      console.error("[notify-pipeline] STAGE timeline query failed:", err?.message);
+      stageErrors.push({ stage: "timeline", error: err?.message });
+    }
 
     for (const apple_id of timelineUsers) {
       try {
@@ -248,10 +272,18 @@ export default async function handler(req, context) {
       }
     }
 
+  } catch (err) {
+    // Outer catch — any throw from one of the for-loop bodies or a
+    // helper. Without this the function returned a raw 502 to Netlify
+    // and the scheduler treated the run as a complete failure, so even
+    // stages that would have worked never got their second chance on
+    // the next cron tick.
+    console.error("[notify-pipeline] fatal:", err?.stack || err?.message || err);
+    stageErrors.push({ stage: "outer", error: err?.message || String(err) });
   } finally {
-    provider.shutdown();
+    try { provider.shutdown(); } catch { /* already shut down */ }
   }
 
-  console.log(`[notify-pipeline] done — total sent: ${totalSent}`);
-  return new Response(JSON.stringify({ sent: totalSent }), { status: 200 });
+  console.log(`[notify-pipeline] done — total sent: ${totalSent} · stageErrors: ${stageErrors.length}`);
+  return new Response(JSON.stringify({ sent: totalSent, stageErrors }), { status: 200 });
 }
