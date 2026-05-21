@@ -23,6 +23,7 @@ export const ENDPOINTS = {
   registerDevice:   `${API_BASE}/.netlify/functions/register-device`,
   sendNotification: `${API_BASE}/.netlify/functions/send-notification`,
   notifyTest:       `${API_BASE}/.netlify/functions/notify-test`,
+  deleteAccount:    `${API_BASE}/.netlify/functions/delete-account`,
   privacy:      `${API_BASE}/privacy`,
   terms:        `${API_BASE}/terms`,
 };

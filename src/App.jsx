@@ -254,7 +254,7 @@ export default function App() {
     authUser, authLoading, sessionRestoring, authError, setAuthError,
     userTier, setUserTier,
     devTierOverride, setDevTierOverride,
-    handleSignInWithApple, handleSignInWithGitHub, handleSignOut, clearAuthState, dbCall,
+    handleSignInWithApple, handleSignInWithGitHub, handleSignOut, handleDeleteAccount, clearAuthState, dbCall,
   } = useAuth({ setProfile, setLang, setFilters, setOpportunities, setStep, DEFAULT_FILTERS });
 
   const t = T[lang];
@@ -1336,6 +1336,7 @@ export default function App() {
                 t={t} lang={lang} onLangChange={handleLangChange}
                 authUser={authUser}
                 onSignOut={handleSignOut}
+                onDeleteAccount={handleDeleteAccount}
                 onOpenMenu={() => setMenuOpen(true)}
                 devTierOverride={devTierOverride}
                 presentationMode={presentationMode}
@@ -1716,9 +1717,25 @@ function useNotifPrefs(authUser) {
   return { get, toggle };
 }
 
-function SettingsTab({ t, lang, onLangChange, authUser, onSignOut, onOpenMenu, devTierOverride, presentationMode, onTogglePresentationMode }) {
+function SettingsTab({ t, lang, onLangChange, authUser, onSignOut, onDeleteAccount, onOpenMenu, devTierOverride, presentationMode, onTogglePresentationMode }) {
   const [showLangPicker, setShowLangPicker] = React.useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
+  const [deleteState, setDeleteState] = React.useState("idle"); // idle | running | error
+  const [deleteError, setDeleteError] = React.useState("");
   const notif = useNotifPrefs(authUser);
+
+  async function runDelete() {
+    setDeleteState("running");
+    setDeleteError("");
+    try {
+      await onDeleteAccount();
+      // onDeleteAccount runs handleSignOut() internally, which unmounts
+      // this component back to the sign-in gate. No further UI required.
+    } catch (err) {
+      setDeleteState("error");
+      setDeleteError(err?.message || String(err));
+    }
+  }
 
   const LANG_NAMES_LOCAL = {
     en: "English", es: "Español", pt: "Português", zh: "中文",
@@ -1908,6 +1925,103 @@ function SettingsTab({ t, lang, onLangChange, authUser, onSignOut, onOpenMenu, d
             </div>
           </button>
         </div>
+        )}
+
+        {/* Delete Account — Apple Guideline 5.1.1(v) requires an in-app
+            deletion path for any app that supports account creation.
+            Two-tap confirmation modal to prevent fat-finger. */}
+        <div style={{ padding: "0 20px" }}>
+          <button
+            onClick={() => setShowDeleteConfirm(true)}
+            style={{
+              width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
+              gap: 12, padding: "20px 0",
+              borderTop: "0.5px solid var(--border)", borderBottom: "none",
+              background: "transparent", cursor: "pointer", textAlign: "left",
+            }}
+          >
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <div style={{ fontFamily: "var(--font-display)", fontSize: 17, fontWeight: 500, color: "#B45A3C", lineHeight: 1.2 }}>
+                {t.settingsDeleteAccount || "Delete Account"}
+              </div>
+              <div style={{ fontFamily: "var(--font-data)", fontSize: 10, letterSpacing: "0.08em", color: "#8A9A8A", textTransform: "uppercase", marginTop: 4 }}>
+                {t.settingsDeleteAccountDesc || "Permanently delete your account and all data"}
+              </div>
+            </div>
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M3 1.5L7 5L3 8.5" stroke="#B45A3C" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          </button>
+        </div>
+
+        {/* Delete confirmation modal — full-bleed dialog over the Settings
+            surface. Two distinct buttons; primary destructive action is the
+            secondary visual treatment (clay-red text) to prevent muscle-memory
+            fat-finger. Cancel is the primary affordance. */}
+        {showDeleteConfirm && (
+          <div
+            role="dialog"
+            aria-modal="true"
+            style={{
+              position: "fixed", inset: 0, zIndex: 9999,
+              background: "rgba(20, 30, 22, 0.6)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              padding: 24,
+            }}
+            onClick={() => deleteState !== "running" && setShowDeleteConfirm(false)}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                background: "var(--paper, #F5F1E8)",
+                borderRadius: 14,
+                maxWidth: 420, width: "100%",
+                padding: "28px 24px 20px",
+                boxShadow: "0 20px 60px rgba(0,0,0,.25)",
+              }}
+            >
+              <div style={{ fontFamily: "var(--font-display)", fontSize: 22, fontWeight: 500, color: "var(--ink)", lineHeight: 1.2, marginBottom: 12 }}>
+                {t.deleteAccountTitle || "Delete your account?"}
+              </div>
+              <div style={{ fontFamily: "var(--font-prose)", fontSize: 15, color: "#4A5A4A", lineHeight: 1.45, marginBottom: 20 }}>
+                {t.deleteAccountBody || "This permanently removes your profile, every scored role, your filter framework, and all behavioral patterns Vetted has observed. This cannot be undone."}
+              </div>
+              {deleteState === "error" && (
+                <div style={{ fontFamily: "var(--font-prose)", fontSize: 13, color: "#B45A3C", lineHeight: 1.4, marginBottom: 16, padding: "10px 12px", background: "#F8E8E0", borderRadius: 8 }}>
+                  {t.deleteAccountError || "Could not delete account."} {deleteError && <span style={{ opacity: 0.7 }}>· {deleteError}</span>}
+                </div>
+              )}
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                <button
+                  onClick={runDelete}
+                  disabled={deleteState === "running"}
+                  style={{
+                    width: "100%", padding: "14px 16px",
+                    background: "#B45A3C", color: "#fff",
+                    border: "none", borderRadius: 10,
+                    fontFamily: "var(--font-display)", fontSize: 16, fontWeight: 500,
+                    cursor: deleteState === "running" ? "default" : "pointer",
+                    opacity: deleteState === "running" ? 0.6 : 1,
+                  }}
+                >
+                  {deleteState === "running"
+                    ? (t.deleteAccountWorking || "Deleting…")
+                    : (t.deleteAccountConfirm || "Yes, delete my account")}
+                </button>
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  disabled={deleteState === "running"}
+                  style={{
+                    width: "100%", padding: "14px 16px",
+                    background: "transparent", color: "var(--ink)",
+                    border: "0.5px solid var(--border)", borderRadius: 10,
+                    fontFamily: "var(--font-display)", fontSize: 16, fontWeight: 500,
+                    cursor: deleteState === "running" ? "default" : "pointer",
+                  }}
+                >
+                  {t.deleteAccountCancel || "Cancel"}
+                </button>
+              </div>
+            </div>
+          </div>
         )}
 
         {/* App version */}

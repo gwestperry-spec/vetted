@@ -415,6 +415,53 @@ export function useAuth({ setProfile, setLang, setFilters, setOpportunities, set
     setFilters(DEFAULT_FILTERS);
   }
 
+  // ── Permanent account deletion ──────────────────────────────────────────
+  // Required by App Store Guideline 5.1.1(v). Calls the delete-account
+  // Netlify function to cascade-delete every apple_id-keyed row, then runs
+  // the standard sign-out cleanup + wipes any remaining Vetted localStorage
+  // keys so the device looks brand new to the next sign-in.
+  //
+  // Returns { ok: true, deleted, errors } on success, or throws on network /
+  // session failure. The caller (Settings UI) shows the appropriate state.
+  async function handleDeleteAccount() {
+    if (!authUser?.id || !authUser?.sessionToken) {
+      throw new Error("Not signed in");
+    }
+    const res = await fetch(ENDPOINTS.deleteAccount, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        appleId: authUser.id,
+        sessionToken: authUser.sessionToken,
+      }),
+    });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(body?.error || `delete-account → ${res.status}`);
+    }
+
+    // Wipe every Vetted localStorage key so re-signing-in feels fresh.
+    try {
+      const keys = Object.keys(localStorage);
+      for (const k of keys) {
+        if (k.startsWith("vetted_") || k.startsWith("vetted-")) {
+          localStorage.removeItem(k);
+        }
+      }
+      const skeys = Object.keys(sessionStorage);
+      for (const k of skeys) {
+        if (k.startsWith("vetted_") || k.startsWith("vetted-")) {
+          sessionStorage.removeItem(k);
+        }
+      }
+    } catch { /* localStorage may be unavailable in some WebView contexts */ }
+
+    // Then run the normal sign-out path to reset in-memory state.
+    handleSignOut();
+
+    return body;
+  }
+
   return {
     authUser,
     authLoading,
@@ -428,6 +475,7 @@ export function useAuth({ setProfile, setLang, setFilters, setOpportunities, set
     handleSignInWithApple,
     handleSignInWithGitHub,
     handleSignOut,
+    handleDeleteAccount,
     clearAuthState,
     dbCall,
   };
