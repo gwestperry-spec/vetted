@@ -61,6 +61,17 @@
       base-uri 'self';
     """
 
+# ── /reel/*.jsx Content-Type override ────────────────────────────────────────
+# Netlify serves unknown file extensions (.jsx) as application/octet-stream.
+# Combined with the global X-Content-Type-Options: nosniff header, the browser
+# refuses to execute them as JavaScript and Babel-standalone's fetch pipeline
+# silently fails, leaving the reel iframes black. Force the correct MIME type
+# so the script tags load and Babel can compile the JSX in-browser.
+[[headers]]
+  for = "/reel/*.jsx"
+  [headers.values]
+    Content-Type = "application/javascript; charset=UTF-8"
+
 # ── Cache-Control: HTML always revalidated, hashed assets cached forever ──────
 [[headers]]
   for = "/*.html"
