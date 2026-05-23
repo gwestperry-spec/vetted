@@ -24,6 +24,7 @@ const landingSrc = path.join(root, 'design', 'landing');
 const landingHtml = path.join(landingSrc, 'Landing Page.html');
 const landingAssets = path.join(landingSrc, 'assets');
 const landingReel = path.join(landingSrc, 'reel');
+const landingPanel = path.join(landingSrc, 'panel');
 
 function copyDir(src, dest) {
   fs.mkdirSync(dest, { recursive: true });
@@ -69,9 +70,15 @@ if (fs.existsSync(landingReel)) {
   copyDir(landingReel, path.join(dist, 'reel'));
 }
 
+// 5. Copy landing's panel/ → dist/panel/  (Build-30 static screenshot panels)
+if (fs.existsSync(landingPanel)) {
+  copyDir(landingPanel, path.join(dist, 'panel'));
+}
+
 console.log('postbuild-landing: ok');
 console.log('  dist/index.html             → SPA (Capacitor entry + /app on web)');
 console.log('  dist/landing.html           → marketing landing (rewritten from / on web)');
 console.log('  dist/dashboard/index.html   → internal KPI dashboard');
 console.log('  dist/assets/                → landing bundle');
 console.log('  dist/reel/                  → reel iframes');
+console.log('  dist/panel/                 → editorial panel iframes (Build-30)');

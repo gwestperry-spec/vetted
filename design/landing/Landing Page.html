@@ -342,6 +342,55 @@
     border-color: var(--ink);
   }
 
+  /* ───────── PANEL STRIP (Build 30) ─────────
+     App Store screenshot pattern: horizontal scroll, snap to each panel,
+     each panel is an 800×1733 iframe scaled to fit a fixed card width. */
+  .panel-strip {
+    margin: 32px auto 0;
+    display: flex;
+    gap: 16px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    scroll-padding: 16px;
+    padding: 8px 16px 28px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; /* Firefox */
+  }
+  .panel-strip::-webkit-scrollbar { display: none; }
+  .panel-card {
+    flex: 0 0 auto;
+    width: 280px;
+    aspect-ratio: 800 / 1733;
+    border-radius: 22px;
+    overflow: hidden;
+    box-shadow: 0 18px 40px rgba(20,30,22,.18), 0 6px 14px rgba(20,30,22,.10);
+    scroll-snap-align: center;
+    background: var(--ink);
+  }
+  .panel-card iframe {
+    width: 800px;
+    height: 1733px;
+    border: 0;
+    display: block;
+    transform-origin: top left;
+    /* CSS-only scale: 280/800 = 0.35 */
+    transform: scale(0.35);
+  }
+  @media (min-width: 720px) {
+    .panel-card { width: 320px; }
+    .panel-card iframe { transform: scale(0.4); }  /* 320/800 = 0.4 */
+  }
+  @media (min-width: 1100px) {
+    .panel-strip {
+      justify-content: center;
+      overflow-x: visible; /* let full row sit, no scroll needed */
+      flex-wrap: nowrap;
+    }
+    .panel-card { width: 200px; }
+    .panel-card iframe { transform: scale(0.25); }  /* 200/800 = 0.25 */
+  }
+
   /* ───────── FEATURES ───────── */
   .features-grid {
     display: grid;
@@ -1104,7 +1153,7 @@
                   <span class="big">App Store</span>
                 </span>
               </a>
-              <a class="btn-secondary" href="#demo">Watch a 15s demo →</a>
+              <a class="btn-secondary" href="#demo">See it in action →</a>
               <span class="meta">iPhone · Rated 16+ · Free to start</span>
             </div>
           </div>
@@ -1115,26 +1164,28 @@
       </div>
     </section>
 
-    <!-- ───────── DEMO REEL ───────── -->
+    <!-- ───────── EDITORIAL PANELS ───────── -->
     <section class="demo" id="demo">
       <div class="container">
-        <div class="sec-eyebrow">In motion</div>
-        <h2 class="sec-title">Watch a role get <em>scored.</em></h2>
+        <div class="sec-eyebrow">Inside the app</div>
+        <h2 class="sec-title">How a score <em>lands.</em></h2>
         <p class="sec-lede">
-          A real opportunity, parsed against a real filter framework. No mocked numbers. The Vetted Quotient comes out the other side with the rationale to back it up.
+          A real candidate, parsed against a real filter framework. No mocked numbers. The Vetted Quotient comes out the other side with the rationale to back it up.
         </p>
 
-        <div class="reel-frame" id="reelFrame" data-reel="reel/01-original.html">
-          <div class="placeholder" id="reelPlaceholder">
-            <div class="play"></div>
-            <div class="label">Tap to play · 24s</div>
-          </div>
-        </div>
-
-        <div class="reel-tabs" role="tablist" aria-label="Examples">
-          <button class="reel-tab active" data-src="reel/01-original.html">GTM Ops · Anthropic</button>
-          <button class="reel-tab" data-src="reel/04-salary.html">CFO · Salary truthing</button>
-          <button class="reel-tab" data-src="reel/06-forensic.html">Technical Director</button>
+        <!-- ────────── PANEL STRIP — Build 30 editorial panels ─────────
+             Six static panel HTMLs rendered as iframes. App Store screenshot
+             pattern: horizontal scroll on mobile, fits 3-up on desktop with
+             swipe through to the rest. Each panel is a self-contained 800×1733
+             HTML file in dist/panel/ (postbuild-landing copies from
+             design/landing/panel/). -->
+        <div class="panel-strip" aria-label="App panels">
+          <div class="panel-card"><iframe src="panel/01-resolve-pursue-primary.html"     title="The decision before the recruiter call — Chime"           loading="lazy"></iframe></div>
+          <div class="panel-card"><iframe src="panel/02-resolve-pursue-secondary.html"   title="A score you can defend in writing — Wealthfront"           loading="lazy"></iframe></div>
+          <div class="panel-card"><iframe src="panel/04-resolve-pass.html"               title="Pass. Cleanly. — Mercury"                                  loading="lazy"></iframe></div>
+          <div class="panel-card"><iframe src="panel/06-filters.html"                    title="Weighted to you — Filters"                                 loading="lazy"></iframe></div>
+          <div class="panel-card"><iframe src="panel/08-pay.html"                        title="Compensation, told straight — Pay"                         loading="lazy"></iframe></div>
+          <div class="panel-card"><iframe src="panel/10-workspace.html"                  title="Every scored role, one editorial view — Workspace"         loading="lazy"></iframe></div>
         </div>
 
         <p class="reel-caption">"What if this score — whatever it says — is exactly the information you needed today?"</p>
@@ -1170,10 +1221,10 @@
             </div>
           </div>
           <div class="feature">
-            <div class="num">STAGE</div>
+            <div class="num">PATTERNS</div>
             <div>
-              <h3>Pipeline tracker.</h3>
-              <p>Applied, phone, interview, final, offer, rejected, withdrew. One quiet board for everything in motion.</p>
+              <h3>Behavioral Insights.</h3>
+              <p>Patterns the app has noticed about your decisions — floor margin, filter signal, preference drift, this-week synthesis. Four cards, swipe through. HEADWIND alerts when a pattern starts to cost you.</p>
             </div>
           </div>
           <div class="feature">
@@ -1209,8 +1260,8 @@
           </li>
           <li>
             <div>
-              <h3>Paste a job &mdash; or a URL.</h3>
-              <p>Drop the JD or link the listing. Vetted parses the role and runs it against your framework, not a generic rubric.</p>
+              <h3>Share from anywhere.</h3>
+              <p>Tap Share on a role — LinkedIn, Indeed, a recruiter email, anywhere a URL lives — select Vetted, and scoring starts. No copy-paste. Or drop the JD directly if you prefer. Vetted parses the role and runs it against your framework, not a generic rubric.</p>
             </div>
           </li>
           <li>
@@ -1245,7 +1296,7 @@
               <span class="tier-tag">Start here</span>
             </div>
             <div class="tier-price">$0</div>
-            <p class="tier-desc">5 VQ scores per day · resets at midnight · no card required.</p>
+            <p class="tier-desc">10 VQ scores per month · no card required.</p>
             <a class="tier-cta" href="/app">Download free</a>
           </div>
 
@@ -1293,23 +1344,25 @@
               </thead>
               <tbody>
                 <tr class="section"><td colspan="4">Core</td></tr>
-                <tr><td class="feat">VQ scoring</td><td class="cell">5 / day</td><td class="cell featured">Unlimited</td><td class="cell">Unlimited</td></tr>
+                <tr><td class="feat">VQ scoring</td><td class="cell">10 / month</td><td class="cell featured">Unlimited</td><td class="cell">Unlimited</td></tr>
                 <tr><td class="feat">Pursue / Monitor / Pass verdict</td><td class="cell"><svg class="check" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M6.3 11.3 2.7 7.7l1.4-1.4 2.2 2.2 5.6-5.6 1.4 1.4z"/></svg></td><td class="cell featured"><svg class="check" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M6.3 11.3 2.7 7.7l1.4-1.4 2.2 2.2 5.6-5.6 1.4 1.4z"/></svg></td><td class="cell"><svg class="check" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M6.3 11.3 2.7 7.7l1.4-1.4 2.2 2.2 5.6-5.6 1.4 1.4z"/></svg></td></tr>
                 <tr><td class="feat">Five-filter framework</td><td class="cell"><svg class="check" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M6.3 11.3 2.7 7.7l1.4-1.4 2.2 2.2 5.6-5.6 1.4 1.4z"/></svg></td><td class="cell featured"><svg class="check" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M6.3 11.3 2.7 7.7l1.4-1.4 2.2 2.2 5.6-5.6 1.4 1.4z"/></svg></td><td class="cell"><svg class="check" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M6.3 11.3 2.7 7.7l1.4-1.4 2.2 2.2 5.6-5.6 1.4 1.4z"/></svg></td></tr>
                 <tr><td class="feat">Seven languages</td><td class="cell"><svg class="check" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M6.3 11.3 2.7 7.7l1.4-1.4 2.2 2.2 5.6-5.6 1.4 1.4z"/></svg></td><td class="cell featured"><svg class="check" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M6.3 11.3 2.7 7.7l1.4-1.4 2.2 2.2 5.6-5.6 1.4 1.4z"/></svg></td><td class="cell"><svg class="check" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M6.3 11.3 2.7 7.7l1.4-1.4 2.2 2.2 5.6-5.6 1.4 1.4z"/></svg></td></tr>
+                <tr><td class="feat">Resolve hub — verdict seal &amp; rationale</td><td class="cell"><svg class="check" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M6.3 11.3 2.7 7.7l1.4-1.4 2.2 2.2 5.6-5.6 1.4 1.4z"/></svg></td><td class="cell featured"><svg class="check" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M6.3 11.3 2.7 7.7l1.4-1.4 2.2 2.2 5.6-5.6 1.4 1.4z"/></svg></td><td class="cell"><svg class="check" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M6.3 11.3 2.7 7.7l1.4-1.4 2.2 2.2 5.6-5.6 1.4 1.4z"/></svg></td></tr>
+                <tr><td class="feat">Share Extension — score from any URL</td><td class="cell"><svg class="check" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M6.3 11.3 2.7 7.7l1.4-1.4 2.2 2.2 5.6-5.6 1.4 1.4z"/></svg></td><td class="cell featured"><svg class="check" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M6.3 11.3 2.7 7.7l1.4-1.4 2.2 2.2 5.6-5.6 1.4 1.4z"/></svg></td><td class="cell"><svg class="check" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M6.3 11.3 2.7 7.7l1.4-1.4 2.2 2.2 5.6-5.6 1.4 1.4z"/></svg></td></tr>
 
                 <tr class="section"><td colspan="4">Signal</td></tr>
                 <tr><td class="feat">Résumé upload</td><td class="cell"><span class="dash">—</span></td><td class="cell featured"><svg class="check" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M6.3 11.3 2.7 7.7l1.4-1.4 2.2 2.2 5.6-5.6 1.4 1.4z"/></svg></td><td class="cell"><svg class="check" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M6.3 11.3 2.7 7.7l1.4-1.4 2.2 2.2 5.6-5.6 1.4 1.4z"/></svg></td></tr>
                 <tr><td class="feat">Custom filter creation</td><td class="cell"><span class="dash">—</span></td><td class="cell featured"><svg class="check" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M6.3 11.3 2.7 7.7l1.4-1.4 2.2 2.2 5.6-5.6 1.4 1.4z"/></svg></td><td class="cell"><svg class="check" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M6.3 11.3 2.7 7.7l1.4-1.4 2.2 2.2 5.6-5.6 1.4 1.4z"/></svg></td></tr>
                 <tr><td class="feat">Persistent score history</td><td class="cell"><span class="dash">—</span></td><td class="cell featured"><svg class="check" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M6.3 11.3 2.7 7.7l1.4-1.4 2.2 2.2 5.6-5.6 1.4 1.4z"/></svg></td><td class="cell"><svg class="check" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M6.3 11.3 2.7 7.7l1.4-1.4 2.2 2.2 5.6-5.6 1.4 1.4z"/></svg></td></tr>
-                <tr><td class="feat">Application tracker</td><td class="cell"><span class="dash">—</span></td><td class="cell featured"><svg class="check" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M6.3 11.3 2.7 7.7l1.4-1.4 2.2 2.2 5.6-5.6 1.4 1.4z"/></svg></td><td class="cell"><svg class="check" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M6.3 11.3 2.7 7.7l1.4-1.4 2.2 2.2 5.6-5.6 1.4 1.4z"/></svg></td></tr>
+                <tr><td class="feat">Behavioral Insights pod</td><td class="cell"><span class="dash">—</span></td><td class="cell featured"><svg class="check" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M6.3 11.3 2.7 7.7l1.4-1.4 2.2 2.2 5.6-5.6 1.4 1.4z"/></svg></td><td class="cell"><svg class="check" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M6.3 11.3 2.7 7.7l1.4-1.4 2.2 2.2 5.6-5.6 1.4 1.4z"/></svg></td></tr>
 
                 <tr class="section"><td colspan="4">Vantage only</td></tr>
                 <tr><td class="feat">Coach — interview prep, negotiating leverage, and more</td><td class="cell"><span class="dash">—</span></td><td class="cell featured"><span class="dash">—</span></td><td class="cell"><svg class="check" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M6.3 11.3 2.7 7.7l1.4-1.4 2.2 2.2 5.6-5.6 1.4 1.4z"/></svg></td></tr>
                 <tr><td class="feat">Market Pulse salary intelligence</td><td class="cell"><span class="dash">—</span></td><td class="cell featured"><span class="dash">—</span></td><td class="cell"><svg class="check" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M6.3 11.3 2.7 7.7l1.4-1.4 2.2 2.2 5.6-5.6 1.4 1.4z"/></svg></td></tr>
                 <tr><td class="feat">Custom filter weighting (Not important → Critical)</td><td class="cell"><span class="dash">—</span></td><td class="cell featured"><span class="dash">—</span></td><td class="cell"><svg class="check" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M6.3 11.3 2.7 7.7l1.4-1.4 2.2 2.2 5.6-5.6 1.4 1.4z"/></svg></td></tr>
                 <tr><td class="feat">Role comparison</td><td class="cell"><span class="dash">—</span></td><td class="cell featured"><span class="dash">—</span></td><td class="cell"><svg class="check" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M6.3 11.3 2.7 7.7l1.4-1.4 2.2 2.2 5.6-5.6 1.4 1.4z"/></svg></td></tr>
-                <tr><td class="feat">VQ Advocate</td><td class="cell"><span class="dash">—</span></td><td class="cell featured"><span class="dash">—</span></td><td class="cell"><svg class="check" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M6.3 11.3 2.7 7.7l1.4-1.4 2.2 2.2 5.6-5.6 1.4 1.4z"/></svg></td></tr>
+                <tr><td class="feat">HEADWIND pattern alerts (push)</td><td class="cell"><span class="dash">—</span></td><td class="cell featured"><span class="dash">—</span></td><td class="cell"><svg class="check" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M6.3 11.3 2.7 7.7l1.4-1.4 2.2 2.2 5.6-5.6 1.4 1.4z"/></svg></td></tr>
               </tbody>
             </table>
           </div>
@@ -1482,56 +1535,9 @@
   </div>
 
   <script>
-    // ── Reel: tap-to-play (saves bandwidth, defers heavy iframe) ──
-    (function() {
-      var frame = document.getElementById('reelFrame');
-      var ph = document.getElementById('reelPlaceholder');
-      var tabs = document.querySelectorAll('.reel-tab');
-      var loaded = false;
-
-      function loadReel(src) {
-        // Remove existing iframe if any
-        var existing = frame.querySelector('iframe');
-        if (existing) existing.remove();
-        if (ph) ph.style.display = 'none';
-        var iframe = document.createElement('iframe');
-        iframe.src = src;
-        iframe.title = 'Vetted demo reel';
-        iframe.loading = 'lazy';
-        iframe.allow = 'autoplay';
-        frame.appendChild(iframe);
-        loaded = true;
-      }
-
-      if (ph) {
-        ph.addEventListener('click', function() {
-          loadReel(frame.dataset.reel);
-        });
-      }
-
-      tabs.forEach(function(tab) {
-        tab.addEventListener('click', function() {
-          tabs.forEach(function(t) { t.classList.remove('active'); });
-          tab.classList.add('active');
-          var src = tab.dataset.src;
-          frame.dataset.reel = src;
-          if (loaded) loadReel(src);
-        });
-      });
-
-      // Auto-load when scrolled into view (desktop only — saves mobile data)
-      if (window.matchMedia('(min-width: 720px)').matches && 'IntersectionObserver' in window) {
-        var io = new IntersectionObserver(function(entries) {
-          entries.forEach(function(e) {
-            if (e.isIntersecting && !loaded) {
-              loadReel(frame.dataset.reel);
-              io.disconnect();
-            }
-          });
-        }, { threshold: 0.4 });
-        io.observe(frame);
-      }
-    })();
+    // Reel JS removed Build 30 — the JSX reels were replaced by the static
+    // editorial panel strip above (panel/*.html iframes). No client-side
+    // logic is needed; CSS scroll-snap handles the swipe.
 
     // ── Trust-strip counter: 0 → 1,000+ pause → reset ──
     (function() {

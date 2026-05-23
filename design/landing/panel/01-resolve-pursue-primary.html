@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Vetted — 01-resolve-pursue-primary</title>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    width: 800px; height: 1733px;
+    background: #0E120F;
+    color: #F4F1E8;
+    font-family: 'Libre Baskerville', Georgia, serif;
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+  }
+  .panel {
+    position: relative;
+    width: 800px; height: 1733px;
+    background: #0E120F;
+  }
+  /* Headline owns the top ~22% of the panel. Tight to top edge, no large gap
+     between it and the phone artifact below. */
+  .headline {
+    position: absolute;
+    top: 120px; left: 60px; right: 60px;
+    font-family: 'Libre Baskerville', serif;
+    font-weight: 700;
+    font-size: 64px;
+    line-height: 1.05;
+    letter-spacing: -0.008em;
+    color: #F4F1E8;
+    margin: 0;
+  }
+  .headline em {
+    font-style: italic;
+    font-weight: 400;
+  }
+  /* Phone artifact owns the bottom ~70% of the panel. iPhone 1284:2778 aspect
+     preserved. Bottom hangs ~60px above the panel edge for breathing room. */
+  .screen-wrap {
+    position: absolute;
+    left: 50%;
+    top: 420px;          /* sits ~80px below the headline */
+    transform: translateX(-50%);
+    width: 580px;
+    height: 1255px;      /* 580 × (2778/1284) ≈ 1255, iPhone aspect */
+    border-radius: 48px;
+    overflow: hidden;
+    box-shadow: 0 60px 120px rgba(0,0,0,.55), 0 24px 48px rgba(0,0,0,.40), 0 0 0 1px rgba(255,255,255,0.04);
+    background: #000;
+  }
+  .screen-wrap img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top center;
+  }
+</style>
+</head>
+<body>
+  <div class="panel">
+    <h1 class="headline">The decision <em>before</em><br/>the recruiter call.</h1>
+    <div class="screen-wrap">
+      <img src="./01-resolve-pursue-primary.png" alt="">
+    </div>
+  </div>
+</body>
+</html>
