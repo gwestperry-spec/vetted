@@ -260,35 +260,38 @@ exports.handler = async (event) => {
     return { statusCode: 400, headers: corsHeaders(origin), body: JSON.stringify({ error: "action and appleId required" }) };
   }
 
-  // ── Session token validation ────────────────────────────────────────────────
+  // ── Session token validation (mandatory; fail closed on server misconfig) ──
+  // Previously: missing VETTED_SECRET silently disabled auth via console.warn
+  // and a fallthrough. The Supabase proxy handles every profile/filter/
+  // opportunity read+write — fail-open here was the highest-blast-radius
+  // bug in the codebase. See ERROR_LOG 178.
   const clientToken = event.headers?.["x-vetted-token"] || event.headers?.["X-Vetted-Token"] || "";
   const serverSecret = (process.env.VETTED_SECRET || "").trim();
   const crypto = require("crypto");
-  if (serverSecret) {
-    const expectedToken = crypto.createHmac("sha256", serverSecret).update(appleId).digest("hex");
-    const tokenToCheck = (clientToken || sessionToken || "").trim();
-    console.log(`[supabase] auth action=${action} appleId_len=${appleId.length} hdr=${clientToken.length} body=${(sessionToken||"").length} expected=${expectedToken.length} got=${tokenToCheck.length} secret=${serverSecret.length}`);
-    if (!tokenToCheck) {
-      console.error("[supabase] auth_fail: no token");
-      return { statusCode: 403, headers: corsHeaders(origin), body: JSON.stringify({ error: "Forbidden" }) };
-    }
-    if (tokenToCheck.length !== 64 || expectedToken.length !== 64) {
-      console.error(`[supabase] auth_fail: bad token length got=${tokenToCheck.length}`);
-      return { statusCode: 403, headers: corsHeaders(origin), body: JSON.stringify({ error: "Forbidden" }) };
-    }
-    let authOk = false;
-    try {
-      authOk = crypto.timingSafeEqual(Buffer.from(tokenToCheck, "hex"), Buffer.from(expectedToken, "hex"));
-    } catch (e) {
-      console.error(`[supabase] auth_fail: ${e.message}`);
-      return { statusCode: 403, headers: corsHeaders(origin), body: JSON.stringify({ error: "Forbidden" }) };
-    }
-    if (!authOk) {
-      console.error("[supabase] auth_fail: HMAC mismatch");
-      return { statusCode: 403, headers: corsHeaders(origin), body: JSON.stringify({ error: "Forbidden" }) };
-    }
-  } else {
-    console.warn("[supabase] VETTED_SECRET not set — skipping auth");
+  if (!serverSecret) {
+    console.error("[supabase] VETTED_SECRET not set — refusing to serve");
+    return { statusCode: 500, headers: corsHeaders(origin), body: JSON.stringify({ error: "Server misconfigured" }) };
+  }
+  const expectedToken = crypto.createHmac("sha256", serverSecret).update(appleId).digest("hex");
+  const tokenToCheck = (clientToken || sessionToken || "").trim();
+  if (!tokenToCheck) {
+    console.error("[supabase] auth_fail: no token");
+    return { statusCode: 403, headers: corsHeaders(origin), body: JSON.stringify({ error: "Forbidden" }) };
+  }
+  if (tokenToCheck.length !== 64 || expectedToken.length !== 64) {
+    console.error(`[supabase] auth_fail: bad token length got=${tokenToCheck.length}`);
+    return { statusCode: 403, headers: corsHeaders(origin), body: JSON.stringify({ error: "Forbidden" }) };
+  }
+  let authOk = false;
+  try {
+    authOk = crypto.timingSafeEqual(Buffer.from(tokenToCheck, "hex"), Buffer.from(expectedToken, "hex"));
+  } catch (e) {
+    console.error(`[supabase] auth_fail: ${e.message}`);
+    return { statusCode: 403, headers: corsHeaders(origin), body: JSON.stringify({ error: "Forbidden" }) };
+  }
+  if (!authOk) {
+    console.error("[supabase] auth_fail: HMAC mismatch");
+    return { statusCode: 403, headers: corsHeaders(origin), body: JSON.stringify({ error: "Forbidden" }) };
   }
 
   try {

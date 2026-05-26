@@ -2002,3 +2002,23 @@ No client changes needed — all 4 callers (ScoreEntry, ScoreEntryV2, Dashboard,
 **Lesson:** Endpoints that read user-scoped data are higher risk than write endpoints because the failure mode is silent (no row change to notice). They MUST validate session before any database query that uses `apple_id` in a WHERE clause. Worth a separate sweep: `grep -rn 'apple_id=eq' netlify/functions/` and verify every match sits behind a validated session.
 **Files:** `netlify/functions/behavioral-insights.js`
 **Commit:** pending
+
+## Error 178 — supabase.js generic proxy failed open if VETTED_SECRET env var missing
+**Scope:** `netlify/functions/supabase.js` — Critical-severity backend security hardening. No client-side impact.
+**Build:** Discovered May 20, 2026 via the `grep -rn 'apple_id=eq' netlify/functions/` follow-up sweep recommended in Error 177's lesson.
+**Side:** `netlify/functions/supabase.js`.
+**Symptom:** The Supabase proxy validates `sessionToken` via HMAC under `if (serverSecret) { /* validate */ } else { console.warn("VETTED_SECRET not set — skipping auth"); /* fall through */ }`. If the `VETTED_SECRET` env var was ever cleared, mistyped, or accidentally unset in Netlify config, the entire auth block would silently skip and any caller with a valid `appleId` could read/write that user's profile, filter framework, opportunities, behavioral_insights, and workspace_roles. This is the highest-blast-radius endpoint in the codebase — every profile read, every filter save, every score persist, every behavioral insight dismiss flows through it.
+**Root cause:** Fail-open default on server misconfig. The `else` branch with `console.warn` was almost certainly added for local-dev convenience (run without env vars set), but it shipped to production. The same anti-pattern as Error 174 (`fetch-jd.js` opt-in via missing creds) but at the env-var layer instead of the request-body layer.
+**Fix:** Flipped to fail-closed: missing `VETTED_SECRET` now returns 500 "Server misconfigured" instead of warning and continuing. All other validation logic preserved unchanged (token presence check, length check, `timingSafeEqual`). The validation itself was already correct — only the precondition gate was wrong.
+**Lesson:** Server-side security checks should fail closed on configuration absence, not on configuration presence. The pattern to avoid: `if (config_present) { validate } else { warn }`. The pattern to use: `if (!config_present) { return 500 }; validate`. Audit every function's env-var-dependent logic with this lens — anywhere the absence of a config value is the "skip auth" path, it's a fail-open bug waiting for a Netlify config typo. Also worth noting: HMAC validation in this codebase computes `expected = HMAC(secret, appleId)` and validates `provided === expected`. This means the proven identity IS the appleId — a caller can never use one user's session to access a different user's data, because the HMAC binds them together. The validated appleId is then used in the subsequent PostgREST query. So horizontal privilege escalation is not possible across this pattern; the only failure mode is the bypass that this fix closes.
+**Files:** `netlify/functions/supabase.js`
+**Commit:** pending
+
+## Sweep audit results — apple_id=eq queries (May 20, 2026)
+**Scope:** Documentation of the `grep -rn 'apple_id=eq' netlify/functions/` sweep recommended in Error 177.
+**Findings categorized:**
+- **Recently fixed (Errors 174-178):** fetch-jd, market-pulse, market-findings, register-device, behavioral-insights, supabase
+- **Always validated session correctly:** anthropic.js, anthropic-stream.mjs, behavioral-intelligence.js, delete-account.js, parse-resume.js, salary-lookup.js, verify-apple-iap.js, create-checkout-session.js, notify-test.js
+- **Internal/cron — no client-supplied appleId, iterates internal data:** notify-pipeline.js, notify-reminders.js, notify-weekly.js
+- **Webhooks validated by signature, not session:** stripe-webhook.js (Stripe signature), apple-server-notifications.js (Apple signature)
+**Conclusion:** No remaining anonymous-access or horizontal-privesc paths to client-controlled `apple_id` queries identified. The HMAC-binds-to-appleId pattern means horizontal privilege escalation is structurally impossible across the validated endpoints — the proven identity IS the appleId used in the query.
