@@ -1957,3 +1957,18 @@ After deploy, the function returns `{"sent":0,"stageErrors":[]}` consistently �
 **Lesson:** When adding any same-origin iframe embed to a Netlify-hosted site, audit the global header rules first. CSP `frame-src` is the modern API but XFO is still independently enforced and silently wins when set to DENY. Three correct approaches for same-origin embeds: (1) global XFO → SAMEORIGIN (loosens whole site), (2) global XFO → DENY + scoped path override to SAMEORIGIN (this fix — preferred when only a few paths need framing), (3) drop XFO entirely and rely on CSP `frame-ancestors` (modern but loses older-browser protection). Same diagnostic pattern would apply to the `/reel/*` iframes if they were re-introduced on the marketing landing — only the panel HTMLs use this pattern today, but `/reel/*` would need its own SAMEORIGIN override if it ever does.
 **Files:** `netlify.toml`
 **Commit:** 9274653
+
+## Error 174 — fetch-jd session validation was opt-in; anonymous callers bypassed auth
+**Scope:** `netlify/functions/fetch-jd.js` — backend security hardening. No client-side impact (all 4 callers already send credentials).
+**Build:** Discovered May 20, 2026 during a security audit pass on public endpoints.
+**Side:** `netlify/functions/fetch-jd.js`.
+**Symptom:** Anyone could POST to `https://tryvettedai.com/.netlify/functions/fetch-jd` with a `url` field, omit `appleId` and `sessionToken`, and the function would happily scrape the URL on their behalf. CORS allowlist offers no protection against curl/Postman/script callers spoofing an Origin header. Rate limit + SSRF guards bound the blast radius but the endpoint was effectively an open URL-fetching proxy.
+**Root cause:** The session auth block was conditional: `if (serverSecret && appleId && sessionToken) { /* validate */ }`. If the caller omitted either credential field, the entire validation was skipped and the request proceeded as if authenticated. The conditional also silently turned into a no-op if `VETTED_SECRET` env var went missing in Netlify — server misconfig became "auth disabled" rather than "all requests fail closed."
+**Fix:** Made auth mandatory with three explicit gates returning correct HTTP status codes:
+- Missing `VETTED_SECRET` → 500 "Server misconfigured" (fail closed on server misconfig instead of silent bypass)
+- Missing `appleId` or `sessionToken` in request body → 401 "Authentication required"
+- Invalid `sessionToken` (HMAC mismatch via `timingSafeEqual`) → 403 "Invalid session"
+No client changes needed — all 4 callers (ScoreEntry, ScoreEntryV2, Dashboard, RoleWorkspace) already pass `appleId` and `sessionToken` from `authUser`. The Share Extension goes through a Universal Link that opens the app, inheriting the session.
+**Lesson:** Conditional auth (`if (creds present) { validate }`) is an anti-pattern — it makes the validation opt-in for anyone who reads the code from the wrong direction. Auth must be a hard precondition that returns early on absence. Also: server-side misconfig (missing env vars) should fail closed, never silently. Worth sweeping every Netlify function with similar conditional-auth patterns: a `grep -rn "if (.*sessionToken)" netlify/functions/` audit before B31 cut would surface any siblings.
+**Files:** `netlify/functions/fetch-jd.js`
+**Commit:** pending

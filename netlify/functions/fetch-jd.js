@@ -258,15 +258,21 @@ exports.handler = async (event) => {
 
   const { url, appleId, sessionToken } = body;
 
-  // ── Session auth ───────────────────────────────────────────────────────────
+  // ── Session auth (mandatory) ───────────────────────────────────────────────
+  // Previously opt-in: callers without appleId+sessionToken silently bypassed
+  // the validation block. Now hard-required — see ERROR_LOG 174.
   const serverSecret = process.env.VETTED_SECRET;
-  if (serverSecret && appleId && sessionToken) {
-    const expected = crypto.createHmac("sha256", serverSecret).update(appleId).digest("hex");
-    const tokBuf = Buffer.from(sessionToken.padEnd(64, "0").slice(0, 64));
-    const expBuf = Buffer.from(expected.padEnd(64, "0").slice(0, 64));
-    if (!crypto.timingSafeEqual(tokBuf, expBuf)) {
-      return { statusCode: 403, headers, body: JSON.stringify({ error: "Invalid session" }) };
-    }
+  if (!serverSecret) {
+    return { statusCode: 500, headers, body: JSON.stringify({ error: "Server misconfigured" }) };
+  }
+  if (!appleId || !sessionToken) {
+    return { statusCode: 401, headers, body: JSON.stringify({ error: "Authentication required" }) };
+  }
+  const expected = crypto.createHmac("sha256", serverSecret).update(appleId).digest("hex");
+  const tokBuf = Buffer.from(sessionToken.padEnd(64, "0").slice(0, 64));
+  const expBuf = Buffer.from(expected.padEnd(64, "0").slice(0, 64));
+  if (!crypto.timingSafeEqual(tokBuf, expBuf)) {
+    return { statusCode: 403, headers, body: JSON.stringify({ error: "Invalid session" }) };
   }
 
   // ── Validate URL ───────────────────────────────────────────────────────────
