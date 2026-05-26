@@ -41,6 +41,18 @@
       form-action 'self';
     """
 
+# ── Editorial panels — same-origin iframe embedding ──────────────────────────
+# /panel/*.html are static Build-30 editorial panels embedded as iframes on
+# the marketing landing page ("Inside the App" section). The global
+# X-Frame-Options: DENY rule blocks ALL framing, including same-origin —
+# override to SAMEORIGIN for these specific files so landing.html can embed them.
+# CSP frame-src 'self' on landing.html permits the embed; this just removes
+# the XFO veto.
+[[headers]]
+  for = "/panel/*"
+  [headers.values]
+    X-Frame-Options = "SAMEORIGIN"
+
 # ── Reel iframes — scoped CSP loosening ───────────────────────────────────────
 # The reel pages under /reel/*.html are React+Babel JSX animations that load
 # react / react-dom / @babel/standalone from unpkg.com. Babel standalone
