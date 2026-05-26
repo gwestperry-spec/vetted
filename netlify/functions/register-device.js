@@ -10,6 +10,8 @@
 // workspace-sweep.js, fetch-jd.js. Avoids depending on @supabase/supabase-js
 // which Netlify's function bundler doesn't pick up in this context.
 
+import crypto from "crypto";
+
 const SB_URL = process.env.VT_DB_URL || process.env.SUPABASE_URL;
 const SB_KEY = process.env.VT_DB_KEY || process.env.SUPABASE_SERVICE_KEY;
 
@@ -79,8 +81,22 @@ export default async function handler(req) {
 
   const { appleId, sessionToken, token, platform = "ios", lang, prefs = {}, langUpdateOnly = false } = payload || {};
 
-  if (!appleId) {
-    return new Response(JSON.stringify({ error: "Missing appleId" }), { status: 400, headers });
+  // ── Session auth (mandatory) ────────────────────────────────────────────
+  // Previously only checked !appleId. Anyone with a leaked/guessed appleId
+  // could register their own APNs token against another user's account
+  // (push notification hijack). See ERROR_LOG 177.
+  const serverSecret = process.env.VETTED_SECRET;
+  if (!serverSecret) {
+    return new Response(JSON.stringify({ error: "Server misconfigured" }), { status: 500, headers });
+  }
+  if (!appleId || !sessionToken) {
+    return new Response(JSON.stringify({ error: "Authentication required" }), { status: 401, headers });
+  }
+  const expected = crypto.createHmac("sha256", serverSecret).update(appleId).digest("hex");
+  const tokBuf   = Buffer.from(sessionToken.padEnd(64, "0").slice(0, 64));
+  const expBuf   = Buffer.from(expected.padEnd(64, "0").slice(0, 64));
+  if (!crypto.timingSafeEqual(tokBuf, expBuf)) {
+    return new Response(JSON.stringify({ error: "Invalid session" }), { status: 403, headers });
   }
 
   // ── Lang-only update: patch all this user's device rows ───────────────

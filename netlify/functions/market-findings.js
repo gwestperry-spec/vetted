@@ -134,17 +134,20 @@ exports.handler = async (event) => {
     ? ` Respond entirely in ${langName}. All JSON string values must be written in ${langName}.`
     : "";
 
-  // ── Optional session auth (mirrors market-pulse.js) ─────────────────────
+  // ── Session auth (mandatory) ────────────────────────────────────────────
+  // Previously opt-in with a swallow-and-bypass try/catch — see ERROR_LOG 175.
   const serverSecret = process.env.VETTED_SECRET;
-  if (serverSecret && appleId && sessionToken) {
-    try {
-      const expected = crypto.createHmac("sha256", serverSecret).update(appleId).digest("hex");
-      const tokBuf   = Buffer.from(sessionToken.padEnd(64, "0").slice(0, 64));
-      const expBuf   = Buffer.from(expected.padEnd(64, "0").slice(0, 64));
-      if (!crypto.timingSafeEqual(tokBuf, expBuf)) {
-        return { statusCode: 403, headers, body: JSON.stringify({ error: "Invalid session" }) };
-      }
-    } catch { /* allow unauth fallthrough if token format is unexpected */ }
+  if (!serverSecret) {
+    return { statusCode: 500, headers, body: JSON.stringify({ error: "Server misconfigured" }) };
+  }
+  if (!appleId || !sessionToken) {
+    return { statusCode: 401, headers, body: JSON.stringify({ error: "Authentication required" }) };
+  }
+  const expected = crypto.createHmac("sha256", serverSecret).update(appleId).digest("hex");
+  const tokBuf   = Buffer.from(sessionToken.padEnd(64, "0").slice(0, 64));
+  const expBuf   = Buffer.from(expected.padEnd(64, "0").slice(0, 64));
+  if (!crypto.timingSafeEqual(tokBuf, expBuf)) {
+    return { statusCode: 403, headers, body: JSON.stringify({ error: "Invalid session" }) };
   }
 
   // ── IP rate limiting ────────────────────────────────────────────────────

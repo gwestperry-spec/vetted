@@ -24,6 +24,8 @@
 // Uses raw fetch against Supabase PostgREST — same pattern as the rest of
 // the codebase (per Error 131 lesson, never use @supabase/supabase-js).
 
+import crypto from "crypto";
+
 const SB_URL = process.env.VT_DB_URL || process.env.SUPABASE_URL;
 const SB_KEY = process.env.VT_DB_KEY || process.env.SUPABASE_SERVICE_KEY;
 
@@ -272,9 +274,24 @@ export default async function handler(req) {
   try { body = await req.json(); }
   catch { return new Response(JSON.stringify({ error: "Invalid JSON" }), { status: 400, headers }); }
 
-  const { appleId, filters: clientFilters } = body || {};
-  if (!appleId) {
-    return new Response(JSON.stringify({ error: "Missing appleId" }), { status: 400, headers });
+  const { appleId, sessionToken, filters: clientFilters } = body || {};
+
+  // ── Session auth (mandatory) ────────────────────────────────────────────
+  // Previously only checked !appleId. Returns sensitive behavioral data
+  // (comp floor margins, location prefs, role patterns) — anyone with a
+  // leaked/guessed appleId could pull this PII for any user. See ERROR_LOG 178.
+  const serverSecret = process.env.VETTED_SECRET;
+  if (!serverSecret) {
+    return new Response(JSON.stringify({ error: "Server misconfigured" }), { status: 500, headers });
+  }
+  if (!appleId || !sessionToken) {
+    return new Response(JSON.stringify({ error: "Authentication required" }), { status: 401, headers });
+  }
+  const expected = crypto.createHmac("sha256", serverSecret).update(appleId).digest("hex");
+  const tokBuf   = Buffer.from(sessionToken.padEnd(64, "0").slice(0, 64));
+  const expBuf   = Buffer.from(expected.padEnd(64, "0").slice(0, 64));
+  if (!crypto.timingSafeEqual(tokBuf, expBuf)) {
+    return new Response(JSON.stringify({ error: "Invalid session" }), { status: 403, headers });
   }
 
   try {

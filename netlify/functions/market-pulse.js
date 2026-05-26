@@ -89,15 +89,20 @@ exports.handler = async (event) => {
     ? ` Respond entirely in ${langName}. All JSON string values must be written in ${langName}.`
     : "";
 
-  // ── Session auth ───────────────────────────────────────────────────────────
+  // ── Session auth (mandatory) ───────────────────────────────────────────────
+  // Previously opt-in: missing creds silently bypassed validation. See ERROR_LOG 175.
   const serverSecret = process.env.VETTED_SECRET;
-  if (serverSecret && appleId && sessionToken) {
-    const expected = crypto.createHmac("sha256", serverSecret).update(appleId).digest("hex");
-    const tokBuf   = Buffer.from(sessionToken.padEnd(64, "0").slice(0, 64));
-    const expBuf   = Buffer.from(expected.padEnd(64, "0").slice(0, 64));
-    if (!crypto.timingSafeEqual(tokBuf, expBuf)) {
-      return { statusCode: 403, headers, body: JSON.stringify({ error: "Invalid session" }) };
-    }
+  if (!serverSecret) {
+    return { statusCode: 500, headers, body: JSON.stringify({ error: "Server misconfigured" }) };
+  }
+  if (!appleId || !sessionToken) {
+    return { statusCode: 401, headers, body: JSON.stringify({ error: "Authentication required" }) };
+  }
+  const expected = crypto.createHmac("sha256", serverSecret).update(appleId).digest("hex");
+  const tokBuf   = Buffer.from(sessionToken.padEnd(64, "0").slice(0, 64));
+  const expBuf   = Buffer.from(expected.padEnd(64, "0").slice(0, 64));
+  if (!crypto.timingSafeEqual(tokBuf, expBuf)) {
+    return { statusCode: 403, headers, body: JSON.stringify({ error: "Invalid session" }) };
   }
 
   if (!title) {

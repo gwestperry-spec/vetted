@@ -1972,3 +1972,33 @@ No client changes needed — all 4 callers (ScoreEntry, ScoreEntryV2, Dashboard,
 **Lesson:** Conditional auth (`if (creds present) { validate }`) is an anti-pattern — it makes the validation opt-in for anyone who reads the code from the wrong direction. Auth must be a hard precondition that returns early on absence. Also: server-side misconfig (missing env vars) should fail closed, never silently. Worth sweeping every Netlify function with similar conditional-auth patterns: a `grep -rn "if (.*sessionToken)" netlify/functions/` audit before B31 cut would surface any siblings.
 **Files:** `netlify/functions/fetch-jd.js`
 **Commit:** pending
+
+## Error 175 — market-pulse + market-findings session auth was opt-in (sibling of 174)
+**Scope:** `netlify/functions/market-pulse.js`, `netlify/functions/market-findings.js` — backend security hardening. No client-side impact (both callers already send credentials).
+**Build:** Discovered May 20, 2026 via the `grep -rn "if.*sessionToken" netlify/functions/` audit recommended in Error 174's lesson.
+**Side:** `netlify/functions/market-pulse.js` (line 94), `netlify/functions/market-findings.js` (line 139).
+**Symptom:** Same opt-in pattern as Error 174 — `if (serverSecret && appleId && sessionToken) { /* validate */ }`. Anyone could POST to either endpoint without credentials and trigger a Perplexity Sonar API call on Vetted's billing account. Per-IP rate limits provide bounded protection (6-8 calls/min/IP), but a distributed caller could drain budget. `market-findings.js` had an additional anti-pattern: the validation block was wrapped in `try { … } catch { /* allow unauth fallthrough if token format is unexpected */ }` — even *malformed* tokens silently bypassed auth instead of failing closed.
+**Fix:** Same mandatory-auth pattern applied to Error 174: 500 on missing `VETTED_SECRET`, 401 on missing creds, 403 on invalid creds. Removed the swallow-and-fallthrough try/catch in market-findings (any thrown error from `timingSafeEqual` now propagates and returns 500, which is correct — malformed tokens are not a legitimate code path).
+**Lesson:** When applying a server-side security fix, sweep for siblings immediately. The conditional-auth anti-pattern was copy-pasted across three functions; finding one means finding all. Also: never wrap auth in a swallow-all `try { … } catch {}` — auth failure modes should fail closed, never silent.
+**Files:** `netlify/functions/market-pulse.js`, `netlify/functions/market-findings.js`
+**Commit:** pending
+
+## Error 176 — register-device had no sessionToken check; allowed push-notification hijack
+**Scope:** `netlify/functions/register-device.js` — High-severity backend security hardening. No client-side impact (caller already sends credentials).
+**Build:** Discovered May 20, 2026 via the Error 174 audit sweep.
+**Side:** `netlify/functions/register-device.js`.
+**Symptom:** Endpoint accepted any POST body with a valid `appleId` and `token` and upserted a row into `user_devices` (keyed on `apple_id` + `token`). No HMAC validation of the session token whatsoever — the original code path was `if (!appleId) { return 400; }` and nothing else. `appleId` is the Apple Sign-in opaque user identifier, not a secret: it's logged on the dev console, appears in support emails, surfaces in error reporting, and can be enumerated from PostHog if the project is misconfigured. Treating it as auth-by-itself meant: (a) anyone who learned a user's appleId could register their own APNs device token against that user's account and intercept future push notifications, (b) attackers could spam-register fake device tokens to bloat the push fanout from cron functions (`notify-pipeline.js`, `notify-weekly.js`) and drive APNs cost.
+**Fix:** Added the standard HMAC mandatory-auth block: 500 on missing `VETTED_SECRET`, 401 on missing `appleId` or `sessionToken`, 403 on HMAC mismatch. Also added `import crypto from "crypto"` (the module is ESM, register-device didn't previously need crypto). The caller in `src/App.jsx` already sends `sessionToken: authUser.sessionToken || ""` so no client changes needed.
+**Lesson:** Treating Apple's opaque user ID as a credential is a category error. It's an identifier, not an authenticator. Every endpoint that takes `appleId` MUST also validate `sessionToken` against `HMAC-SHA256(VETTED_SECRET, appleId)` — even endpoints that don't *return* user data, because identifier-only auth still allows write actions against another user's row. Add to the security review checklist: any function that mentions `apple_id` in its body must validate session token.
+**Files:** `netlify/functions/register-device.js`
+**Commit:** pending
+
+## Error 177 — behavioral-insights had no sessionToken check; PII read leak
+**Scope:** `netlify/functions/behavioral-insights.js` — High-severity backend security hardening. No client-side impact (caller already sends credentials).
+**Build:** Discovered May 20, 2026 via the Error 174 audit sweep.
+**Side:** `netlify/functions/behavioral-insights.js`.
+**Symptom:** Endpoint accepted any POST with a valid `appleId` and returned that user's behavioral aggregates: comp floor margins (`compensation_min`, average pursue comp), location preferences (`location_prefs`), currency, scored role counts, filter signal patterns, preference drift percentages. Anyone who learned an appleId could pull this data for that user with no session token required. Original guard was `if (!appleId) { return 400; }` — same anti-pattern as Error 177 but worse because behavioral-insights *returns* PII directly rather than allowing a write.
+**Fix:** Same as Error 176: added `import crypto from "crypto"`, added the standard HMAC mandatory-auth block before the aggregation logic, returning 500/401/403 for the three failure modes. Caller in `RoleWorkspace.jsx` already sends `sessionToken: authUser.sessionToken || ""` so no client changes needed.
+**Lesson:** Endpoints that read user-scoped data are higher risk than write endpoints because the failure mode is silent (no row change to notice). They MUST validate session before any database query that uses `apple_id` in a WHERE clause. Worth a separate sweep: `grep -rn 'apple_id=eq' netlify/functions/` and verify every match sits behind a validated session.
+**Files:** `netlify/functions/behavioral-insights.js`
+**Commit:** pending
