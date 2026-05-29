@@ -635,8 +635,8 @@ export default function Dashboard() {
         <Section title="Quality">
           <Card
             label="VQ quality (manual)"
-            value="9.04"
-            note="Build 28 — May 9, 2026"
+            value="9.54"
+            note="Build 31 — May 20, 2026"
             status="good"
           />
           <Card
