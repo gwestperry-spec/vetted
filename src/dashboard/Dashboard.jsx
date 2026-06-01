@@ -20,14 +20,18 @@ const F = {
 };
 
 // ─── Targets — edit these to recalibrate stage gates ─────────────────────────
+// Targets reflect post-launch ambitions as of Build 31 (May 2026).
+// Pre-launch targets (totalScores: 200, mrr: 1000) were early-stage
+// goals that no longer reflect the trajectory; bumped to give the
+// green/amber/red status thresholds room to mean something.
 const TARGETS = {
   installToSignin: 0.7, // 70%
-  firstScoreRate: 0.5,  // 50%
-  totalScores: 200,     // descriptive
-  d7Retention: 0.2,
-  repeatScoring: 1.5,
+  firstScoreRate: 0.5,  // 50% — score within 7d of profile creation
+  totalScores: 2000,    // descriptive — post-launch milestone
+  d7Retention: 0.25,    // 25% — tightened from 20% as product matures
+  repeatScoring: 1.5,   // 1.5 scores/active user/week
   crashFree: 0.99,
-  mrr: 1000,            // $1,000 MRR
+  mrr: 5000,            // $5,000 MRR — post-launch ambition (was $1k pre-launch)
   paidConversion: 0.05, // 5%
   monthlyChurn: 0.10,   // <10%
   jdFetchSuccess: 0.85, // 85% across all providers
@@ -531,7 +535,7 @@ export default function Dashboard() {
           <Card
             label="Total profiles"
             value={fmt.num(data.supabase?.totalProfiles)}
-            note={`+${fmt.num(data.supabase?.profilesNew7d ?? 0)} / 7d`}
+            note={`+${fmt.num(data.supabase?.profilesNew7d ?? 0)} / 7d · ${fmt.num(data.supabase?.profilesActive7d ?? 0)} active`}
             status="neutral"
           />
           <Card
@@ -636,7 +640,13 @@ export default function Dashboard() {
           <Card
             label="VQ quality (manual)"
             value="9.54"
-            note="Build 31 — May 20, 2026"
+            note="Build 31 · +0.74 vs Day One · Lifestyle cohort"
+            status="good"
+          />
+          <Card
+            label="Security posture"
+            value="Hardened"
+            note="6 findings closed Build 31 · fail-closed auth · HMAC binds identity to query"
             status="good"
           />
           <Card
