@@ -200,7 +200,13 @@ export default async function handler(req) {
     }
   }
 
-  provider.shutdown();
+  // Shut down both APNs providers. Wrap in try/catch — a shutdown error
+  // must never kill the diagnostic response that the client needs to see.
+  // Bare `provider.shutdown()` was a ReferenceError here (no such variable);
+  // the throw escaped the handler with no response body, causing the iOS
+  // client to surface "Network error: Load failed". See ERROR_LOG 179.
+  try { providerProd.shutdown(); } catch { /* already shut down */ }
+  try { providerDev.shutdown();  } catch { /* already shut down */ }
 
   // ── Stage 6: summarize ───────────────────────────────────────────────
   let summary;
